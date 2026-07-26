@@ -43,6 +43,20 @@
   }
 
   *{ box-sizing: border-box; }
+
+  /* SAFEGUARD: always use this class (via classList.toggle) for JS-driven
+     show/hide, never element.style.display directly. An inline style set
+     from JS overrides EVERY CSS rule for that element regardless of
+     selector specificity — so a hardcoded 'flex'/'block' value here will
+     silently keep an element in the wrong layout mode if its CSS is ever
+     changed later (e.g. from a flex row to a stacked block), since nobody
+     thinks to go find and update the JS. This exact bug shipped once
+     already (the Direction/Branch rows stayed flex via inline style after
+     their CSS was changed to stack — see the Line/Mode/Direction/Branch
+     label consistency fix). Toggling this class instead means the
+     "what's the right display value when visible" question is answered
+     once, in CSS, by whoever owns the layout — JS just says yes or no. */
+  .hidden{ display:none !important; }
   html,body{ margin:0; padding:0; max-width:100%; overflow-x:hidden; }
   body{
     --accent-ink: var(--line-accent);
@@ -71,13 +85,16 @@
     border-radius: 999px; cursor:pointer;
   }
 
-  .line-select{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .section-label{ display:block; margin-bottom:8px; }
+  .line-select-label{ margin-top:18px; }
+  .line-select{ display:flex; flex-wrap:wrap; gap:8px; margin-top:0; }
   .pill{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12px; padding:7px 12px; border-radius: 999px; border:1px solid var(--line); color: var(--ink-dim); background: var(--panel); letter-spacing:.03em; cursor:pointer; appearance:none; -webkit-appearance:none; }
   .pill.active{ background: var(--line-accent); color:#181818; border-color:var(--line-accent); font-weight:400; }
   .pill.soon{ opacity:.4; }
 
-  .direction-row{ display:flex; align-items:center; gap:10px; margin-bottom: 16px; flex-wrap:wrap; }
+  .direction-row{ margin-bottom: 16px; }
   .direction-label{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color: var(--ink-dim); }
+  .mode-row{ margin-bottom: 16px; }
   .direction-group{ display:flex; gap:6px; flex-wrap:wrap; }
   .direction-btn{
     background: var(--panel); color: var(--ink-dim); border:1px solid var(--line);
@@ -86,7 +103,6 @@
   }
   .direction-btn.active{ border-color: var(--line-accent); color: var(--accent-ink); background: color-mix(in srgb, var(--line-accent) 14%, transparent); }
   .direction-btn:active{ transform: translateY(1px); }
-  .direction-row.disabled{ opacity:.35; pointer-events:none; }
 
   .mc-options{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
   .mc-option{
@@ -101,10 +117,6 @@
   @media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; } }
 
   .mc-context-block{ margin: 2px 0 26px; }
-  .mc-context-heading{
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-size:11.5px; letter-spacing:.16em;
-    text-transform:uppercase; color: var(--ink-dim); margin: 0 0 8px; font-weight:400;
-  }
   .mc-context-row{ display:flex; align-items:center; justify-content:center; gap:4px; overflow-x:auto; padding-bottom:2px; }
   .mc-context-node{
     flex:1 1 90px; max-width:150px; min-width:0; text-align:center; padding:12px 6px; border-radius:12px;
@@ -119,7 +131,7 @@
   .mc-context-node.empty{ border-style:dashed; opacity:.35; color: var(--ink-dim); }
   .mc-context-connector{ flex:0 0 10px; width:10px; height:2px; background: var(--line); }
 
-  .mode-select{ display:flex; gap:8px; margin-bottom: 16px; flex-wrap:wrap; }
+  .mode-select{ display:flex; gap:8px; margin-bottom: 0; flex-wrap:wrap; }
   .mode-btn{
     flex:1; min-width: 0; text-align:center; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:13px;
     padding: 11px 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel);
@@ -158,6 +170,12 @@
     margin: 0 0 18px; letter-spacing:.01em; line-height:1.3;
   }
 
+  .interchange-row{ display:flex; flex-wrap:wrap; gap:6px; margin: -8px 0 18px; }
+  .interchange-chip{
+    display:inline-flex; align-items:center; padding:5px 11px; border-radius:999px;
+    font-size:11px; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400;
+  }
+
   .input-row{ display:flex; gap:10px; }
   input[type=text]{
     flex:1; min-width:0; background: var(--panel-2); border: 2px solid var(--line);
@@ -187,8 +205,6 @@
 
   .diagram-card{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; }
   .diagram-card h3{ font-family:'P22 Underground', 'Cabin', sans-serif; font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color: var(--ink-dim); margin: 0 0 4px; font-weight:400; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-  .diagram-card .legend{ font-weight:400; font-size:10px; letter-spacing:normal; text-transform:none; color: var(--ink-dim); }
-  .diagram-card .legend b{ color:var(--accent-ink); }
   svg{ width:100%; height:auto; display:block; }
 
   .summary h2{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:26px; margin: 0 0 4px; }
@@ -205,6 +221,36 @@
   .miss-list .correct{ color: var(--green); font-weight:400; }
 
   footer{ text-align:center; margin-top: 26px; color: var(--ink-dim); font-size:12px; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; }
+
+  .drain-egg{
+    display:inline-block; width:10px; height:10px; margin:0 8px; padding:0; border:none; border-radius:50%;
+    background: repeating-conic-gradient(var(--ink-dim) 0deg 8deg, transparent 8deg 20deg);
+    vertical-align:middle; position:relative; top:-1px; cursor:pointer;
+    opacity:.6; transition: transform .2s ease, opacity .2s ease;
+  }
+  .drain-egg:hover, .drain-egg:focus-visible{ opacity:1; transform: scale(1.7); }
+
+  .olympia-egg{
+    display:inline-block; width:11px; height:11px; margin-left:10px; padding:0; border:none; border-radius:50%;
+    background: radial-gradient(circle, var(--ink-dim) 0%, transparent 72%);
+    vertical-align:middle; position:relative; top:1px; cursor:pointer;
+    opacity:.35; animation: olympiaFlicker 2.6s ease-in-out infinite;
+  }
+  @keyframes olympiaFlicker{ 0%,100%{ opacity:.2; } 50%{ opacity:.55; } }
+  .olympia-egg:hover, .olympia-egg:focus-visible{
+    opacity:1; transform: scale(1.6); animation-play-state: paused;
+  }
+
+  .egg-toast{
+    position: fixed; left:50%; bottom: 22px; transform: translateX(-50%) translateY(16px);
+    background: var(--panel); border:1px solid var(--line); color: var(--ink);
+    padding: 12px 18px; border-radius: 999px; font-family:'P22 Underground', 'Cabin', sans-serif;
+    font-size:13px; box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+    opacity:0; pointer-events:none; transition: opacity .3s ease, transform .3s ease;
+    z-index: 999; white-space:nowrap; max-width: 90vw; overflow:hidden; text-overflow:ellipsis;
+  }
+  .egg-toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+  .egg-toast b{ color: var(--accent-ink); }
 
   @media (hover: hover) and (pointer: fine){
     .pill:not(.active):not(.soon):hover{ border-color: var(--ink-dim); color: var(--ink); }
@@ -238,10 +284,14 @@
       </div>
       <button type="button" id="themeToggle" class="theme-toggle">☀ Light</button>
     </div>
+    <span class="direction-label section-label line-select-label">Line</span>
     <div class="line-select">
-      <button type="button" class="pill active" id="lineCircleBtn">● Circle — 35 stations</button>
-      <button type="button" class="pill" id="lineVictoriaBtn">● Victoria — 16 stations</button>
-      <div class="pill soon">District — soon</div>
+      <button type="button" class="pill active" id="lineCircleBtn" data-line-id="circle">● Circle — 35 stations</button>
+      <button type="button" class="pill" id="lineVictoriaBtn" data-line-id="victoria">● Victoria — 16 stations</button>
+      <button type="button" class="pill" id="lineJubileeBtn" data-line-id="jubilee">● Jubilee — 27 stations</button>
+      <button type="button" class="pill" id="lineBakerlooBtn" data-line-id="bakerloo">● Bakerloo — 25 stations</button>
+      <button type="button" class="pill" id="lineHcBtn" data-line-id="hammersmithcity">● H&amp;C — 29 stations</button>
+      <button type="button" class="pill" id="lineDistrictBtn" data-line-id="district">● District — 59 stations</button>
       <div class="pill soon">Central — soon</div>
       <div class="pill soon">Piccadilly — soon</div>
       <div class="pill soon">Northern — soon</div>
@@ -249,14 +299,23 @@
   </header>
 
   <main>
-  <div class="mode-select">
-    <button type="button" class="mode-btn active" id="modeWarmupBtn">Warm-up<small>Type what you see</small></button>
-    <button type="button" class="mode-btn" id="modeQuizBtn">Recall quiz<small>Type from memory</small></button>
-    <button type="button" class="mode-btn" id="modeMcBtn">Multiple choice<small>Pick from 4</small></button>
+  <div class="mode-row">
+    <span class="direction-label section-label">Mode</span>
+    <div class="mode-select">
+      <button type="button" class="mode-btn active" id="modeWarmupBtn">Warm-up<small>Type what you see</small></button>
+      <button type="button" class="mode-btn" id="modeQuizBtn">Recall quiz<small>Type from memory</small></button>
+      <button type="button" class="mode-btn" id="modeMcBtn">Multiple choice<small>Pick from 4</small></button>
+    </div>
+  </div>
+
+  <div class="direction-row hidden" id="branchRow">
+    <span class="direction-label section-label">Branch</span>
+    <div class="direction-group" id="branchGroup"></div>
+    <button type="button" id="olympiaEgg" class="olympia-egg" aria-label="Hidden feature"></button>
   </div>
 
   <div class="direction-row" id="directionRow">
-    <span class="direction-label">Direction</span>
+    <span class="direction-label section-label">Direction</span>
     <div class="direction-group">
       <button type="button" id="directionForwardBtn" class="direction-btn active">Hammersmith → Edgware Road</button>
       <button type="button" id="directionReverseBtn" class="direction-btn">Edgware Road → Hammersmith</button>
@@ -278,16 +337,17 @@
   <div id="gameArea">
     <div class="card" id="gameCard">
       <div class="context" id="contextLine"></div>
-      <div class="prompt" id="promptLine" style="display:none;"></div>
-      <div class="target-word" id="targetWord" style="display:none;"></div>
-      <div class="mc-context-block" id="mcContextCard" style="display:none;">
+      <div class="prompt hidden" id="promptLine"></div>
+      <div class="target-word hidden" id="targetWord"></div>
+      <div class="interchange-row hidden" id="interchangeRow"></div>
+      <div class="mc-context-block hidden" id="mcContextCard">
         <div class="mc-context-row" id="mcContextRow"></div>
       </div>
       <div class="input-row" id="inputRow">
         <input type="text" id="answerInput" placeholder="Type here…" autocomplete="off" spellcheck="false" maxlength="60">
         <button type="button" id="submitBtn">Enter</button>
       </div>
-      <div class="mc-options" id="mcOptions" style="display:none;"></div>
+      <div class="mc-options hidden" id="mcOptions"></div>
       <div class="row-actions" id="rowActions">
         <button type="button" class="link-btn" id="hintBtn">Show hint</button>
         <button type="button" class="link-btn" id="skipBtn">Skip →</button>
@@ -301,10 +361,10 @@
     </div>
   </div>
 
-  <div id="summaryArea" style="display:none;" class="card summary">
+  <div id="summaryArea" class="card summary hidden">
     <h2 id="summaryTitle">Run complete</h2>
     <p id="summarySub"></p>
-    <div class="summary-time" id="summaryTime" style="display:none;">
+    <div class="summary-time hidden" id="summaryTime">
       <span class="summary-time-label">Time</span>
       <span class="summary-time-value" id="summaryTimeValue">0:00</span>
     </div>
@@ -313,7 +373,8 @@
   </div>
   </main>
 
-  <footer>Underground Explorer · © 2026 Studio Espero</footer>
+  <footer>Underground Explorer <button type="button" id="drainEgg" class="drain-egg" aria-label="Hidden feature"></button> © 2026 Studio Espero</footer>
+  <div class="egg-toast" id="eggToast">🕳️ Found <b>The Drain</b> — Waterloo &amp; City unlocked</div>
 </div>
 
 <script>
@@ -325,6 +386,51 @@
   // service pattern that revisits a station (like Circle's spiral
   // closing back through Paddington/Edgware Road).
   // ---------------------------------------------------------------
+  // ---------------------------------------------------------------
+  // Station interchanges: which other lines/services connect at each
+  // station. Keyed by station NAME (not by line), since a station like
+  // King's Cross St. Pancras appears in several lines' data — this way
+  // the fact is recorded once and any line can look it up. Only Victoria
+  // line's 16 stations are populated for now; anything not listed here
+  // just renders no badges rather than erroring.
+  //
+  // London Overground badges use the specific one of the six 2024-renamed
+  // lines (Liberty/Lioness/Mildmay/Suffragette/Weaver/Windrush) rather than
+  // a generic Overground badge. Colours are TfL's official Pantone-derived
+  // RGB values (content.tfl.gov.uk colour standard), not approximations.
+  // National Rail is still one generic badge (no single official colour,
+  // and its double-arrow logo is a registered mark we won't reproduce).
+  // ---------------------------------------------------------------
+  const LINE_BADGE_COLORS = {
+    bakerloo: '#B36305', central: '#E32017', circle: '#FFD300', district: '#00782A',
+    hammersmithcity: '#F3A9BB', jubilee: '#A0A5A9', metropolitan: '#9B0056',
+    northern: '#000000', piccadilly: '#003688', victoria: '#0098D4',
+    waterloocity: '#95CDBA', elizabeth: '#6950A1', dlr: '#00A4A7',
+    nationalrail: '#4A4A4A',
+    liberty: '#5D6061', lioness: '#FAA61A', mildmay: '#0077AD',
+    suffragette: '#5BBD72', weaver: '#823A62', windrush: '#ED1B00'
+  };
+  function badge(id, label){ return { color: LINE_BADGE_COLORS[id], label }; }
+
+  const STATION_INTERCHANGES = {
+    "Brixton": [badge('nationalrail','National Rail')],
+    "Stockwell": [badge('northern','Northern')],
+    "Vauxhall": [badge('nationalrail','National Rail')],
+    "Pimlico": [],
+    "Victoria": [badge('circle','Circle'), badge('district','District'), badge('nationalrail','National Rail')],
+    "Green Park": [badge('piccadilly','Piccadilly'), badge('jubilee','Jubilee')],
+    "Oxford Circus": [badge('central','Central'), badge('bakerloo','Bakerloo')],
+    "Warren Street": [badge('northern','Northern')],
+    "Euston": [badge('northern','Northern'), badge('nationalrail','National Rail')],
+    "King's Cross St. Pancras": [badge('circle','Circle'), badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('northern','Northern'), badge('piccadilly','Piccadilly'), badge('nationalrail','National Rail')],
+    "Highbury & Islington": [badge('mildmay','Mildmay'), badge('windrush','Windrush'), badge('nationalrail','National Rail')],
+    "Finsbury Park": [badge('piccadilly','Piccadilly'), badge('nationalrail','National Rail')],
+    "Seven Sisters": [badge('weaver','Weaver'), badge('nationalrail','National Rail')],
+    "Tottenham Hale": [badge('nationalrail','National Rail')],
+    "Blackhorse Road": [badge('suffragette','Suffragette')],
+    "Walthamstow Central": [badge('weaver','Weaver'), badge('nationalrail','National Rail')]
+  };
+
   const LINES = {
     circle: {
       id: 'circle',
@@ -356,21 +462,148 @@
         "Highbury & Islington","Finsbury Park","Seven Sisters","Tottenham Hale","Blackhorse Road",
         "Walthamstow Central"
       ]
+    },
+    jubilee: {
+      id: 'jubilee',
+      label: 'Jubilee',
+      color: '#A0A5A9',
+      layout: 'linear',
+      spurCount: 0,
+      loopClosure: [],
+      stations: [
+        "Stanmore","Canons Park","Queensbury","Kingsbury","Wembley Park",
+        "Neasden","Dollis Hill","Willesden Green","Kilburn","West Hampstead",
+        "Finchley Road","Swiss Cottage","St. John's Wood","Baker Street","Bond Street",
+        "Green Park","Westminster","Waterloo","Southwark","London Bridge",
+        "Bermondsey","Canada Water","Canary Wharf","North Greenwich","Canning Town",
+        "West Ham","Stratford"
+      ]
+    },
+    bakerloo: {
+      id: 'bakerloo',
+      label: 'Bakerloo',
+      color: '#B36305',
+      layout: 'linear',
+      spurCount: 0,
+      loopClosure: [],
+      stations: [
+        "Harrow & Wealdstone","Kenton","South Kenton","North Wembley","Wembley Central",
+        "Stonebridge Park","Harlesden","Willesden Junction","Kensal Green","Queen's Park",
+        "Kilburn Park","Maida Vale","Warwick Avenue","Paddington","Edgware Road",
+        "Marylebone","Baker Street","Regent's Park","Oxford Circus","Piccadilly Circus",
+        "Charing Cross","Embankment","Waterloo","Lambeth North","Elephant & Castle"
+      ]
+    },
+    hammersmithcity: {
+      id: 'hammersmithcity',
+      label: 'Hammersmith & City',
+      color: '#F3A9BB',
+      layout: 'linear',
+      spurCount: 0,
+      loopClosure: [],
+      stations: [
+        "Hammersmith","Goldhawk Road","Shepherd's Bush Market","Wood Lane","Latimer Road",
+        "Ladbroke Grove","Westbourne Park","Royal Oak","Paddington","Edgware Road",
+        "Baker Street","Great Portland Street","Euston Square","King's Cross St. Pancras","Farringdon",
+        "Barbican","Moorgate","Liverpool Street","Aldgate East","Whitechapel",
+        "Stepney Green","Mile End","Bow Road","Bromley-by-Bow","West Ham",
+        "Plaistow","Upton Park","East Ham","Barking"
+      ]
+    },
+    // District's real service pattern is four specific through-routes,
+    // not "any western branch to any eastern end": Ealing Broadway and
+    // Richmond both run to Upminster; Wimbledon splits into a Barking
+    // service and a separate Edgware Road service (via the same fork
+    // at Gloucester Road that Circle/H&C use). Modeled here as a tree
+    // of segments (trunk + arms) so the diagram can show the actual
+    // branch shape, not just whichever route happens to be selected.
+    // Kensington (Olympia) is deliberately left out — documented as a
+    // "limited service" branch with its own unusual pattern, so it's a
+    // separate judgment call rather than data to guess at.
+    district: (function(){
+      const ealingArm = ["Chiswick Park","Acton Town","Ealing Common","Ealing Broadway"];
+      const westCore = ["West Kensington","Barons Court","Hammersmith","Ravenscourt Park","Stamford Brook","Turnham Green"];
+      const trunk = ["Earl's Court","Gloucester Road"];
+      const eastCore = ["South Kensington","Sloane Square","Victoria","St. James's Park","Westminster","Embankment","Temple","Blackfriars","Mansion House","Cannon Street","Monument","Tower Hill","Aldgate East","Whitechapel","Stepney Green","Mile End","Bow Road","Bromley-by-Bow","West Ham","Plaistow","Upton Park","East Ham","Barking"];
+      const upminsterExt = ["Upney","Becontree","Dagenham Heathway","Dagenham East","Elm Park","Hornchurch","Upminster Bridge","Upminster"];
+      const richmondArm = ["Gunnersbury","Kew Gardens","Richmond"];
+      const wimbledonArm = ["West Brompton","Fulham Broadway","Parsons Green","Putney Bridge","East Putney","Southfields","Wimbledon Park","Wimbledon"];
+      const edgwareArm = ["High Street Kensington","Notting Hill Gate","Bayswater","Paddington","Edgware Road"];
+
+      // the Ealing–Upminster route is treated as one dead-straight horizontal
+      // spine; Richmond, Wimbledon, and the Edgware Road arm are each a
+      // simple vertical stub connecting perpendicular to it at the real
+      // junction — Turnham Green, Earl's Court, and Gloucester Road — rather
+      // than diagonal "spider legs" going off at odd angles
+      const spine = [...ealingArm.slice().reverse(), ...westCore.slice().reverse(), ...trunk, ...eastCore, ...upminsterExt];
+      const turnhamGreenIdx = spine.indexOf('Turnham Green');
+      const earlsCourtIdx = spine.indexOf("Earl's Court");
+      const gloucesterRoadIdx = spine.indexOf('Gloucester Road');
+
+      const segments = [
+        { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
+        { id:'richmondArm', stations: richmondArm, parent:'spine', parentIndex: turnhamGreenIdx, dx:0, dy:-1, spacing:26 },
+        { id:'wimbledonArm', stations: wimbledonArm, parent:'spine', parentIndex: earlsCourtIdx, dx:0, dy:1, spacing:26 },
+        { id:'edgwareArm', stations: edgwareArm, parent:'spine', parentIndex: gloucesterRoadIdx, dx:0, dy:-1, spacing:26 }
+      ];
+
+      return {
+        id: 'district',
+        label: 'District',
+        color: '#00782A',
+        layout: 'branch-tree',
+        segments: segments,
+        spurCount: 0,
+        loopClosure: [],
+        defaultBranch: 'ealingUpminster',
+        branches: {
+          ealingUpminster: {
+            label: 'Ealing Broadway – Upminster',
+            stations: spine
+          },
+          richmondUpminster: {
+            label: 'Richmond – Upminster',
+            stations: [...richmondArm.slice().reverse(), ...westCore.slice().reverse(), ...trunk, ...eastCore, ...upminsterExt]
+          },
+          wimbledonBarking: {
+            label: 'Wimbledon – Barking',
+            stations: [...wimbledonArm.slice().reverse(), ...trunk, ...eastCore]
+          },
+          wimbledonEdgware: {
+            label: 'Wimbledon – Edgware Road',
+            stations: [...wimbledonArm.slice().reverse(), ...trunk, ...edgwareArm]
+          }
+        }
+      };
+    })(),
+    // secret: "The Drain" — Londoners' nickname for Waterloo & City, on
+    // account of its short, single-tunnel run between just two stations.
+    // Not listed anywhere in the UI; found only via the hidden footer egg.
+    waterloocity: {
+      id: 'waterloocity',
+      label: 'Waterloo & City',
+      color: '#95CDBA',
+      layout: 'linear',
+      spurCount: 0,
+      loopClosure: [],
+      stations: ["Waterloo", "Bank"]
     }
   };
 
   // ---- Build the derived runtime data for a line (journey sequence,
   // reversed variants, etc) from its static definition ----
-  function buildLineRuntime(id){
+  function buildLineRuntime(id, branchId){
     const def = LINES[id];
-    const stations = def.stations;
+    const hasBranches = !!def.branches;
+    const activeBranchId = hasBranches ? (branchId || def.defaultBranch) : null;
+    const stations = hasBranches ? def.branches[activeBranchId].stations : def.stations;
     const N = stations.length;
     const journeyIndices = [...Array(N).keys(), ...def.loopClosure];
     const reversedJourneyIndices = journeyIndices.slice().reverse();
     const journeyNames = journeyIndices.map(i => stations[i]);
     const reversedJourneyNames = reversedJourneyIndices.map(i => stations[i]);
     return {
-      def, stations, N,
+      def, stations, N, branchId: activeBranchId,
       journeyIndices, reversedJourneyIndices, journeyNames, reversedJourneyNames,
       JOURNEY_LEN: journeyIndices.length
     };
@@ -396,6 +629,14 @@
     return rgbToHex(r*factor, g*factor, b*factor);
   }
 
+  // for interchange pills filled solid with a line's own color: pick
+  // whichever of near-black/near-white text actually reads on it
+  function readableTextOn(hex){
+    const {r,g,b} = hexToRgb(hex);
+    const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
+    return luminance > 0.6 ? '#14151a' : '#f5f4ef';
+  }
+
   let LINE = buildLineRuntime('circle');
 
   const $ = id => document.getElementById(id);
@@ -408,6 +649,25 @@
   const mcOptionsEl = $('mcOptions');
   const mcContextCard = $('mcContextCard');
   const mcContextRow = $('mcContextRow');
+  const interchangeRow = $('interchangeRow');
+  // cached once here rather than re-queried on every call — several of
+  // these (statMid, gameArea, liveDot) are touched by the 500ms tick timer,
+  // so avoiding a fresh getElementById each time is a real (if small) win
+  const gameAreaEl = $('gameArea');
+  const summaryAreaEl = $('summaryArea');
+  const summaryTitleEl = $('summaryTitle');
+  const summarySubEl = $('summarySub');
+  const statMidEl = $('statMid');
+  const statBestEl = $('statBest');
+  const statTimeEl = $('statTime');
+  const liveDotEl = $('liveDot');
+  const hintBtnEl = $('hintBtn');
+  const themeToggleEl = $('themeToggle');
+  const modeWarmupBtnEl = $('modeWarmupBtn');
+  const modeQuizBtnEl = $('modeQuizBtn');
+  const modeMcBtnEl = $('modeMcBtn');
+  const directionForwardBtnEl = $('directionForwardBtn');
+  const directionReverseBtnEl = $('directionReverseBtn');
 
   let isLight = true;
   let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc'
@@ -417,7 +677,6 @@
   let misses = [];
   let startTime = null, charsTyped = 0, bestWpm = 0;
   let wpmTimer = null;
-  let mcOptionIndices = []; // original station indices currently shown as MC choices
   let mcOrder = [];         // shuffled true-station-indices, one per MC question
   // per-station outcome, keyed by true geographic index: 'ok' | 'bad'
   let results = {};
@@ -469,10 +728,10 @@
     idx = 0; streak = 0; correctCount = 0; attempts = 0; misses = [];
     startTime = null; charsTyped = 0; results = {};
     if(mode === 'mc') mcOrder = shuffle([...Array(LINE.N).keys()]);
-    $('statTime').textContent = '0:00';
-    $('liveDot').classList.remove('ticking');
-    $('summaryArea').style.display = 'none';
-    $('gameArea').style.display = 'block';
+    statTimeEl.textContent = '0:00';
+    liveDotEl.classList.remove('ticking');
+    summaryAreaEl.classList.add('hidden');
+    gameAreaEl.classList.remove('hidden');
   }
 
   function applyLineTheme(){
@@ -489,8 +748,39 @@
 
   function updateDirectionLabels(){
     const { start, end } = terminusNames();
-    $('directionForwardBtn').textContent = start + ' → ' + end;
-    $('directionReverseBtn').textContent = end + ' → ' + start;
+    directionForwardBtnEl.textContent = start + ' → ' + end;
+    directionReverseBtnEl.textContent = end + ' → ' + start;
+  }
+
+  function renderBranchRow(){
+    const row = $('branchRow');
+    const hasBranches = !!LINE.def.branches;
+    row.classList.toggle('hidden', !hasBranches);
+    if(!hasBranches) return;
+    const group = $('branchGroup');
+    group.innerHTML = '';
+    Object.keys(LINE.def.branches).forEach(branchId => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'direction-btn';
+      if(branchId === LINE.branchId) btn.classList.add('active');
+      btn.textContent = LINE.def.branches[branchId].label;
+      btn.addEventListener('click', function(){ setBranch(branchId); });
+      group.appendChild(btn);
+    });
+  }
+
+  function setBranch(branchId){
+    if(branchId === LINE.branchId) return;
+    LINE = buildLineRuntime(LINE.def.id, branchId);
+    reverseDirection = false;
+    directionForwardBtnEl.classList.add('active');
+    directionReverseBtnEl.classList.remove('active');
+    renderBranchRow();
+    updateDirectionLabels();
+    setupGeometry();
+    resetState();
+    render();
   }
 
   function setLine(id){
@@ -500,12 +790,14 @@
     }
     LINE = buildLineRuntime(id);
     reverseDirection = false;
-    $('directionForwardBtn').classList.add('active');
-    $('directionReverseBtn').classList.remove('active');
-    $('lineCircleBtn').classList.toggle('active', id === 'circle');
-    $('lineVictoriaBtn').classList.toggle('active', id === 'victoria');
+    directionForwardBtnEl.classList.add('active');
+    directionReverseBtnEl.classList.remove('active');
+    document.querySelectorAll('.line-select .pill[id^="line"]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lineId === id);
+    });
     $('lineNameSpan').textContent = LINE.def.label;
     document.title = LINE.def.label + ' Line — Underground Explorer';
+    renderBranchRow();
     updateDirectionLabels();
     applyLineTheme();
     setupGeometry();
@@ -515,27 +807,26 @@
   function setDirection(rev){
     if(mode === 'mc') return;
     reverseDirection = rev;
-    $('directionForwardBtn').classList.toggle('active', !reverseDirection);
-    $('directionReverseBtn').classList.toggle('active', reverseDirection);
+    directionForwardBtnEl.classList.toggle('active', !reverseDirection);
+    directionReverseBtnEl.classList.toggle('active', reverseDirection);
     resetState();
     render();
   }
 
   function setMode(newMode){
     mode = newMode;
-    $('modeWarmupBtn').classList.toggle('active', mode === 'warmup');
-    $('modeQuizBtn').classList.toggle('active', mode === 'quiz');
-    $('modeMcBtn').classList.toggle('active', mode === 'mc');
+    modeWarmupBtnEl.classList.toggle('active', mode === 'warmup');
+    modeQuizBtnEl.classList.toggle('active', mode === 'quiz');
+    modeMcBtnEl.classList.toggle('active', mode === 'mc');
     $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Streak';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
-    promptLine.style.display = mode === 'quiz' ? 'block' : 'none';
-    targetWord.style.display = mode === 'warmup' ? 'block' : 'none';
-    inputRow.style.display = mode === 'mc' ? 'none' : 'flex';
-    mcOptionsEl.style.display = mode === 'mc' ? 'grid' : 'none';
-    mcContextCard.style.display = mode === 'mc' ? 'block' : 'none';
-    $('directionRow').style.display = mode === 'mc' ? 'none' : 'flex';
-    const hintBtn = $('hintBtn');
-    hintBtn.style.display = mode === 'warmup' ? 'none' : 'inline-block';
+    promptLine.classList.toggle('hidden', mode !== 'quiz');
+    targetWord.classList.toggle('hidden', mode !== 'warmup');
+    inputRow.classList.toggle('hidden', mode === 'mc');
+    mcOptionsEl.classList.toggle('hidden', mode !== 'mc');
+    mcContextCard.classList.toggle('hidden', mode !== 'mc');
+    $('directionRow').classList.toggle('hidden', mode === 'mc');
+    hintBtnEl.classList.toggle('hidden', mode === 'warmup');
     $('rowActions').classList.toggle('single', mode === 'warmup');
     resetState();
     render();
@@ -560,12 +851,30 @@
     $('statProgress').textContent = idx + '/' + totalSteps();
     $('statAcc').textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
     if(mode === 'warmup'){
-      $('statMid').textContent = currentWpm();
-      $('statBest').textContent = bestWpm;
+      statMidEl.textContent = currentWpm();
+      statBestEl.textContent = bestWpm;
     } else {
-      $('statMid').textContent = streak;
-      $('statBest').textContent = bestStreak;
+      statMidEl.textContent = streak;
+      statBestEl.textContent = bestStreak;
     }
+  }
+
+  function renderInterchanges(stationName){
+    const list = STATION_INTERCHANGES[stationName];
+    interchangeRow.innerHTML = '';
+    if(!list || list.length === 0){
+      interchangeRow.classList.add('hidden');
+      return;
+    }
+    interchangeRow.classList.remove('hidden');
+    list.forEach(({color, label}) => {
+      const chip = document.createElement('span');
+      chip.className = 'interchange-chip';
+      chip.style.background = color;
+      chip.style.color = readableTextOn(color);
+      chip.textContent = label;
+      interchangeRow.appendChild(chip);
+    });
   }
 
   function generateMcOptions(correctIdx){
@@ -573,9 +882,7 @@
     for(let i=0;i<LINE.N;i++){ if(i !== correctIdx) pool.push(i); }
     shuffle(pool);
     const distractors = pool.slice(0, 3);
-    const optionIdxs = shuffle([correctIdx, ...distractors]);
-    mcOptionIndices = optionIdxs;
-    return optionIdxs;
+    return shuffle([correctIdx, ...distractors]);
   }
 
   function renderMcContext(targetIdx){
@@ -656,7 +963,7 @@
     }
   }
 
-  function render(){
+  function render(shouldFocus){
     answerInput.value = '';
     answerInput.className = '';
     feedback.textContent = '';
@@ -672,7 +979,9 @@
       contextLine.innerHTML = 'Stop ' + (idx+1) + ' of ' + LINE.JOURNEY_LEN + dir + note;
       targetWord.textContent = list[idx];
       answerInput.placeholder = 'Type it exactly…';
+      renderInterchanges(list[idx]);
     } else if(mode === 'quiz'){
+      interchangeRow.classList.add('hidden');
       if(idx === 0){
         contextLine.innerHTML = reverseDirection
           ? end + ' — the terminus, where trains reverse'
@@ -686,6 +995,7 @@
       }
       answerInput.placeholder = 'Type a station name…';
     } else if(mode === 'mc'){
+      interchangeRow.classList.add('hidden');
       const targetIdx = mcOrder[idx];
       contextLine.innerHTML = '';
       renderMcOptions();
@@ -693,22 +1003,25 @@
     }
     updateStats();
     drawDiagram();
-    if(mode !== 'mc') answerInput.focus();
+    // only pull focus (and pop the mobile keyboard) when continuing an
+    // active typing flow — never on a fresh line/mode/direction switch,
+    // where the person hasn't necessarily chosen to type yet
+    if(shouldFocus && mode !== 'mc') answerInput.focus();
   }
 
   function finishRun(){
     updateStats();
-    $('gameArea').style.display = 'none';
-    const area = $('summaryArea');
-    area.style.display = 'block';
+    gameAreaEl.classList.add('hidden');
+    const area = summaryAreaEl;
+    area.classList.remove('hidden');
     const acc = attempts ? Math.round(100*correctCount/attempts) : 0;
     const elapsed = formatElapsed();
     const summaryTime = $('summaryTime');
     if(startTime){
-      summaryTime.style.display = 'flex';
+      summaryTime.classList.remove('hidden');
       $('summaryTimeValue').textContent = elapsed;
     } else {
-      summaryTime.style.display = 'none';
+      summaryTime.classList.add('hidden');
     }
     const hasClosure = LINE.def.loopClosure.length > 0;
     const closureNote = hasClosure
@@ -717,14 +1030,14 @@
     if(mode === 'warmup'){
       const wpm = currentWpm();
       bestWpm = Math.max(bestWpm, wpm);
-      $('summaryTitle').textContent = 'Warm-up complete';
-      $('summarySub').textContent = 'Typed the full ' + LINE.JOURNEY_LEN + '-stop journey' + closureNote + ' at ' + wpm + ' WPM · ' + acc + '% first-try accuracy. Try the recall quiz next.';
+      summaryTitleEl.textContent = 'Warm-up complete';
+      summarySubEl.textContent = 'Typed the full ' + LINE.JOURNEY_LEN + '-stop journey' + closureNote + ' at ' + wpm + ' WPM · ' + acc + '% first-try accuracy. Try the recall quiz next.';
     } else if(mode === 'quiz'){
-      $('summaryTitle').textContent = misses.length === 0 ? 'Full journey, zero mistakes' : 'Quiz complete';
-      $('summarySub').textContent = 'You got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
+      summaryTitleEl.textContent = misses.length === 0 ? 'Full journey, zero mistakes' : 'Quiz complete';
+      summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
     } else {
-      $('summaryTitle').textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
-      $('summarySub').textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
+      summaryTitleEl.textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
+      summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
     }
     const list = $('missList');
     list.innerHTML = '';
@@ -751,7 +1064,7 @@
 
   function advance(){
     idx++;
-    if(idx >= totalSteps()){ finishRun(); } else { render(); }
+    if(idx >= totalSteps()){ finishRun(); } else { render(true); }
   }
 
   function submitAnswer(){
@@ -802,7 +1115,7 @@
     }
   });
 
-  $('hintBtn').addEventListener('click', function(){
+  hintBtnEl.addEventListener('click', function(){
     const list = seq();
     if(mode === 'mc'){
       streak = Math.max(0, streak - 1);
@@ -861,32 +1174,90 @@
     render();
   });
 
-  $('modeWarmupBtn').addEventListener('click', function(){ setMode('warmup'); });
-  $('modeQuizBtn').addEventListener('click', function(){ setMode('quiz'); });
-  $('modeMcBtn').addEventListener('click', function(){ setMode('mc'); });
+  modeWarmupBtnEl.addEventListener('click', function(){ setMode('warmup'); });
+  modeQuizBtnEl.addEventListener('click', function(){ setMode('quiz'); });
+  modeMcBtnEl.addEventListener('click', function(){ setMode('mc'); });
 
-  $('directionForwardBtn').addEventListener('click', function(){ setDirection(false); });
-  $('directionReverseBtn').addEventListener('click', function(){ setDirection(true); });
+  directionForwardBtnEl.addEventListener('click', function(){ setDirection(false); });
+  directionReverseBtnEl.addEventListener('click', function(){ setDirection(true); });
 
   $('lineCircleBtn').addEventListener('click', function(){ setLine('circle'); });
   $('lineVictoriaBtn').addEventListener('click', function(){ setLine('victoria'); });
+  $('lineJubileeBtn').addEventListener('click', function(){ setLine('jubilee'); });
+  $('lineBakerlooBtn').addEventListener('click', function(){ setLine('bakerloo'); });
+  $('lineHcBtn').addEventListener('click', function(){ setLine('hammersmithcity'); });
+  $('lineDistrictBtn').addEventListener('click', function(){ setLine('district'); });
 
-  $('themeToggle').addEventListener('click', function(){
+  // ---- secret: "The Drain" ----
+  // a nearly-invisible drain-cover dot hides in the footer; clicking it
+  // reveals Waterloo & City as a proper pill (so it's easy to return to
+  // once found) and jumps straight into it
+  let drainUnlocked = false;
+  let eggToastTimer = null;
+  function showEggToast(html){
+    const toast = $('eggToast');
+    toast.innerHTML = html;
+    toast.classList.add('show');
+    clearTimeout(eggToastTimer);
+    eggToastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 3200);
+  }
+  $('drainEgg').addEventListener('click', function(){
+    if(!drainUnlocked){
+      drainUnlocked = true;
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'pill';
+      pill.id = 'lineWaterlooCityBtn';
+      pill.dataset.lineId = 'waterloocity';
+      pill.textContent = '● Waterloo & City — 2 stations';
+      pill.addEventListener('click', function(){ setLine('waterloocity'); });
+      document.querySelector('.line-select').appendChild(pill);
+    }
+    setLine('waterloocity');
+    showEggToast('🕳️ Found <b>The Drain</b> — Waterloo &amp; City unlocked');
+  });
+
+  // ---- secret: Kensington (Olympia) ----
+  // District's genuine "ghost" branch — real, but so rarely timetabled
+  // that Wikipedia itself calls it "limited service". Hidden as a small
+  // dot in the Branch row (only visible once District is selected),
+  // separate from the drain egg since this is a quirk of one line
+  // rather than a whole hidden line of its own.
+  let olympiaUnlocked = false;
+  $('olympiaEgg').addEventListener('click', function(){
+    if(LINE.def.id !== 'district') return;
+    if(!olympiaUnlocked){
+      olympiaUnlocked = true;
+      const def = LINES.district;
+      def.segments.push({
+        id: 'olympiaArm', stations: ["Kensington (Olympia)"],
+        parent: 'spine', parentIndex: def.segments.find(s => s.id === 'spine').stations.indexOf("Earl's Court"),
+        dx: 0, dy: -1, spacing: 26
+      });
+      const edgwareArm = def.segments.find(s => s.id === 'edgwareArm').stations;
+      const trunk = ["Earl's Court", "Gloucester Road"];
+      def.branches.kensingtonOlympia = {
+        label: 'Kensington (Olympia) – Edgware Road',
+        stations: ["Kensington (Olympia)", ...trunk, ...edgwareArm]
+      };
+    }
+    setBranch('kensingtonOlympia');
+    showEggToast('👻 Found the <b>ghost branch</b> — Kensington (Olympia) unlocked');
+  });
+
+  themeToggleEl.addEventListener('click', function(){
     isLight = !isLight;
     document.body.classList.toggle('light', isLight);
-    $('themeToggle').textContent = isLight ? '☀ Light' : '☾ Dark';
+    themeToggleEl.textContent = isLight ? '☀ Light' : '☾ Dark';
     applyLineTheme();
     drawDiagram();
   });
 
-  const statTimeEl = $('statTime');
-  const liveDotEl = $('liveDot');
-
   if(wpmTimer) clearInterval(wpmTimer);
   wpmTimer = setInterval(function(){
-    const running = startTime && $('gameArea').style.display !== 'none';
+    const running = startTime && !gameAreaEl.classList.contains('hidden');
     if(mode === 'warmup' && running){
-      $('statMid').textContent = currentWpm();
+      statMidEl.textContent = currentWpm();
     }
     if(running){
       statTimeEl.textContent = formatElapsed();
@@ -942,6 +1313,69 @@
         },
         emphasisIndex: spurCount // Paddington: slightly larger dot, the spur/loop junction
       };
+    } else if(layout === 'branch-tree'){
+      const segmentDefs = LINE.def.segments;
+      const byId = {};
+      segmentDefs.forEach(s => byId[s.id] = s);
+      const globalPositions = {};
+      const outwardByName = {};
+      const segmentPositions = {};
+      const networkEdges = [];
+
+      function getSegPos(segId){
+        if(segmentPositions[segId]) return segmentPositions[segId];
+        const seg = byId[segId];
+        const len = Math.hypot(seg.dx, seg.dy);
+        const ndx = seg.dx/len, ndy = seg.dy/len;
+        // perpendicular to the segment's own direction, for tick-mark placement
+        const outward = { dx: -ndy, dy: ndx };
+        const positions = [];
+        let x, y;
+        if(seg.parent === null){
+          x = seg.startX; y = seg.startY;
+          positions.push({x,y});
+          for(let i=1;i<seg.stations.length;i++){
+            x += ndx*seg.spacing; y += ndy*seg.spacing;
+            positions.push({x,y});
+            networkEdges.push([positions[i-1], positions[i]]);
+          }
+        } else {
+          const parentPositions = getSegPos(seg.parent);
+          const attach = parentPositions[seg.parentIndex];
+          x = attach.x; y = attach.y;
+          for(let i=0;i<seg.stations.length;i++){
+            x += ndx*seg.spacing; y += ndy*seg.spacing;
+            positions.push({x,y});
+            networkEdges.push([i === 0 ? attach : positions[i-1], positions[i]]);
+          }
+        }
+        segmentPositions[segId] = positions;
+        seg.stations.forEach((name, idx) => {
+          globalPositions[name] = positions[idx];
+          outwardByName[name] = outward;
+        });
+        return positions;
+      }
+      segmentDefs.forEach(s => getSegPos(s.id));
+
+      const xs = Object.values(globalPositions).map(p => p.x);
+      const ys = Object.values(globalPositions).map(p => p.y);
+      const pad = 45;
+      const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+      const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+
+      geo = {
+        viewBox: minX + ' ' + minY + ' ' + (maxX-minX) + ' ' + (maxY-minY),
+        labelX: 450, labelYMain: 336, labelYSub: 360,
+        labelFontSize: 42, subLabelFontSize: 15,
+        hasClosingSegment: false,
+        closingPair: null,
+        networkEdges: networkEdges,
+        networkStations: Object.entries(globalPositions).map(([name,p]) => ({ name, x:p.x, y:p.y })),
+        stationPos(i){ return globalPositions[LINE.stations[i]]; },
+        outwardDir(i){ return outwardByName[LINE.stations[i]] || { dx:0, dy:-1 }; },
+        emphasisIndex: -1
+      };
     } else { // 'linear' — a straight run, horizontal by default
       const vbW = 640, vbH = 200;
       const leftPad = 45, rightPad = 45;
@@ -977,10 +1411,41 @@
     const c = isLight
       ? { pending: '#d9d5c8', dot: '#c7c2b2', ink: '#17181c', inkDim: '#6b6d76' }
       : { pending: '#2c2e37', dot: '#3a3d47', ink: '#F4F2EA', inkDim: '#9a9ba3' };
-    const done = LINE.def.color, current = '#E32017';
-    const okColor = '#7CCB6B', badColor = '#E32017';
+    // pale line colors (Circle's yellow, H&C's pink, Waterloo & City's teal)
+    // wash out against a white panel, so light mode gets the same darkened
+    // variant already used for accent-ink text; dark mode keeps the vivid
+    // brand color, which reads fine against a near-black panel
+    const done = isLight ? darkenForLightMode(LINE.def.color) : LINE.def.color;
+    const current = '#E32017';
+    const okColor = isLight ? '#1E8A46' : '#7CCB6B', badColor = '#E32017';
 
     const curOrig = idx < totalSteps() ? currentTargetIndex() : -1;
+
+    // for branching lines: draw the whole real network faintly first, so
+    // the shape of the branches is always visible even though only one
+    // route's progress is being tracked at a time
+    if(geo.networkEdges){
+      const routeSet = new Set(LINE.stations);
+      geo.networkEdges.forEach(([a,b]) => {
+        const seg = document.createElementNS(ns,'line');
+        seg.setAttribute('x1',a.x); seg.setAttribute('y1',a.y);
+        seg.setAttribute('x2',b.x); seg.setAttribute('y2',b.y);
+        seg.setAttribute('stroke', c.pending);
+        seg.setAttribute('stroke-width', 2);
+        seg.setAttribute('stroke-linecap','round');
+        seg.setAttribute('opacity', '0.55');
+        svg.appendChild(seg);
+      });
+      geo.networkStations.forEach(({name,x,y}) => {
+        if(routeSet.has(name)) return; // drawn normally in the main loop below
+        const dot = document.createElementNS(ns,'circle');
+        dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+        dot.setAttribute('r', 2.6);
+        dot.setAttribute('fill', c.dot);
+        dot.setAttribute('opacity', '0.6');
+        svg.appendChild(dot);
+      });
+    }
 
     for(let i=0;i<N-1;i++){
       const a = positions[i], b = positions[i+1];
