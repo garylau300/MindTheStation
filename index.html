@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; connect-src https://vitals.vercel-insights.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <title>Circle Line — Underground Explorer</title>
@@ -87,8 +87,41 @@
 
   .section-label{ display:block; margin-bottom:8px; }
   .line-select-label{ margin-top:18px; }
+
+  .start-playing-btn{
+    display:block; width:100%; margin-top: 6px; padding: 15px 20px; font-size:16px;
+    font-weight:400; border-radius: 12px;
+  }
+  .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; }
+
+  .play-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; }
+  .back-btn{
+    background: var(--panel); color: var(--ink-dim); border:1px solid var(--line);
+    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12.5px;
+    padding: 8px 13px; border-radius: 999px; cursor:pointer; flex:none;
+  }
+
+  .play-info{ margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+  .play-info-main{
+    display:flex; align-items:center; gap:9px; font-size:21px;
+    font-family:'P22 Underground', 'Cabin', sans-serif; color: var(--ink);
+  }
+  #playInfoLine{ color: var(--accent-ink); }
+  .play-info-dot{ width:11px; height:11px; border-radius:50%; background: var(--line-accent); flex:none; }
+  .play-info-sub{
+    margin-top:6px; font-size:14px; color: var(--ink-dim);
+    font-family:'P22 Underground', 'Cabin', sans-serif; line-height:1.5;
+  }
+
+  .summary-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .summary-actions button{ flex:1; min-width:140px; padding: 12px 20px; }
+  .ghost-btn{
+    background: var(--panel-2); color: var(--ink); border:1px solid var(--line);
+    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:15px;
+    padding: 12px 20px; border-radius: 10px; cursor:pointer;
+  }
   .line-select{ display:flex; flex-wrap:wrap; gap:8px; margin-top:0; }
-  .pill{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12px; padding:7px 12px; border-radius: 999px; border:1px solid var(--line); color: var(--ink-dim); background: var(--panel); letter-spacing:.03em; cursor:pointer; appearance:none; -webkit-appearance:none; }
+  .pill{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12px; padding:7px 12px; border-radius: 999px; border:1px solid var(--line); color: var(--pill-color, var(--ink-dim)); background: var(--panel); letter-spacing:.03em; cursor:pointer; appearance:none; -webkit-appearance:none; }
   .pill.active{ background: var(--line-accent); color:#181818; border-color:var(--line-accent); font-weight:400; }
   .pill.soon{ opacity:.4; }
 
@@ -158,7 +191,23 @@
   .live-dot.ticking{ opacity:1; animation: dotpulse 1s ease-in-out infinite; }
   @keyframes dotpulse{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.5); opacity:.5; } }
 
-  .card{ background: var(--panel); border:1px solid var(--line); border-top: 3px solid var(--line-accent); border-radius: var(--radius); padding: 26px 22px; margin-bottom: 18px; }
+  .card{ position:relative; background: var(--panel); border:1px solid var(--line); border-top: 3px solid var(--line-accent); border-radius: var(--radius); padding: 26px 22px; margin-bottom: 18px; }
+
+  .countdown-overlay{
+    position:absolute; inset:0; border-radius: var(--radius); z-index:50;
+    background: rgba(10,11,14,0.82); display:flex; align-items:center; justify-content:center;
+  }
+  .countdown-number{
+    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:64px;
+    color: var(--line-accent); line-height:1;
+  }
+  .countdown-number.go{ color: var(--green); font-size:40px; letter-spacing:.02em; }
+  @keyframes countdownPop{
+    0%{ transform: scale(1.6); opacity:0; }
+    55%{ transform: scale(1); opacity:1; }
+    100%{ transform: scale(1); opacity:1; }
+  }
+  .countdown-number.pop{ animation: countdownPop .45s ease-out; }
   .context{ font-weight:400; font-size: 13.5px; color: var(--ink-dim); margin-bottom: 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .context b{ color: var(--ink); font-weight:400; }
   .repeat-note{ color: var(--accent-ink); font-size: 12px; }
@@ -205,7 +254,58 @@
 
   .diagram-card{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; }
   .diagram-card h3{ font-family:'P22 Underground', 'Cabin', sans-serif; font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color: var(--ink-dim); margin: 0 0 4px; font-weight:400; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .route-hint{ text-transform:none; letter-spacing:normal; font-size:11px; opacity:.7; }
+
+  .station-popup{
+    position:fixed; left:0; top:0; z-index:150; width:min(280px, calc(100vw - 24px));
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 36px 12px 14px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+  }
+  .station-popup::before{
+    content:''; position:absolute; width:12px; height:12px; background: var(--panel);
+    border: 1px solid var(--line); left: var(--arrow-x, 50%); margin-left:-6px;
+    display:none;
+  }
+  .station-popup.has-arrow-up::before{
+    display:block; top:-7px; border-right:none; border-bottom:none; transform: rotate(45deg);
+  }
+  .station-popup.has-arrow-down::before{
+    display:block; bottom:-7px; border-left:none; border-top:none; transform: rotate(45deg);
+  }
+  .station-popup-close{
+    position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%;
+    background: var(--panel-2); border:1px solid var(--line); color: var(--ink-dim);
+    display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; padding:0;
+  }
+  .station-popup-name{
+    font-family:'P22 Underground', 'Cabin', sans-serif; font-size:16px; color: var(--ink); margin-bottom:7px;
+  }
+  .station-popup .interchange-row{ margin:0; }
   svg{ width:100%; height:auto; display:block; }
+
+  .progress-rail-wrap{ margin: 0 0 18px; }
+  .progress-rail-svg{ width:100%; height:auto; display:block; }
+  .rail-track{ stroke: var(--line); stroke-width:3; stroke-linecap:round; }
+  .rail-fill{
+    stroke: var(--line-accent); stroke-width:3; stroke-linecap:round;
+    transition: x2 .5s ease;
+  }
+  #trainGroup{ transition: transform .5s ease; }
+  .train-body{ fill: var(--line-accent); }
+  .train-skirt{ stroke: var(--panel); stroke-width:.9; opacity:.5; }
+  .train-window{ fill: var(--panel); opacity:.92; }
+  .train-door-seam{ stroke: var(--panel); stroke-width:.65; opacity:.75; }
+  .train-wheel{ fill: var(--ink-dim); }
+  .wheel-mark{ fill: var(--panel); opacity:.85; }
+
+  @keyframes trainShake{ 0%, 100%{ transform: translateY(0); } 50%{ transform: translateY(-1px); } }
+  .train-shake{ animation: trainShake .3s ease-in-out infinite; }
+  @keyframes wheelSpin{ from{ transform: rotate(0deg); } to{ transform: rotate(360deg); } }
+  .wheel-anim{ animation: wheelSpin .6s linear infinite; }
+  .wheel-anim-1{ transform-origin: -16.5px 35.8px; }
+  .wheel-anim-2{ transform-origin: -6.5px 35.8px; }
+  .wheel-anim-3{ transform-origin: 5.5px 35.8px; }
+  .wheel-anim-4{ transform-origin: 15.5px 35.8px; }
 
   .summary h2{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:26px; margin: 0 0 4px; }
   .summary p{ color: var(--ink-dim); margin: 0 0 18px; font-size:14px; }
@@ -250,6 +350,41 @@
     z-index: 999; white-space:nowrap; max-width: 90vw; overflow:hidden; text-overflow:ellipsis;
   }
   .egg-toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+
+  .terms-link{
+    background:none; border:none; color: var(--ink-dim); font-family:'P22 Underground', 'Cabin', sans-serif;
+    font-weight:400; font-size:12px; text-decoration: underline; cursor:pointer; padding:0;
+  }
+
+  .terms-overlay{
+    position:fixed; inset:0; background: rgba(10,11,14,0.72); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding: 20px;
+  }
+  .terms-modal{
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    max-width: 520px; width:100%; max-height: 82vh; display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+  .terms-header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding: 18px 20px; border-bottom: 1px solid var(--line); flex:none;
+  }
+  .terms-header h2{
+    margin:0; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:20px; color: var(--ink);
+  }
+  .terms-close{
+    background: var(--panel-2); border:1px solid var(--line); color: var(--ink-dim);
+    width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:14px; flex:none;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .terms-body{ padding: 18px 20px 22px; overflow-y:auto; }
+  .terms-body p{ margin: 0 0 14px; font-size:13.5px; line-height:1.6; color: var(--ink); }
+  .terms-body .terms-updated{ color: var(--ink-dim); font-size:11.5px; text-transform:uppercase; letter-spacing:.08em; }
+  .terms-body h3{
+    margin: 20px 0 8px; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400;
+    font-size:13px; text-transform:uppercase; letter-spacing:.06em; color: var(--accent-ink);
+  }
+  .terms-body h3:first-of-type{ margin-top: 4px; }
   .egg-toast b{ color: var(--accent-ink); }
 
   @media (hover: hover) and (pointer: fine){
@@ -271,10 +406,15 @@
     outline: 2px solid var(--accent-ink); outline-offset: 2px;
   }
 </style>
+<script>
+   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+ </script>
+ <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </head>
 <body class="light">
 <div class="wrap">
 
+  <div id="setupPage">
   <header>
     <div class="roundel-row">
       <div class="roundel"><div class="ring"></div><div class="bar"></div></div>
@@ -286,19 +426,21 @@
     </div>
     <span class="direction-label section-label line-select-label">Line</span>
     <div class="line-select">
-      <button type="button" class="pill active" id="lineCircleBtn" data-line-id="circle">● Circle — 35 stations</button>
-      <button type="button" class="pill" id="lineVictoriaBtn" data-line-id="victoria">● Victoria — 16 stations</button>
-      <button type="button" class="pill" id="lineJubileeBtn" data-line-id="jubilee">● Jubilee — 27 stations</button>
-      <button type="button" class="pill" id="lineBakerlooBtn" data-line-id="bakerloo">● Bakerloo — 25 stations</button>
-      <button type="button" class="pill" id="lineHcBtn" data-line-id="hammersmithcity">● H&amp;C — 29 stations</button>
-      <button type="button" class="pill" id="lineDistrictBtn" data-line-id="district">● District — 59 stations</button>
+      <button type="button" class="pill active" id="lineCircleBtn" data-line-id="circle">Circle — 35 stations</button>
+      <button type="button" class="pill" id="lineVictoriaBtn" data-line-id="victoria">Victoria — 16 stations</button>
+      <button type="button" class="pill" id="lineJubileeBtn" data-line-id="jubilee">Jubilee — 27 stations</button>
+      <button type="button" class="pill" id="lineBakerlooBtn" data-line-id="bakerloo">Bakerloo — 25 stations</button>
+      <button type="button" class="pill" id="lineHcBtn" data-line-id="hammersmithcity">H&amp;C — 29 stations</button>
+      <button type="button" class="pill" id="lineDistrictBtn" data-line-id="district">District — 59 stations</button>
+      <button type="button" class="pill" id="lineMetropolitanBtn" data-line-id="metropolitan">Metropolitan — 34 stations</button>
       <div class="pill soon">Central — soon</div>
       <div class="pill soon">Piccadilly — soon</div>
       <div class="pill soon">Northern — soon</div>
     </div>
   </header>
 
-  <main>
+  <div class="setup-divider"></div>
+
   <div class="mode-row">
     <span class="direction-label section-label">Mode</span>
     <div class="mode-select">
@@ -322,59 +464,165 @@
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat"><b id="statProgress">0/35</b><span>Stations</span></div>
-    <div class="stat"><b id="statMid">0</b><span id="statMidLabel">WPM</span></div>
-    <div class="stat"><b id="statAcc">—</b><span>Accuracy</span></div>
-    <div class="stat"><b id="statBest">0</b><span id="statBestLabel">Best WPM</span></div>
+  <div class="diagram-card">
+    <h3>Route map <span class="route-hint">tap a station</span></h3>
+    <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
   </div>
-  <div class="stat-row-time">
-    <span class="live-dot" id="liveDot"></span>
-    <b id="statTime">0:00</b>
-    <span>Elapsed</span>
+  <div class="station-popup hidden" id="stationPopup">
+    <button type="button" class="station-popup-close" id="stationPopupClose" aria-label="Close">✕</button>
+    <div class="station-popup-name" id="stationPopupName"></div>
+    <div class="interchange-row" id="stationPopupBadges"></div>
   </div>
 
-  <div id="gameArea">
-    <div class="card" id="gameCard">
-      <div class="context" id="contextLine"></div>
-      <div class="prompt hidden" id="promptLine"></div>
-      <div class="target-word hidden" id="targetWord"></div>
-      <div class="interchange-row hidden" id="interchangeRow"></div>
-      <div class="mc-context-block hidden" id="mcContextCard">
-        <div class="mc-context-row" id="mcContextRow"></div>
-      </div>
-      <div class="input-row" id="inputRow">
-        <input type="text" id="answerInput" placeholder="Type here…" autocomplete="off" spellcheck="false" maxlength="60">
-        <button type="button" id="submitBtn">Enter</button>
-      </div>
-      <div class="mc-options hidden" id="mcOptions"></div>
-      <div class="row-actions" id="rowActions">
-        <button type="button" class="link-btn" id="hintBtn">Show hint</button>
-        <button type="button" class="link-btn" id="skipBtn">Skip →</button>
-      </div>
-      <div class="feedback" id="feedback"></div>
-    </div>
+  <div class="setup-divider"></div>
 
-    <div class="diagram-card">
-      <h3>Line progress</h3>
-      <svg id="lineSvg" viewBox="0 0 400 260"></svg>
-    </div>
+  <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing →</button>
+
+  <footer>Underground Explorer <button type="button" id="drainEgg" class="drain-egg" aria-label="Hidden feature"></button> © 2026 Studio Espero · <button type="button" id="termsLink" class="terms-link">Terms of Use</button></footer>
   </div>
 
-  <div id="summaryArea" class="card summary hidden">
-    <h2 id="summaryTitle">Run complete</h2>
-    <p id="summarySub"></p>
-    <div class="summary-time hidden" id="summaryTime">
-      <span class="summary-time-label">Time</span>
-      <span class="summary-time-value" id="summaryTimeValue">0:00</span>
+  <main id="playPage" class="hidden">
+    <div class="play-topbar">
+      <button type="button" id="backToSetupBtn" class="back-btn">← Setup</button>
+      <button type="button" id="themeTogglePlay" class="theme-toggle">☀ Light</button>
     </div>
-    <ul class="miss-list" id="missList"></ul>
-    <button type="button" id="restartBtn">Run it again</button>
-  </div>
+    <div class="play-info">
+      <div class="play-info-main">
+        <span class="play-info-dot" id="playInfoDot"></span>
+        <span id="playInfoLine">Circle</span> · <span id="playInfoMode">Warm-up</span>
+      </div>
+      <div class="play-info-sub" id="playInfoSub"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="statProgress">0/35</b><span>Stations</span></div>
+      <div class="stat"><b id="statMid">0</b><span id="statMidLabel">WPM</span></div>
+      <div class="stat"><b id="statAcc">—</b><span>Accuracy</span></div>
+      <div class="stat"><b id="statBest">0</b><span id="statBestLabel">Best WPM</span></div>
+    </div>
+    <div class="stat-row-time">
+      <span class="live-dot" id="liveDot"></span>
+      <b id="statTime">0:00</b>
+      <span>Elapsed</span>
+    </div>
+
+    <div class="progress-rail-wrap">
+      <svg class="progress-rail-svg" id="progressRailSvg" viewBox="0 0 400 50" preserveAspectRatio="none">
+        <line class="rail-track" x1="44" y1="38" x2="360" y2="38"></line>
+        <line class="rail-fill" id="railFill" x1="44" y1="38" x2="44" y2="38"></line>
+        <g id="trainGroup">
+          <g class="train-shake">
+            <g class="wheel-anim wheel-anim-1">
+              <circle class="train-wheel" cx="-16.5" cy="35.8" r="2.3"></circle>
+              <circle class="wheel-mark" cx="-16.5" cy="34.2" r="0.6"></circle>
+            </g>
+            <g class="wheel-anim wheel-anim-2">
+              <circle class="train-wheel" cx="-6.5" cy="35.8" r="2.3"></circle>
+              <circle class="wheel-mark" cx="-6.5" cy="34.2" r="0.6"></circle>
+            </g>
+            <g class="wheel-anim wheel-anim-3">
+              <circle class="train-wheel" cx="5.5" cy="35.8" r="2.3"></circle>
+              <circle class="wheel-mark" cx="5.5" cy="34.2" r="0.6"></circle>
+            </g>
+            <g class="wheel-anim wheel-anim-4">
+              <circle class="train-wheel" cx="15.5" cy="35.8" r="2.3"></circle>
+              <circle class="wheel-mark" cx="15.5" cy="34.2" r="0.6"></circle>
+            </g>
+            <path class="train-body" d="M -26.5 24 Q -26.5 20 -22.5 20 L 13.5 20 Q 15.5 20 16.5 21 L 25.5 32 Q 26.5 36 22.5 36 L -22.5 36 Q -26.5 36 -26.5 32 Z"></path>
+            <line class="train-skirt" x1="-24.5" y1="33" x2="23.5" y2="33"></line>
+            <rect class="train-window" x="-23.5" y="23" width="6" height="7" rx="1"></rect>
+            <line class="train-door-seam" x1="-14.5" y1="21" x2="-14.5" y2="32"></line>
+            <line class="train-door-seam" x1="-13" y1="21" x2="-13" y2="32"></line>
+            <rect class="train-window" x="-10" y="23" width="13" height="7" rx="1.5"></rect>
+            <line class="train-door-seam" x1="6" y1="21" x2="6" y2="32"></line>
+            <line class="train-door-seam" x1="7.5" y1="21" x2="7.5" y2="32"></line>
+            <rect class="train-window" x="10.5" y="23" width="6" height="7" rx="1"></rect>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <div id="gameArea">
+      <div class="card" id="gameCard">
+        <div class="countdown-overlay hidden" id="countdownOverlay">
+          <div class="countdown-number" id="countdownNumber">3</div>
+        </div>
+        <div class="context" id="contextLine"></div>
+        <div class="prompt hidden" id="promptLine"></div>
+        <div class="target-word hidden" id="targetWord"></div>
+        <div class="interchange-row hidden" id="interchangeRow"></div>
+        <div class="mc-context-block hidden" id="mcContextCard">
+          <div class="mc-context-row" id="mcContextRow"></div>
+        </div>
+        <div class="input-row" id="inputRow">
+          <input type="text" id="answerInput" placeholder="Type here…" autocomplete="off" spellcheck="false" maxlength="60">
+          <button type="button" id="submitBtn">Enter</button>
+        </div>
+        <div class="mc-options hidden" id="mcOptions"></div>
+        <div class="row-actions" id="rowActions">
+          <button type="button" class="link-btn" id="hintBtn">Show hint</button>
+          <button type="button" class="link-btn" id="skipBtn">Skip →</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+
+      <div class="diagram-card">
+        <h3>Line progress</h3>
+        <svg id="lineSvg" viewBox="0 0 400 260"></svg>
+      </div>
+    </div>
+
+    <div id="summaryArea" class="card summary hidden">
+      <h2 id="summaryTitle">Run complete</h2>
+      <p id="summarySub"></p>
+      <div class="summary-time hidden" id="summaryTime">
+        <span class="summary-time-label">Time</span>
+        <span class="summary-time-value" id="summaryTimeValue">0:00</span>
+      </div>
+      <ul class="miss-list" id="missList"></ul>
+      <div class="summary-actions">
+        <button type="button" id="restartBtn">Play again</button>
+        <button type="button" id="backToSetupBtn2" class="ghost-btn">Change settings</button>
+      </div>
+    </div>
   </main>
 
-  <footer>Underground Explorer <button type="button" id="drainEgg" class="drain-egg" aria-label="Hidden feature"></button> © 2026 Studio Espero</footer>
   <div class="egg-toast" id="eggToast">🕳️ Found <b>The Drain</b> — Waterloo &amp; City unlocked</div>
+
+  <div class="terms-overlay hidden" id="termsOverlay">
+    <div class="terms-modal">
+      <div class="terms-header">
+        <h2>Terms of Use</h2>
+        <button type="button" id="termsCloseBtn" class="terms-close" aria-label="Close">✕</button>
+      </div>
+      <div class="terms-body">
+        <p class="terms-updated">Last updated 2026</p>
+
+        <p><strong>Underground Explorer</strong> ("the site") is an independent, fan-made study tool created by Studio Espero to help people learn London Underground station names and network layout. It is not affiliated with, endorsed by, or connected to Transport for London (TfL) or any train operating company. Line names, station names, and general route information reflect publicly available knowledge of the network and are used here for educational purposes only.</p>
+
+        <h3>No official transit information</h3>
+        <p>This site is a memory-training tool, not a live travel planner. Station order, interchanges, and route details may contain errors or become outdated as real services change. Always check TfL's official channels before travelling.</p>
+
+        <h3>Use of the site</h3>
+        <p>You're welcome to use this site for personal, non-commercial learning. Please don't scrape, republish, or resell its content.</p>
+
+        <h3>No account, no data collection</h3>
+        <p>This site doesn't require sign-up and doesn't collect or store any personal data on a server. Everything happens locally in your browser and disappears when you close the tab.</p>
+
+        <h3>Trademarks</h3>
+        <p>TfL's line names, colours, and the general concept of the roundel belong to their respective owners; any resemblance here is for educational and stylistic purposes as an independent fan project, not an official TfL product.</p>
+
+        <h3>No warranty</h3>
+        <p>This site is provided "as is," with no guarantee of accuracy, availability, or fitness for any particular purpose. Use it at your own discretion.</p>
+
+        <h3>Changes</h3>
+        <p>These terms, and the site itself, may change or be discontinued at any time without notice.</p>
+
+        <h3>Contact</h3>
+        <p>Questions? Reach out to Studio Espero.</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -410,25 +658,175 @@
     liberty: '#5D6061', lioness: '#FAA61A', mildmay: '#0077AD',
     suffragette: '#5BBD72', weaver: '#823A62', windrush: '#ED1B00'
   };
-  function badge(id, label){ return { color: LINE_BADGE_COLORS[id], label }; }
+  function badge(id, label){ return { id, color: LINE_BADGE_COLORS[id], label }; }
 
   const STATION_INTERCHANGES = {
+    // ---- Victoria line ----
     "Brixton": [badge('nationalrail','National Rail')],
     "Stockwell": [badge('northern','Northern')],
     "Vauxhall": [badge('nationalrail','National Rail')],
     "Pimlico": [],
-    "Victoria": [badge('circle','Circle'), badge('district','District'), badge('nationalrail','National Rail')],
-    "Green Park": [badge('piccadilly','Piccadilly'), badge('jubilee','Jubilee')],
-    "Oxford Circus": [badge('central','Central'), badge('bakerloo','Bakerloo')],
+    "Victoria": [badge('circle','Circle'), badge('district','District'), badge('victoria','Victoria'), badge('nationalrail','National Rail')],
+    "Green Park": [badge('piccadilly','Piccadilly'), badge('jubilee','Jubilee'), badge('victoria','Victoria')],
+    "Oxford Circus": [badge('central','Central'), badge('bakerloo','Bakerloo'), badge('victoria','Victoria')],
     "Warren Street": [badge('northern','Northern')],
-    "Euston": [badge('northern','Northern'), badge('nationalrail','National Rail')],
-    "King's Cross St. Pancras": [badge('circle','Circle'), badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('northern','Northern'), badge('piccadilly','Piccadilly'), badge('nationalrail','National Rail')],
+    "Euston": [badge('northern','Northern'), badge('lioness','Lioness'), badge('nationalrail','National Rail')],
+    "King's Cross St. Pancras": [badge('circle','Circle'), badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('northern','Northern'), badge('piccadilly','Piccadilly'), badge('victoria','Victoria'), badge('nationalrail','National Rail')],
     "Highbury & Islington": [badge('mildmay','Mildmay'), badge('windrush','Windrush'), badge('nationalrail','National Rail')],
     "Finsbury Park": [badge('piccadilly','Piccadilly'), badge('nationalrail','National Rail')],
     "Seven Sisters": [badge('weaver','Weaver'), badge('nationalrail','National Rail')],
     "Tottenham Hale": [badge('nationalrail','National Rail')],
     "Blackhorse Road": [badge('suffragette','Suffragette')],
-    "Walthamstow Central": [badge('weaver','Weaver'), badge('nationalrail','National Rail')]
+    "Walthamstow Central": [badge('weaver','Weaver'), badge('nationalrail','National Rail')],
+
+    // ---- Circle line ----
+    "Hammersmith": [badge('hammersmithcity',"H&C"), badge('district','District'), badge('piccadilly','Piccadilly'), badge('circle','Circle')],
+    "Goldhawk Road": [badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Shepherd's Bush Market": [badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Wood Lane": [badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Latimer Road": [badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Ladbroke Grove": [badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Westbourne Park": [badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Royal Oak": [badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Paddington": [badge('bakerloo','Bakerloo'), badge('district','District'), badge('hammersmithcity',"H&C"), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail'), badge('circle','Circle')],
+    "Edgware Road": [badge('district','District'), badge('hammersmithcity',"H&C"), badge('circle','Circle')],
+    "Baker Street": [badge('bakerloo','Bakerloo'), badge('hammersmithcity',"H&C"), badge('jubilee','Jubilee'), badge('metropolitan','Metropolitan'), badge('circle','Circle')],
+    "Great Portland Street": [badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('circle','Circle')],
+    "Euston Square": [badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('circle','Circle')],
+    "Farringdon": [badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail'), badge('circle','Circle')],
+    "Barbican": [badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('circle','Circle')],
+    "Moorgate": [badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('northern','Northern'), badge('nationalrail','National Rail'), badge('circle','Circle')],
+    "Liverpool Street": [badge('central','Central'), badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('elizabeth','Elizabeth'), badge('weaver','Weaver'), badge('nationalrail','National Rail'), badge('circle','Circle')],
+    "Aldgate": [badge('metropolitan','Metropolitan'), badge('circle','Circle')],
+    "Tower Hill": [badge('district','District'), badge('circle','Circle')],
+    "Monument": [badge('district','District'), badge('northern','Northern'), badge('waterloocity','Waterloo & City'), badge('dlr','DLR'), badge('circle','Circle')],
+    "Cannon Street": [badge('district','District'), badge('nationalrail','National Rail'), badge('circle','Circle')],
+    "Mansion House": [badge('district','District'), badge('circle','Circle')],
+    "Blackfriars": [badge('district','District'), badge('nationalrail','National Rail'), badge('circle','Circle')],
+    "Temple": [badge('district','District'), badge('circle','Circle')],
+    "Embankment": [badge('bakerloo','Bakerloo'), badge('district','District'), badge('northern','Northern'), badge('circle','Circle')],
+    "Westminster": [badge('jubilee','Jubilee'), badge('district','District'), badge('circle','Circle')],
+    "St. James's Park": [badge('district','District'), badge('circle','Circle')],
+    "Sloane Square": [badge('district','District'), badge('circle','Circle')],
+    "South Kensington": [badge('district','District'), badge('piccadilly','Piccadilly'), badge('circle','Circle')],
+    "Gloucester Road": [badge('district','District'), badge('piccadilly','Piccadilly'), badge('circle','Circle')],
+    "High Street Kensington": [badge('district','District'), badge('circle','Circle')],
+    "Notting Hill Gate": [badge('district','District'), badge('central','Central'), badge('circle','Circle')],
+    "Bayswater": [badge('district','District'), badge('circle','Circle')],
+
+    // ---- Jubilee line ----
+    "Stanmore": [],
+    "Canons Park": [],
+    "Queensbury": [],
+    "Kingsbury": [],
+    "Wembley Park": [badge('metropolitan','Metropolitan'), badge('jubilee','Jubilee')],
+    "Neasden": [],
+    "Dollis Hill": [],
+    "Willesden Green": [],
+    "Kilburn": [],
+    "West Hampstead": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
+    "Finchley Road": [badge('metropolitan','Metropolitan'), badge('jubilee','Jubilee')],
+    "Swiss Cottage": [],
+    "St. John's Wood": [],
+    "Bond Street": [badge('central','Central'), badge('elizabeth','Elizabeth')],
+    "Waterloo": [badge('bakerloo','Bakerloo'), badge('northern','Northern'), badge('waterloocity','Waterloo & City'), badge('nationalrail','National Rail'), badge('jubilee','Jubilee')],
+    "Southwark": [],
+    "London Bridge": [badge('northern','Northern'), badge('nationalrail','National Rail')],
+    "Bermondsey": [],
+    "Canada Water": [badge('windrush','Windrush')],
+    "Canary Wharf": [badge('dlr','DLR'), badge('elizabeth','Elizabeth')],
+    "North Greenwich": [],
+    "Canning Town": [badge('dlr','DLR')],
+    "West Ham": [badge('hammersmithcity',"H&C"), badge('district','District'), badge('dlr','DLR'), badge('jubilee','Jubilee')],
+    "Stratford": [badge('central','Central'), badge('dlr','DLR'), badge('elizabeth','Elizabeth'), badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
+
+    // ---- Bakerloo line ----
+    "Harrow & Wealdstone": [badge('lioness','Lioness'), badge('nationalrail','National Rail')],
+    "Kenton": [badge('lioness','Lioness')],
+    "South Kenton": [badge('lioness','Lioness')],
+    "North Wembley": [badge('lioness','Lioness')],
+    "Wembley Central": [badge('lioness','Lioness'), badge('nationalrail','National Rail')],
+    "Stonebridge Park": [badge('lioness','Lioness')],
+    "Harlesden": [badge('lioness','Lioness')],
+    "Willesden Junction": [badge('lioness','Lioness'), badge('mildmay','Mildmay')],
+    "Kensal Green": [badge('lioness','Lioness')],
+    "Queen's Park": [badge('lioness','Lioness')],
+    "Kilburn Park": [],
+    "Maida Vale": [],
+    "Warwick Avenue": [],
+    "Marylebone": [badge('nationalrail','National Rail')],
+    "Regent's Park": [],
+    "Piccadilly Circus": [badge('piccadilly','Piccadilly')],
+    "Charing Cross": [badge('northern','Northern'), badge('nationalrail','National Rail')],
+    "Lambeth North": [],
+    "Elephant & Castle": [badge('northern','Northern'), badge('nationalrail','National Rail')],
+
+    // ---- Hammersmith & City line ----
+    "Aldgate East": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Whitechapel": [badge('district','District'), badge('elizabeth','Elizabeth'), badge('windrush','Windrush'), badge('hammersmithcity','H&C')],
+    "Stepney Green": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Mile End": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Bow Road": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Bromley-by-Bow": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Plaistow": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Upton Park": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "East Ham": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Barking": [badge('district','District'), badge('nationalrail','National Rail'), badge('hammersmithcity','H&C')],
+
+    // ---- District line ----
+    "Ealing Broadway": [badge('central','Central'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
+    "Ealing Common": [badge('piccadilly','Piccadilly')],
+    "Acton Town": [badge('piccadilly','Piccadilly')],
+    "Chiswick Park": [],
+    "Turnham Green": [badge('piccadilly','Piccadilly')],
+    "Stamford Brook": [],
+    "Ravenscourt Park": [],
+    "Barons Court": [badge('piccadilly','Piccadilly')],
+    "West Kensington": [],
+    "Earl's Court": [badge('piccadilly','Piccadilly')],
+    "Upney": [],
+    "Becontree": [],
+    "Dagenham Heathway": [],
+    "Dagenham East": [],
+    "Elm Park": [],
+    "Hornchurch": [],
+    "Upminster Bridge": [],
+    "Upminster": [badge('nationalrail','National Rail')],
+    "Richmond": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
+    "Kew Gardens": [badge('nationalrail','National Rail')],
+    "Gunnersbury": [badge('nationalrail','National Rail')],
+    "Wimbledon": [badge('nationalrail','National Rail')],
+    "Wimbledon Park": [],
+    "Southfields": [],
+    "East Putney": [],
+    "Putney Bridge": [],
+    "Parsons Green": [],
+    "Fulham Broadway": [],
+    "West Brompton": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
+    "Kensington (Olympia)": [badge('nationalrail','National Rail')],
+
+    // ---- Metropolitan line ----
+    "West Harrow": [],
+    "Rayners Lane": [badge('piccadilly','Piccadilly')],
+    "Eastcote": [],
+    "Ruislip Manor": [],
+    "Ruislip": [],
+    "Ickenham": [],
+    "Hillingdon": [],
+    "Uxbridge": [badge('piccadilly','Piccadilly')],
+    "North Harrow": [],
+    "Pinner": [],
+    "Northwood Hills": [],
+    "Northwood": [],
+    "Moor Park": [],
+    "Croxley": [],
+    "Watford": [],
+    "Rickmansworth": [],
+    "Chorleywood": [],
+    "Harrow-on-the-Hill": [badge('nationalrail','National Rail')],
+    "Chalfont & Latimer": [badge('nationalrail','National Rail')],
+    "Amersham": [badge('nationalrail','National Rail')],
+    "Chesham": []
   };
 
   const LINES = {
@@ -576,6 +974,60 @@
         }
       };
     })(),
+    // Metropolitan: one western spine (Aldgate–Amersham, the historic main
+    // route) with three vertical stub branches at their real junctions —
+    // Uxbridge off Harrow-on-the-Hill, Watford off Moor Park, and Chesham
+    // off Chalfont & Latimer. Station order and branch assignment taken
+    // directly from Wikipedia's own per-station "Branch" column, which
+    // labels every stop, so this is unusually well-verified.
+    metropolitan: (function(){
+      const spine = [
+        "Aldgate","Liverpool Street","Moorgate","Barbican","Farringdon",
+        "King's Cross St. Pancras","Euston Square","Great Portland Street","Baker Street","Finchley Road",
+        "Wembley Park","Preston Road","Northwick Park","Harrow-on-the-Hill","North Harrow",
+        "Pinner","Northwood Hills","Northwood","Moor Park","Rickmansworth",
+        "Chorleywood","Chalfont & Latimer","Amersham"
+      ];
+      const uxbridgeDrop = ["West Harrow"];
+      const uxbridgeArm = ["Rayners Lane","Eastcote","Ruislip Manor","Ruislip","Ickenham","Hillingdon","Uxbridge"];
+      const watfordArm = ["Croxley","Watford"];
+      const cheshamArm = ["Chesham"];
+      const harrowIdx = spine.indexOf('Harrow-on-the-Hill');
+      const bakerStIdx = spine.indexOf('Baker Street');
+      const moorParkIdx = spine.indexOf('Moor Park');
+      const chalfontIdx = spine.indexOf('Chalfont & Latimer');
+
+      const segments = [
+        // dx:-1 so the spine runs right-to-left in the diagram — Aldgate
+        // (index 0) ends up on the right, Amersham on the left
+        { id:'spine', stations: spine, parent:null, dx:-1, dy:0, spacing:16, startX:60, startY:250 },
+        // Uxbridge is drawn as an L: one step down from Harrow-on-the-Hill,
+        // then left, rather than a straight vertical stub
+        { id:'uxbridgeDrop', stations: uxbridgeDrop, parent:'spine', parentIndex: harrowIdx, dx:0, dy:1, spacing:26 },
+        { id:'uxbridgeArm', stations: uxbridgeArm, parent:'uxbridgeDrop', parentIndex:0, dx:-1, dy:0, spacing:16 },
+        { id:'watfordArm', stations: watfordArm, parent:'spine', parentIndex: moorParkIdx, dx:0, dy:-1, spacing:26 },
+        { id:'cheshamArm', stations: cheshamArm, parent:'spine', parentIndex: chalfontIdx, dx:0, dy:1, spacing:26 }
+      ];
+
+      return {
+        id: 'metropolitan',
+        label: 'Metropolitan',
+        color: '#9B0056',
+        layout: 'branch-tree',
+        segments: segments,
+        spurCount: 0,
+        loopClosure: [],
+        defaultBranch: 'amersham',
+        branches: {
+          amersham: { label: 'Aldgate – Amersham', stations: spine },
+          uxbridge: { label: 'Aldgate – Uxbridge', stations: [...spine.slice(0, harrowIdx+1), ...uxbridgeDrop, ...uxbridgeArm] },
+          // real advertised through-service is Baker Street–Watford, not
+          // Aldgate–Watford — the Watford branch doesn't through-run to Aldgate
+          watford: { label: 'Baker Street – Watford', stations: [...spine.slice(bakerStIdx, moorParkIdx+1), ...watfordArm] },
+          chesham: { label: 'Aldgate – Chesham', stations: [...spine.slice(0, chalfontIdx+1), ...cheshamArm] }
+        }
+      };
+    })(),
     // secret: "The Drain" — Londoners' nickname for Waterloo & City, on
     // account of its short, single-tunnel run between just two stations.
     // Not listed anywhere in the UI; found only via the hidden footer egg.
@@ -650,6 +1102,12 @@
   const mcContextCard = $('mcContextCard');
   const mcContextRow = $('mcContextRow');
   const interchangeRow = $('interchangeRow');
+  const trainGroupEl = $('trainGroup');
+  const railFillEl = $('railFill');
+  const routePreviewSvgEl = $('routePreviewSvg');
+  const stationPopupEl = $('stationPopup');
+  const stationPopupNameEl = $('stationPopupName');
+  const stationPopupBadgesEl = $('stationPopupBadges');
   // cached once here rather than re-queried on every call — several of
   // these (statMid, gameArea, liveDot) are touched by the 500ms tick timer,
   // so avoiding a fresh getElementById each time is a real (if small) win
@@ -663,6 +1121,7 @@
   const liveDotEl = $('liveDot');
   const hintBtnEl = $('hintBtn');
   const themeToggleEl = $('themeToggle');
+  const themeTogglePlayEl = $('themeTogglePlay');
   const modeWarmupBtnEl = $('modeWarmupBtn');
   const modeQuizBtnEl = $('modeQuizBtn');
   const modeMcBtnEl = $('modeMcBtn');
@@ -739,6 +1198,18 @@
     document.body.style.setProperty('--accent-ink', isLight ? darkenForLightMode(LINE.def.color) : LINE.def.color);
   }
 
+  // each line pill's text is colored with that line's own brand color —
+  // darkened in light mode so pale colors (like Circle's yellow) stay
+  // readable against the light panel background, same logic as accent-ink
+  function applyPillColors(){
+    document.querySelectorAll('.line-select .pill[data-line-id]').forEach(function(btn){
+      const def = LINES[btn.dataset.lineId];
+      if(!def) return;
+      const color = isLight ? darkenForLightMode(def.color) : def.color;
+      btn.style.setProperty('--pill-color', color);
+    });
+  }
+
   function terminusNames(){
     // the true start and end of a forward run through this line
     const start = LINE.stations[LINE.journeyIndices[0]];
@@ -756,6 +1227,10 @@
     const row = $('branchRow');
     const hasBranches = !!LINE.def.branches;
     row.classList.toggle('hidden', !hasBranches);
+    // the Olympia egg is a District-specific secret — it lives in this
+    // shared branch row, so it must be explicitly hidden for every other
+    // branching line (it was incorrectly showing up for Metropolitan too)
+    $('olympiaEgg').classList.toggle('hidden', LINE.def.id !== 'district' || olympiaUnlocked);
     if(!hasBranches) return;
     const group = $('branchGroup');
     group.innerHTML = '';
@@ -779,6 +1254,9 @@
     renderBranchRow();
     updateDirectionLabels();
     setupGeometry();
+    updatePlayContextLabel();
+    drawRoutePreview();
+    stationPopupEl.classList.add('hidden');
     resetState();
     render();
   }
@@ -801,6 +1279,8 @@
     updateDirectionLabels();
     applyLineTheme();
     setupGeometry();
+    drawRoutePreview();
+    stationPopupEl.classList.add('hidden');
     setMode('warmup');
   }
 
@@ -809,8 +1289,73 @@
     reverseDirection = rev;
     directionForwardBtnEl.classList.toggle('active', !reverseDirection);
     directionReverseBtnEl.classList.toggle('active', reverseDirection);
+    updatePlayContextLabel();
     resetState();
     render();
+  }
+
+  function showPage(page){
+    $('setupPage').classList.toggle('hidden', page !== 'setup');
+    $('playPage').classList.toggle('hidden', page !== 'play');
+  }
+
+  function runCountdown(onComplete){
+    const overlay = $('countdownOverlay');
+    const numberEl = $('countdownNumber');
+    overlay.classList.remove('hidden');
+    function show(text, isGo){
+      numberEl.textContent = text;
+      numberEl.classList.toggle('go', !!isGo);
+      numberEl.classList.remove('pop');
+      void numberEl.offsetWidth; // restart the pop animation even on repeated identical text
+      numberEl.classList.add('pop');
+    }
+    let n = 3;
+    show(n);
+    const interval = setInterval(function(){
+      n--;
+      if(n > 0){
+        show(n);
+      } else if(n === 0){
+        show('Go!', true);
+      } else {
+        clearInterval(interval);
+        overlay.classList.add('hidden');
+        onComplete();
+      }
+    }, 1000);
+  }
+
+  // starting a run always means a genuinely fresh run — resetState() first
+  // so a stale mid-run state from before can never be silently resumed
+  function beginRun(){
+    resetState();
+    render();
+    runCountdown(function(){
+      startTime = Date.now();
+      if(mode !== 'mc') answerInput.focus();
+    });
+  }
+  $('startPlayingBtn').addEventListener('click', function(){ showPage('play'); beginRun(); });
+  $('backToSetupBtn').addEventListener('click', function(){ showPage('setup'); });
+  $('backToSetupBtn2').addEventListener('click', function(){ showPage('setup'); });
+
+  function updatePlayContextLabel(){
+    const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice' };
+    $('playInfoLine').textContent = LINE.def.label;
+    $('playInfoMode').textContent = modeLabels[mode];
+    $('playInfoDot').style.background = LINE.def.color;
+
+    const subParts = [];
+    if(mode !== 'mc'){
+      const { start, end } = terminusNames();
+      subParts.push(reverseDirection ? (end + ' → ' + start) : (start + ' → ' + end));
+    } else if(LINE.def.branches){
+      // MC mode doesn't show a direction, so the branch is the only way
+      // to tell which of the line's routes is currently active
+      subParts.push(LINE.def.branches[LINE.branchId].label);
+    }
+    $('playInfoSub').textContent = subParts.join(' · ');
   }
 
   function setMode(newMode){
@@ -828,6 +1373,7 @@
     $('directionRow').classList.toggle('hidden', mode === 'mc');
     hintBtnEl.classList.toggle('hidden', mode === 'warmup');
     $('rowActions').classList.toggle('single', mode === 'warmup');
+    updatePlayContextLabel();
     resetState();
     render();
   }
@@ -857,12 +1403,32 @@
       statMidEl.textContent = streak;
       statBestEl.textContent = bestStreak;
     }
+    renderProgressRail();
+  }
+
+  function renderProgressRail(){
+    const total = totalSteps();
+    const frac = total > 0 ? Math.min(1, Math.max(0, idx / total)) : 0;
+    const trackX1 = 44, trackX2 = 360;
+    const trainX = trackX1 + frac * (trackX2 - trackX1);
+    trainGroupEl.setAttribute('transform', 'translate(' + trainX + ',0)');
+    railFillEl.setAttribute('x2', trainX);
   }
 
   function renderInterchanges(stationName){
-    const list = STATION_INTERCHANGES[stationName];
+    // Bakerloo's "Edgware Road" is a separate physical station from the
+    // Circle/District/H&C one nearby — same name, not an in-station
+    // interchange, so it must never inherit that station's badges here
+    if(stationName === 'Edgware Road' && LINE.def.id === 'bakerloo'){
+      interchangeRow.innerHTML = '';
+      interchangeRow.classList.add('hidden');
+      return;
+    }
+    const full = STATION_INTERCHANGES[stationName] || [];
+    // don't show the line you're currently studying as its own "interchange"
+    const list = full.filter(b => b.id !== LINE.def.id);
     interchangeRow.innerHTML = '';
-    if(!list || list.length === 0){
+    if(list.length === 0){
       interchangeRow.classList.add('hidden');
       return;
     }
@@ -933,7 +1499,6 @@
   function handleMcAnswer(btn, optIdx, correctIdx){
     const allBtns = Array.from(mcOptionsEl.querySelectorAll('.mc-option'));
     allBtns.forEach(b => b.classList.add('disabled'));
-    if(!startTime) startTime = Date.now();
     attempts++;
 
     if(optIdx === correctIdx){
@@ -1071,7 +1636,6 @@
     if(mode === 'mc') return; // handled via option buttons
     const val = answerInput.value.trim();
     if(!val) return;
-    if(!startTime) startTime = Date.now();
     attempts++;
 
     const list = seq();
@@ -1107,13 +1671,6 @@
   answerInput.addEventListener('keydown', function(e){
     if(e.key === 'Enter'){ e.preventDefault(); submitAnswer(); }
   });
-  answerInput.addEventListener('input', function(){
-    // stopwatch starts the moment they type their first character,
-    // not when they eventually submit it
-    if(!startTime && answerInput.value.length > 0){
-      startTime = Date.now();
-    }
-  });
 
   hintBtnEl.addEventListener('click', function(){
     const list = seq();
@@ -1141,7 +1698,6 @@
 
   $('skipBtn').addEventListener('click', function(){
     const list = seq();
-    if(!startTime) startTime = Date.now();
     attempts++;
     streak = 0;
     if(mode === 'mc'){
@@ -1170,8 +1726,7 @@
   });
 
   $('restartBtn').addEventListener('click', function(){
-    resetState();
-    render();
+    beginRun();
   });
 
   modeWarmupBtnEl.addEventListener('click', function(){ setMode('warmup'); });
@@ -1187,6 +1742,7 @@
   $('lineBakerlooBtn').addEventListener('click', function(){ setLine('bakerloo'); });
   $('lineHcBtn').addEventListener('click', function(){ setLine('hammersmithcity'); });
   $('lineDistrictBtn').addEventListener('click', function(){ setLine('district'); });
+  $('lineMetropolitanBtn').addEventListener('click', function(){ setLine('metropolitan'); });
 
   // ---- secret: "The Drain" ----
   // a nearly-invisible drain-cover dot hides in the footer; clicking it
@@ -1209,9 +1765,10 @@
       pill.className = 'pill';
       pill.id = 'lineWaterlooCityBtn';
       pill.dataset.lineId = 'waterloocity';
-      pill.textContent = '● Waterloo & City — 2 stations';
+      pill.textContent = 'Waterloo & City — 2 stations';
       pill.addEventListener('click', function(){ setLine('waterloocity'); });
       document.querySelector('.line-select').appendChild(pill);
+      applyPillColors();
     }
     setLine('waterloocity');
     showEggToast('🕳️ Found <b>The Drain</b> — Waterloo &amp; City unlocked');
@@ -1240,17 +1797,36 @@
         label: 'Kensington (Olympia) – Edgware Road',
         stations: ["Kensington (Olympia)", ...trunk, ...edgwareArm]
       };
+      $('olympiaEgg').classList.add('hidden');
     }
     setBranch('kensingtonOlympia');
     showEggToast('👻 Found the <b>ghost branch</b> — Kensington (Olympia) unlocked');
   });
 
-  themeToggleEl.addEventListener('click', function(){
+  function toggleTheme(){
     isLight = !isLight;
     document.body.classList.toggle('light', isLight);
-    themeToggleEl.textContent = isLight ? '☀ Light' : '☾ Dark';
+    const label = isLight ? '☀ Light' : '☾ Dark';
+    themeToggleEl.textContent = label;
+    themeTogglePlayEl.textContent = label;
     applyLineTheme();
+    applyPillColors();
     drawDiagram();
+    drawRoutePreview();
+  }
+  themeToggleEl.addEventListener('click', toggleTheme);
+  themeTogglePlayEl.addEventListener('click', toggleTheme);
+
+  const termsOverlayEl = $('termsOverlay');
+  function openTerms(){ termsOverlayEl.classList.remove('hidden'); }
+  function closeTerms(){ termsOverlayEl.classList.add('hidden'); }
+  $('termsLink').addEventListener('click', openTerms);
+  $('termsCloseBtn').addEventListener('click', closeTerms);
+  termsOverlayEl.addEventListener('click', function(e){
+    if(e.target === termsOverlayEl) closeTerms(); // click on the backdrop, not the modal itself
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && !termsOverlayEl.classList.contains('hidden')) closeTerms();
   });
 
   if(wpmTimer) clearInterval(wpmTimer);
@@ -1290,8 +1866,6 @@
 
       geo = {
         viewBox: '0 0 400 260',
-        labelX: cx, labelYMain: cy - 4, labelYSub: cy + 16,
-        labelFontSize: 28, subLabelFontSize: 10,
         hasClosingSegment: true,
         closingPair: [LINE.N - 1, spurCount],
         stationPos(i){
@@ -1366,8 +1940,6 @@
 
       geo = {
         viewBox: minX + ' ' + minY + ' ' + (maxX-minX) + ' ' + (maxY-minY),
-        labelX: 450, labelYMain: 336, labelYSub: 360,
-        labelFontSize: 42, subLabelFontSize: 15,
         hasClosingSegment: false,
         closingPair: null,
         networkEdges: networkEdges,
@@ -1385,8 +1957,6 @@
 
       geo = {
         viewBox: '0 0 ' + vbW + ' ' + vbH,
-        labelX: vbW / 2, labelYMain: 52, labelYSub: 76,
-        labelFontSize: 42, subLabelFontSize: 15,
         hasClosingSegment: false,
         closingPair: null,
         stationPos(i){
@@ -1399,6 +1969,116 @@
     }
 
     svg.setAttribute('viewBox', geo.viewBox);
+  }
+
+  function drawRoutePreview(){
+    const svg = routePreviewSvgEl;
+    svg.innerHTML = '';
+    svg.setAttribute('viewBox', geo.viewBox);
+    const ns = 'http://www.w3.org/2000/svg';
+    const color = isLight ? darkenForLightMode(LINE.def.color) : LINE.def.color;
+    // the currently selected branch (or, for non-branching lines, every
+    // station — there's nothing else to dim in that case)
+    const routeSet = new Set(LINE.stations);
+    const DIM = 0.32;
+
+    function drawSeg(pa, pb, on){
+      const seg = document.createElementNS(ns,'line');
+      seg.setAttribute('x1',pa.x); seg.setAttribute('y1',pa.y);
+      seg.setAttribute('x2',pb.x); seg.setAttribute('y2',pb.y);
+      seg.setAttribute('stroke', color);
+      seg.setAttribute('stroke-width', on ? 2.4 : 1.6);
+      seg.setAttribute('stroke-linecap','round');
+      seg.setAttribute('opacity', on ? 1 : DIM);
+      svg.appendChild(seg);
+    }
+
+    let stations;
+    if(geo.networkStations){
+      // branch-tree lines: the full network (every branch) is already
+      // computed, regardless of which single branch is currently selected.
+      // An edge counts as "on" the current branch only if both of its
+      // endpoints are actually stations on it — shared trunk segments
+      // light up for every branch that uses them, diverging arms don't.
+      const posToName = new Map();
+      geo.networkStations.forEach(s => posToName.set(s.x+','+s.y, s.name));
+      geo.networkEdges.forEach(([a,b]) => {
+        const nameA = posToName.get(a.x+','+a.y);
+        const nameB = posToName.get(b.x+','+b.y);
+        drawSeg(a, b, routeSet.has(nameA) && routeSet.has(nameB));
+      });
+      stations = geo.networkStations;
+    } else {
+      stations = [];
+      for(let i=0;i<LINE.N;i++){
+        const p = geo.stationPos(i);
+        stations.push({ name: LINE.stations[i], x: p.x, y: p.y });
+      }
+      for(let i=0;i<stations.length-1;i++){
+        drawSeg(stations[i], stations[i+1], true);
+      }
+      if(geo.hasClosingSegment){
+        const [ia, ib] = geo.closingPair;
+        drawSeg(geo.stationPos(ia), geo.stationPos(ib), true);
+      }
+    }
+
+    stations.forEach(({name, x, y}) => {
+      const on = routeSet.has(name);
+      const dot = document.createElementNS(ns,'circle');
+      dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+      dot.setAttribute('r', on ? 4.8 : 3.6);
+      dot.setAttribute('fill', color);
+      dot.setAttribute('opacity', on ? 1 : DIM);
+      dot.style.cursor = 'pointer';
+      dot.addEventListener('click', function(){ showStationPopup(name, dot); });
+      svg.appendChild(dot);
+    });
+  }
+
+  function showStationPopup(name, anchorEl){
+    const badges = (STATION_INTERCHANGES[name] || []).filter(b => b.id !== LINE.def.id);
+    stationPopupNameEl.textContent = name;
+    stationPopupBadgesEl.innerHTML = '';
+    badges.forEach(({color, label}) => {
+      const chip = document.createElement('span');
+      chip.className = 'interchange-chip';
+      chip.style.background = color;
+      chip.style.color = readableTextOn(color);
+      chip.textContent = label;
+      stationPopupBadgesEl.appendChild(chip);
+    });
+
+    // reset to a plain block first so we get its natural (un-clamped) size
+    stationPopupEl.classList.remove('hidden');
+    stationPopupEl.classList.remove('has-arrow-up', 'has-arrow-down');
+    stationPopupEl.style.left = '0px';
+    stationPopupEl.style.top = '0px';
+
+    if(anchorEl){
+      const a = anchorEl.getBoundingClientRect();
+      const p = stationPopupEl.getBoundingClientRect();
+      const margin = 12;
+      let left = a.left + a.width/2 - p.width/2;
+      left = Math.max(margin, Math.min(left, window.innerWidth - p.width - margin));
+
+      const spaceAbove = a.top;
+      const spaceBelow = window.innerHeight - a.bottom;
+      let top, arrowClass;
+      if(spaceAbove > p.height + 20 || spaceAbove > spaceBelow){
+        top = a.top - p.height - 10;
+        arrowClass = 'has-arrow-down'; // arrow points down, toward the station below the card
+      } else {
+        top = a.bottom + 10;
+        arrowClass = 'has-arrow-up'; // arrow points up, toward the station above the card
+      }
+      top = Math.max(margin, Math.min(top, window.innerHeight - p.height - margin));
+
+      stationPopupEl.style.left = left + 'px';
+      stationPopupEl.style.top = top + 'px';
+      stationPopupEl.style.setProperty('--arrow-x', (a.left + a.width/2 - left) + 'px');
+      stationPopupEl.classList.add(arrowClass);
+    }
   }
 
   function drawDiagram(){
@@ -1514,30 +2194,21 @@
         svg.appendChild(mark);
       }
     }
-
-    const label = document.createElementNS(ns,'text');
-    label.setAttribute('x', geo.labelX); label.setAttribute('y', geo.labelYMain);
-    label.setAttribute('text-anchor','middle');
-    label.setAttribute('font-family',"'P22 Underground', 'Cabin', sans-serif");
-    label.setAttribute('font-weight','400');
-    label.setAttribute('font-size', geo.labelFontSize);
-    label.setAttribute('fill', c.ink);
-    label.textContent = idx;
-    svg.appendChild(label);
-
-    const label2 = document.createElementNS(ns,'text');
-    label2.setAttribute('x', geo.labelX); label2.setAttribute('y', geo.labelYSub);
-    label2.setAttribute('text-anchor','middle');
-    label2.setAttribute('font-family',"'P22 Underground', 'Cabin', sans-serif");
-    label2.setAttribute('font-size', geo.subLabelFontSize);
-    label2.setAttribute('fill', c.inkDim);
-    label2.textContent = 'of ' + N;
-    svg.appendChild(label2);
   }
 
   updateDirectionLabels();
   applyLineTheme();
+  applyPillColors();
   setupGeometry();
+  drawRoutePreview();
+  $('stationPopupClose').addEventListener('click', function(){ stationPopupEl.classList.add('hidden'); });
+  document.addEventListener('click', function(e){
+    if(stationPopupEl.classList.contains('hidden')) return;
+    const isDot = e.target.tagName === 'circle' && e.target.closest('#routePreviewSvg');
+    if(!stationPopupEl.contains(e.target) && !isDot){
+      stationPopupEl.classList.add('hidden');
+    }
+  });
   setMode('warmup');
 })();
 </script>
