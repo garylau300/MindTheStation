@@ -75,8 +75,8 @@
      leaving most of a laptop/desktop screen as dead margin — capped short
      of full-bleed so text lines and the diagram don't get uncomfortably
      wide on very large monitors. The diagram SVG (width:92%, no separate
-     cap) and every clamp()-based font-size scale up along with this
-     automatically; nothing else needs to change per breakpoint. */
+     cap) scales up with the wider card automatically; text does not (see
+     the next block) since most of it is fixed px, not viewport-relative. */
   @media (min-width: 900px){ .wrap{ max-width: 960px; } }
   @media (min-width: 1300px){ .wrap{ max-width: 1180px; } }
 
@@ -268,9 +268,9 @@
 
   .station-popup{
     position:fixed; left:0; top:0; z-index:150;
-    width: max-content; min-width: 150px; max-width: min(260px, calc(100vw - 24px));
+    width: max-content; min-width: 120px; max-width: min(200px, calc(100vw - 24px));
     background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
-    padding: 14px 36px 12px 14px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+    padding: 9px 26px 8px 11px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
   }
   .station-popup::before{
     content:''; position:absolute; width:12px; height:12px; background: var(--panel);
@@ -284,14 +284,15 @@
     display:block; bottom:-7px; border-left:none; border-top:none; transform: rotate(45deg);
   }
   .station-popup-close{
-    position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%;
+    position:absolute; top:6px; right:6px; width:18px; height:18px; border-radius:50%;
     background: var(--panel-2); border:1px solid var(--line); color: var(--ink-dim);
-    display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center; font-size:9px; cursor:pointer; padding:0;
   }
   .station-popup-name{
-    font-family:var(--font-main); font-size:16px; color: var(--ink); margin-bottom:7px;
+    font-family:var(--font-main); font-size:13.5px; color: var(--ink); margin-bottom:5px;
   }
   .station-popup .interchange-row{ margin:0; }
+  .station-popup .interchange-chip{ font-size:9.5px; padding:4px 9px; }
   svg{ width:100%; height:auto; display:block; }
 
   .progress-rail-wrap{ margin: 0 0 18px; }
@@ -415,6 +416,77 @@
 
   button:focus-visible, input:focus-visible, .mode-btn:focus-visible, .direction-btn:focus-visible, .pill:focus-visible{
     outline: 2px solid var(--accent-ink); outline-offset: 2px;
+  }
+
+  /* Text was sized for the old 720px-max layout (see .wrap's breakpoints
+     near the top of this stylesheet) and, left alone, looks small and lost
+     inside the extra room those breakpoints open up — pills, stats, and
+     prompts all end up with far more empty padding around them than actual
+     content. These two blocks step the same text up in lockstep with
+     .wrap's own two breakpoints. Placed last on purpose: CSS resolves ties
+     between equal-specificity rules by source order, so an override has to
+     come after every base rule it touches, not just be wrapped in a
+     matching @media query, or the later base rule wins regardless of
+     whether the media condition matches. (Small caption-style labels like
+     .eyebrow/.direction-label/.diagram-card h3 are left close to their
+     original size on purpose — they're meant to read as quiet uppercase
+     microcopy, not body text. .station-popup's own text is deliberately
+     NOT included here — it was sized too large to begin with and was
+     tightened at its base size instead, not to be re-grown here.) The
+     clamp()-based h1/.prompt/.target-word sizes are overridden outright
+     rather than tuned via their vw component: clamp()'s vw math is
+     relative to the true viewport, not to .wrap's now-capped width, so
+     past the point .wrap stops growing, continuing to scale text by vw
+     would grow it faster than the column actually widens. */
+  @media (min-width: 900px){
+    h1{ font-size:44px; }
+    .eyebrow{ font-size:12px; }
+    .pill{ font-size:13.5px; padding:8px 14px; }
+    .direction-btn{ font-size:14px; padding:8px 16px; }
+    .direction-label{ font-size:11.5px; }
+    .mode-btn{ font-size:15px; padding:13px 12px; }
+    .mode-btn small{ font-size:12px; }
+    .stat b, .stat-row-time b{ font-size:27px; }
+    .stat span{ font-size:12px; }
+    .play-info-main{ font-size:23px; }
+    .play-info-sub{ font-size:15px; }
+    .context{ font-size:15px; }
+    .prompt{ font-size:26px; }
+    .target-word{ font-size:32px; }
+    .interchange-chip{ font-size:12px; padding:6px 12px; }
+    input[type=text]{ font-size:18px; padding:14px 16px; }
+    button{ font-size:16px; }
+    .diagram-card h3{ font-size:12px; }
+    .summary h2{ font-size:29px; }
+    .summary p{ font-size:15px; }
+    .mc-option{ font-size:16px; }
+    .mc-context-node{ font-size:14px; }
+    .back-btn{ font-size:13.5px; }
+  }
+  @media (min-width: 1300px){
+    h1{ font-size:48px; }
+    .eyebrow{ font-size:12.5px; }
+    .pill{ font-size:15px; padding:9px 16px; }
+    .direction-btn{ font-size:15.5px; padding:9px 18px; }
+    .direction-label{ font-size:12px; }
+    .mode-btn{ font-size:16.5px; padding:15px 14px; }
+    .mode-btn small{ font-size:13px; }
+    .stat b, .stat-row-time b{ font-size:31px; }
+    .stat span{ font-size:13px; }
+    .play-info-main{ font-size:25px; }
+    .play-info-sub{ font-size:16px; }
+    .context{ font-size:16px; }
+    .prompt{ font-size:29px; }
+    .target-word{ font-size:36px; }
+    .interchange-chip{ font-size:13px; padding:6px 13px; }
+    input[type=text]{ font-size:19px; padding:15px 18px; }
+    button{ font-size:17px; }
+    .diagram-card h3{ font-size:12.5px; }
+    .summary h2{ font-size:32px; }
+    .summary p{ font-size:16px; }
+    .mc-option{ font-size:17px; }
+    .mc-context-node{ font-size:15px; }
+    .back-btn{ font-size:14.5px; }
   }
 </style>
 <script>

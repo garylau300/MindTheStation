@@ -100,6 +100,45 @@ test('page widens responsively on larger viewports without ever overflowing', as
   }
 });
 
+// Text was sized for the old 720px-max layout and looked small and lost
+// once .wrap could grow — see the big comment block at the end of
+// index.html's <style> for why the override has to come after every base
+// rule it touches (not just be wrapped in a matching @media query) to
+// actually take effect. This pins down that it really does, at both
+// breakpoints, rather than silently no-op'ing the way it did once already.
+test('text scales up at both width breakpoints, not just the container', async ({ page }) => {
+  await page.click('.pill[data-line-id="district"]');
+  const sizeAt = async (width) => {
+    await page.setViewportSize({ width, height: 900 });
+    return page.evaluate(() => ({
+      pill: parseFloat(getComputedStyle(document.querySelector('.pill')).fontSize),
+      h1: parseFloat(getComputedStyle(document.querySelector('h1')).fontSize)
+    }));
+  };
+  const base = await sizeAt(800);   // below the 900px breakpoint
+  const mid = await sizeAt(1024);   // between the two breakpoints
+  const wide = await sizeAt(1440);  // above the 1300px breakpoint
+
+  expect(base.pill).toBe(12);
+  expect(mid.pill).toBeGreaterThan(base.pill);
+  expect(wide.pill).toBeGreaterThan(mid.pill);
+
+  expect(mid.h1).toBeGreaterThan(base.h1);
+  expect(wide.h1).toBeGreaterThan(mid.h1);
+});
+
+// The route-map "bubble" popup was sized too large relative to the tiny
+// diagram dots it points at — this pins it to a deliberately tight size so
+// it can't silently creep back up.
+test('station popup stays compact, not a large bubble', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.click('.pill[data-line-id="district"]');
+  await page.click('#routePreviewSvg circle');
+  const box = await page.locator('#stationPopup').boundingBox();
+  expect(box.width).toBeLessThan(220);
+  expect(box.height).toBeLessThan(120);
+});
+
 test('station dot render size stays consistent (within 2x) across a compact and a wide line', async ({ page }) => {
   const diameters = {};
   for (const lineId of ['victoria', 'district']) {

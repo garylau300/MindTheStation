@@ -50,7 +50,9 @@ above), dot render size stays within 2x between a compact and a wide line, and `
 responsive width breakpoints (720px base / 960px at 900px+ / 1180px at 1300px+, chosen so
 larger screens use more space instead of staying capped at the mobile-era 720px) hit their
 exact expected values at phone/tablet/laptop/desktop widths with zero overflow at any of
-them. Two console messages are deliberately filtered as expected-not-broken: Chrome's notice that
+them, that text (not just the container) actually scales up at both breakpoints, and that
+the route-map station popup stays compact rather than the oversized bubble it once was.
+Two console messages are deliberately filtered as expected-not-broken: Chrome's notice that
 `frame-ancestors` is ignored when delivered via `<meta>` (a real CSP limitation — the
 `<meta>` tag in `index.html` is a fallback for when the file is opened directly, e.g.
 `file://` or these very e2e tests; `vercel.json` ships the same policy as a real HTTP
@@ -90,6 +92,13 @@ committing any change to `index.html`.
 ## Hard rules (violating these previously shipped real bugs — see PROJECT_HISTORY.md for each)
 
 - **Never use `element.style.display` for show/hide.** Always `classList.toggle('hidden', bool)`.
+- **A media-query override only wins if it comes *after* the base rule it overrides, in source
+  order.** Wrapping a rule in a matching `@media` query does not by itself make it take
+  priority — CSS resolves ties between equal-specificity rules by source order regardless of
+  which are inside a media query, so an override placed earlier in the file (as the responsive
+  text-scale-up block briefly was) silently loses to a later base rule even while its media
+  condition matches. The fix: put breakpoint overrides last in the stylesheet, after every rule
+  they touch — see the block just before `</style>` in `index.html`.
 - **Never derive "the true start/end station" from `LINE.stations[0]` / `[N-1]`.** For loop
   lines (Circle), the real journey start/end depends on `journeyIndices` (loop-aware), not
   raw station array position. Always go through `terminusNames()` / `journeyIndices`.
