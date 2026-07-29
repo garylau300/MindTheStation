@@ -30,6 +30,7 @@
     --ink-dim: #9a9ba3;
     --line: #2c2e37;
     --radius: 14px;
+    --font-main: 'P22 Underground', 'Cabin', sans-serif;
   }
 
   body.light{
@@ -62,7 +63,7 @@
     --accent-ink: var(--line-accent);
     background: var(--bg);
     color: var(--ink);
-    font-family: 'P22 Underground', 'Cabin', sans-serif;
+    font-family:var(--font-main);
     min-height: 100vh;
     padding: 28px 16px 60px;
     transition: background-color .2s, color .2s;
@@ -75,13 +76,13 @@
   .roundel{ width: 34px; height: 34px; position:relative; flex:none; }
   .roundel .ring{ position:absolute; inset:0; border-radius:50%; border: 5px solid var(--red); }
   .roundel .bar{ position:absolute; left:-3px; right:-3px; top:50%; height: 8px; background: var(--blue); transform: translateY(-50%); }
-  .eyebrow{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:11.5px; letter-spacing:.2em; color: var(--ink-dim); text-transform:uppercase; }
-  h1{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size: clamp(28px,6vw,40px); margin: 2px 0 0; letter-spacing:-0.01em; line-height:1.02; }
+  .eyebrow{ font-family:var(--font-main); font-weight:400; font-size:11.5px; letter-spacing:.2em; color: var(--ink-dim); text-transform:uppercase; }
+  h1{ font-family:var(--font-main); font-weight:400; font-size: clamp(28px,6vw,40px); margin: 2px 0 0; letter-spacing:-0.01em; line-height:1.02; }
   h1 span{ color: var(--accent-ink); }
 
   .theme-toggle{
     flex:none; background: var(--panel); color: var(--ink-dim); border: 1px solid var(--line);
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12.5px; padding: 8px 13px;
+    font-family:var(--font-main); font-weight:400; font-size:12.5px; padding: 8px 13px;
     border-radius: 999px; cursor:pointer;
   }
 
@@ -97,31 +98,31 @@
   .play-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; }
   .back-btn{
     background: var(--panel); color: var(--ink-dim); border:1px solid var(--line);
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12.5px;
+    font-family:var(--font-main); font-weight:400; font-size:12.5px;
     padding: 8px 13px; border-radius: 999px; cursor:pointer; flex:none;
   }
 
   .play-info{ margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
   .play-info-main{
     display:flex; align-items:center; gap:9px; font-size:21px;
-    font-family:'P22 Underground', 'Cabin', sans-serif; color: var(--ink);
+    font-family:var(--font-main); color: var(--ink);
   }
   #playInfoLine{ color: var(--accent-ink); }
   .play-info-dot{ width:11px; height:11px; border-radius:50%; background: var(--line-accent); flex:none; }
   .play-info-sub{
     margin-top:6px; font-size:14px; color: var(--ink-dim);
-    font-family:'P22 Underground', 'Cabin', sans-serif; line-height:1.5;
+    font-family:var(--font-main); line-height:1.5;
   }
 
   .summary-actions{ display:flex; gap:10px; flex-wrap:wrap; }
   .summary-actions button{ flex:1; min-width:140px; padding: 12px 20px; }
   .ghost-btn{
     background: var(--panel-2); color: var(--ink); border:1px solid var(--line);
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:15px;
+    font-family:var(--font-main); font-weight:400; font-size:15px;
     padding: 12px 20px; border-radius: 10px; cursor:pointer;
   }
   .line-select{ display:flex; flex-wrap:wrap; gap:8px; margin-top:0; }
-  .pill{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12px; padding:7px 12px; border-radius: 999px; border:1px solid var(--line); color: var(--pill-color, var(--ink-dim)); background: var(--panel); letter-spacing:.03em; cursor:pointer; appearance:none; -webkit-appearance:none; }
+  .pill{ font-family:var(--font-main); font-weight:400; font-size:12px; padding:7px 12px; border-radius: 999px; border:1px solid var(--line); color: var(--pill-color, var(--ink-dim)); background: var(--panel); letter-spacing:.03em; cursor:pointer; appearance:none; -webkit-appearance:none; }
   .pill.active{ background: var(--line-accent); color:#181818; border-color:var(--line-accent); font-weight:400; }
   .pill.soon{ opacity:.4; }
 
@@ -131,7 +132,7 @@
   .direction-group{ display:flex; gap:6px; flex-wrap:wrap; }
   .direction-btn{
     background: var(--panel); color: var(--ink-dim); border:1px solid var(--line);
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12.5px;
+    font-family:var(--font-main); font-weight:400; font-size:12.5px;
     padding: 7px 14px; border-radius: 999px; cursor:pointer;
   }
   .direction-btn.active{ border-color: var(--line-accent); color: var(--accent-ink); background: color-mix(in srgb, var(--line-accent) 14%, transparent); }
@@ -140,7 +141,7 @@
   .mc-options{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
   .mc-option{
     text-align:left; background: var(--panel-2); border: 2px solid var(--line); color: var(--ink);
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:15px;
+    font-family:var(--font-main); font-weight:400; font-size:15px;
     padding: 14px 14px; border-radius: 10px; cursor:pointer; transition: border-color .15s, background-color .15s;
   }
   .mc-option:active{ transform: translateY(1px); }
@@ -154,7 +155,7 @@
   .mc-context-node{
     flex:1 1 90px; max-width:150px; min-width:0; text-align:center; padding:12px 6px; border-radius:12px;
     border:1px solid var(--line); background: var(--panel-2); color: var(--ink);
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:13px; line-height:1.3;
+    font-family:var(--font-main); font-weight:400; font-size:13px; line-height:1.3;
     overflow-wrap: break-word;
   }
   .mc-context-node.blank{
@@ -166,23 +167,23 @@
 
   .mode-select{ display:flex; gap:8px; margin-bottom: 0; flex-wrap:wrap; }
   .mode-btn{
-    flex:1; min-width: 0; text-align:center; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:13px;
+    flex:1; min-width: 0; text-align:center; font-family:var(--font-main); font-weight:400; font-size:13px;
     padding: 11px 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel);
     color: var(--ink-dim); cursor:pointer;
   }
-  .mode-btn small{ display:block; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:11px; margin-top:2px; opacity:.9; }
+  .mode-btn small{ display:block; font-family:var(--font-main); font-weight:400; font-size:11px; margin-top:2px; opacity:.9; }
   .mode-btn.active{ border-color: var(--line-accent); color: var(--accent-ink); background: color-mix(in srgb, var(--line-accent) 14%, transparent); }
 
   .stats{ display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--line); border-radius: var(--radius) var(--radius) 0 0; overflow:hidden; margin-bottom: 1px; border: 1px solid var(--line); border-bottom:none; }
   .stat{ background: var(--panel); padding: 12px 10px; text-align:center; }
-  .stat b{ display:block; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:22px; }
+  .stat b{ display:block; font-family:var(--font-main); font-weight:400; font-size:22px; }
   .stat span{ font-weight:400; font-size:11px; color: var(--ink-dim); text-transform:uppercase; letter-spacing:.1em; }
   .stat-row-time{
     display:flex; align-items:center; justify-content:center; gap:8px; background: var(--panel);
     border:1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); padding: 10px 10px 12px;
     margin-bottom: 18px;
   }
-  .stat-row-time b{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:22px; color: var(--red); display:flex; align-items:center; gap:8px; }
+  .stat-row-time b{ font-family:var(--font-main); font-weight:400; font-size:22px; color: var(--red); display:flex; align-items:center; gap:8px; }
   .stat-row-time span{ font-weight:400; font-size:11px; color: var(--ink-dim); text-transform:uppercase; letter-spacing:.1em; }
   .live-dot{
     display:inline-block; width:7px; height:7px; border-radius:50%; background: var(--red);
@@ -198,7 +199,7 @@
     background: rgba(10,11,14,0.82); display:flex; align-items:center; justify-content:center;
   }
   .countdown-number{
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:64px;
+    font-family:var(--font-main); font-weight:400; font-size:64px;
     color: var(--line-accent); line-height:1;
   }
   .countdown-number.go{ color: var(--green); font-size:40px; letter-spacing:.02em; }
@@ -211,24 +212,24 @@
   .context{ font-weight:400; font-size: 13.5px; color: var(--ink-dim); margin-bottom: 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .context b{ color: var(--ink); font-weight:400; }
   .repeat-note{ color: var(--accent-ink); font-size: 12px; }
-  .prompt{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size: clamp(18px,4.4vw,24px); margin: 4px 0 20px; line-height:1.25; }
+  .prompt{ font-family:var(--font-main); font-weight:400; font-size: clamp(18px,4.4vw,24px); margin: 4px 0 20px; line-height:1.25; }
   .prompt em{ color: var(--accent-ink); font-style: normal; }
 
   .target-word{
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-size: clamp(20px,5vw,28px); font-weight:400;
+    font-family:var(--font-main); font-size: clamp(20px,5vw,28px); font-weight:400;
     margin: 0 0 18px; letter-spacing:.01em; line-height:1.3;
   }
 
   .interchange-row{ display:flex; flex-wrap:wrap; gap:6px; margin: -8px 0 18px; }
   .interchange-chip{
     display:inline-flex; align-items:center; padding:5px 11px; border-radius:999px;
-    font-size:11px; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400;
+    font-size:11px; font-family:var(--font-main); font-weight:400;
   }
 
   .input-row{ display:flex; gap:10px; }
   input[type=text]{
     flex:1; min-width:0; background: var(--panel-2); border: 2px solid var(--line);
-    color: var(--ink); font-family:'P22 Underground', 'Cabin', sans-serif; font-size:17px; font-weight:400;
+    color: var(--ink); font-family:var(--font-main); font-size:17px; font-weight:400;
     padding: 13px 14px; border-radius: 10px; outline:none; transition: border-color .15s;
   }
   input[type=text]:focus{ border-color: var(--line-accent); }
@@ -237,27 +238,28 @@
 
   @keyframes shake{ 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-6px); } 75%{ transform: translateX(6px); } }
 
-  button{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:15px; border:none; border-radius: 10px; padding: 0 20px; cursor:pointer; background: var(--line-accent); color:#181818; appearance:none; -webkit-appearance:none; }
+  button{ font-family:var(--font-main); font-weight:400; font-size:15px; border:none; border-radius: 10px; padding: 0 20px; cursor:pointer; background: var(--line-accent); color:#181818; appearance:none; -webkit-appearance:none; }
   button:active{ transform: translateY(1px); }
 
   .row-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:16px; gap: 10px; flex-wrap:wrap; }
   .row-actions.single{ justify-content:flex-end; }
   .link-btn{
     background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-dim);
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:12.5px;
+    font-family:var(--font-main); font-weight:400; font-size:12.5px;
     cursor:pointer; padding:8px 14px; border-radius: 999px;
   }
   .link-btn:active{ transform: translateY(1px); }
-  .feedback{ margin-top: 14px; font-size: 13.5px; font-family:'P22 Underground', 'Cabin', sans-serif; min-height: 18px; }
+  .feedback{ margin-top: 14px; font-size: 13.5px; font-family:var(--font-main); min-height: 18px; }
   .feedback.ok{ color: var(--green); }
   .feedback.bad{ color: var(--red); }
 
   .diagram-card{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; }
-  .diagram-card h3{ font-family:'P22 Underground', 'Cabin', sans-serif; font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color: var(--ink-dim); margin: 0 0 4px; font-weight:400; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-  .route-hint{ text-transform:none; letter-spacing:normal; font-size:11px; opacity:.7; }
+  .diagram-card svg{ display:block; width: 92%; max-width: 92%; height: auto; margin: 0 auto; }
+  .diagram-card h3{ font-family:var(--font-main); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color: var(--ink-dim); margin: 0 0 4px; font-weight:400; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
 
   .station-popup{
-    position:fixed; left:0; top:0; z-index:150; width:min(280px, calc(100vw - 24px));
+    position:fixed; left:0; top:0; z-index:150;
+    width: max-content; min-width: 150px; max-width: min(260px, calc(100vw - 24px));
     background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
     padding: 14px 36px 12px 14px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
   }
@@ -278,7 +280,7 @@
     display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; padding:0;
   }
   .station-popup-name{
-    font-family:'P22 Underground', 'Cabin', sans-serif; font-size:16px; color: var(--ink); margin-bottom:7px;
+    font-family:var(--font-main); font-size:16px; color: var(--ink); margin-bottom:7px;
   }
   .station-popup .interchange-row{ margin:0; }
   svg{ width:100%; height:auto; display:block; }
@@ -307,20 +309,20 @@
   .wheel-anim-3{ transform-origin: 5.5px 35.8px; }
   .wheel-anim-4{ transform-origin: 15.5px 35.8px; }
 
-  .summary h2{ font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:26px; margin: 0 0 4px; }
+  .summary h2{ font-family:var(--font-main); font-weight:400; font-size:26px; margin: 0 0 4px; }
   .summary p{ color: var(--ink-dim); margin: 0 0 18px; font-size:14px; }
   .summary-time{
     display:flex; align-items:baseline; gap:8px; background: var(--panel-2); border:1px solid var(--line);
     border-radius: 10px; padding: 12px 16px; margin: 0 0 18px;
   }
   .summary-time-label{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color: var(--ink-dim); }
-  .summary-time-value{ font-family:'P22 Underground', 'Cabin', sans-serif; font-size:22px; color: var(--accent-ink); }
+  .summary-time-value{ font-family:var(--font-main); font-size:22px; color: var(--accent-ink); }
   .miss-list{ list-style:none; margin:0 0 20px; padding:0; display:flex; flex-direction:column; gap:8px; }
   .miss-list li{ display:flex; justify-content:space-between; gap:10px; font-size:13.5px; background: var(--panel-2); border-radius:8px; padding:9px 12px; border:1px solid var(--line); }
   .miss-list .you{ color: var(--red); text-decoration: line-through; opacity:.8; }
   .miss-list .correct{ color: var(--green); font-weight:400; }
 
-  footer{ text-align:center; margin-top: 26px; color: var(--ink-dim); font-size:12px; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; }
+  footer{ text-align:center; margin-top: 26px; color: var(--ink-dim); font-size:12px; font-family:var(--font-main); font-weight:400; }
 
   .drain-egg{
     display:inline-block; width:10px; height:10px; margin:0 8px; padding:0; border:none; border-radius:50%;
@@ -344,7 +346,7 @@
   .egg-toast{
     position: fixed; left:50%; bottom: 22px; transform: translateX(-50%) translateY(16px);
     background: var(--panel); border:1px solid var(--line); color: var(--ink);
-    padding: 12px 18px; border-radius: 999px; font-family:'P22 Underground', 'Cabin', sans-serif;
+    padding: 12px 18px; border-radius: 999px; font-family:var(--font-main);
     font-size:13px; box-shadow: 0 8px 24px rgba(0,0,0,0.22);
     opacity:0; pointer-events:none; transition: opacity .3s ease, transform .3s ease;
     z-index: 999; white-space:nowrap; max-width: 90vw; overflow:hidden; text-overflow:ellipsis;
@@ -352,7 +354,7 @@
   .egg-toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
 
   .terms-link{
-    background:none; border:none; color: var(--ink-dim); font-family:'P22 Underground', 'Cabin', sans-serif;
+    background:none; border:none; color: var(--ink-dim); font-family:var(--font-main);
     font-weight:400; font-size:12px; text-decoration: underline; cursor:pointer; padding:0;
   }
 
@@ -370,7 +372,7 @@
     padding: 18px 20px; border-bottom: 1px solid var(--line); flex:none;
   }
   .terms-header h2{
-    margin:0; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400; font-size:20px; color: var(--ink);
+    margin:0; font-family:var(--font-main); font-weight:400; font-size:20px; color: var(--ink);
   }
   .terms-close{
     background: var(--panel-2); border:1px solid var(--line); color: var(--ink-dim);
@@ -381,7 +383,7 @@
   .terms-body p{ margin: 0 0 14px; font-size:13.5px; line-height:1.6; color: var(--ink); }
   .terms-body .terms-updated{ color: var(--ink-dim); font-size:11.5px; text-transform:uppercase; letter-spacing:.08em; }
   .terms-body h3{
-    margin: 20px 0 8px; font-family:'P22 Underground', 'Cabin', sans-serif; font-weight:400;
+    margin: 20px 0 8px; font-family:var(--font-main); font-weight:400;
     font-size:13px; text-transform:uppercase; letter-spacing:.06em; color: var(--accent-ink);
   }
   .terms-body h3:first-of-type{ margin-top: 4px; }
@@ -433,7 +435,7 @@
       <button type="button" class="pill" id="lineHcBtn" data-line-id="hammersmithcity">H&amp;C — 29 stations</button>
       <button type="button" class="pill" id="lineDistrictBtn" data-line-id="district">District — 59 stations</button>
       <button type="button" class="pill" id="lineMetropolitanBtn" data-line-id="metropolitan">Metropolitan — 34 stations</button>
-      <div class="pill soon">Central — soon</div>
+      <button type="button" class="pill" id="lineCentralBtn" data-line-id="central">Central — 43 stations</button>
       <div class="pill soon">Piccadilly — soon</div>
       <div class="pill soon">Northern — soon</div>
     </div>
@@ -465,7 +467,7 @@
   </div>
 
   <div class="diagram-card">
-    <h3>Route map <span class="route-hint">tap a station</span></h3>
+    <h3>Route map</h3>
     <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
   </div>
   <div class="station-popup hidden" id="stationPopup">
@@ -728,7 +730,7 @@
     "Finchley Road": [badge('metropolitan','Metropolitan'), badge('jubilee','Jubilee')],
     "Swiss Cottage": [],
     "St. John's Wood": [],
-    "Bond Street": [badge('central','Central'), badge('elizabeth','Elizabeth')],
+    "Bond Street": [badge('central','Central'), badge('jubilee','Jubilee'), badge('elizabeth','Elizabeth')],
     "Waterloo": [badge('bakerloo','Bakerloo'), badge('northern','Northern'), badge('waterloocity','Waterloo & City'), badge('nationalrail','National Rail'), badge('jubilee','Jubilee')],
     "Southwark": [],
     "London Bridge": [badge('northern','Northern'), badge('nationalrail','National Rail')],
@@ -738,7 +740,7 @@
     "North Greenwich": [],
     "Canning Town": [badge('dlr','DLR')],
     "West Ham": [badge('hammersmithcity',"H&C"), badge('district','District'), badge('dlr','DLR'), badge('jubilee','Jubilee')],
-    "Stratford": [badge('central','Central'), badge('dlr','DLR'), badge('elizabeth','Elizabeth'), badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
+    "Stratford": [badge('central','Central'), badge('jubilee','Jubilee'), badge('dlr','DLR'), badge('elizabeth','Elizabeth'), badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
 
     // ---- Bakerloo line ----
     "Harrow & Wealdstone": [badge('lioness','Lioness'), badge('nationalrail','National Rail')],
@@ -765,7 +767,7 @@
     "Aldgate East": [badge('district','District'), badge('hammersmithcity','H&C')],
     "Whitechapel": [badge('district','District'), badge('elizabeth','Elizabeth'), badge('windrush','Windrush'), badge('hammersmithcity','H&C')],
     "Stepney Green": [badge('district','District'), badge('hammersmithcity','H&C')],
-    "Mile End": [badge('district','District'), badge('hammersmithcity','H&C')],
+    "Mile End": [badge('central','Central'), badge('district','District'), badge('hammersmithcity','H&C')],
     "Bow Road": [badge('district','District'), badge('hammersmithcity','H&C')],
     "Bromley-by-Bow": [badge('district','District'), badge('hammersmithcity','H&C')],
     "Plaistow": [badge('district','District'), badge('hammersmithcity','H&C')],
@@ -774,7 +776,7 @@
     "Barking": [badge('district','District'), badge('nationalrail','National Rail'), badge('hammersmithcity','H&C')],
 
     // ---- District line ----
-    "Ealing Broadway": [badge('central','Central'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
+    "Ealing Broadway": [badge('central','Central'), badge('district','District'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
     "Ealing Common": [badge('piccadilly','Piccadilly')],
     "Acton Town": [badge('piccadilly','Piccadilly')],
     "Chiswick Park": [],
@@ -826,7 +828,51 @@
     "Harrow-on-the-Hill": [badge('nationalrail','National Rail')],
     "Chalfont & Latimer": [badge('nationalrail','National Rail')],
     "Amersham": [badge('nationalrail','National Rail')],
-    "Chesham": []
+    "Bank": [badge('central','Central'), badge('northern','Northern'), badge('dlr','DLR'), badge('waterloocity',"Waterloo & City")],
+    "Chesham": [],
+
+    // ---- Central line ----
+    "West Ruislip": [badge('nationalrail','National Rail')],
+    "Ruislip Gardens": [],
+    "South Ruislip": [badge('nationalrail','National Rail')],
+    "Northolt": [],
+    "Greenford": [badge('nationalrail','National Rail')],
+    "Perivale": [],
+    "Hanger Lane": [],
+    "North Acton": [],
+    "East Acton": [],
+    "Holland Park": [],
+    "Lancaster Gate": [],
+    "Tottenham Court Road": [badge('northern','Northern')],
+    "Holborn": [badge('piccadilly','Piccadilly')],
+    "Chancery Lane": [],
+    "St. Paul's": [],
+    "Bethnal Green": [],
+    "Leyton": [],
+    "Leytonstone": [],
+    "Snaresbrook": [],
+    "South Woodford": [],
+    "Woodford": [],
+    "Buckhurst Hill": [],
+    "Loughton": [],
+    "Debden": [],
+    "Theydon Bois": [],
+    "Epping": [badge('nationalrail','National Rail')],
+    "West Acton": [],
+    "Roding Valley": [],
+    "Chigwell": [],
+    "Grange Hill": [],
+    "Hainault": [],
+    "Fairlop": [],
+    "Barkingside": [],
+    "Newbury Park": [],
+    "Gants Hill": [],
+    "Redbridge": [],
+    "Wanstead": [],
+    // out-of-station interchange with the separate National Rail/Overground
+    // Shepherd's Bush station on the West London Line — not the same
+    // building as Shepherd's Bush Market (Circle/H&C), a third station
+    "Shepherd's Bush": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')]
   };
 
   const LINES = {
@@ -1025,6 +1071,59 @@
           // Aldgate–Watford — the Watford branch doesn't through-run to Aldgate
           watford: { label: 'Baker Street – Watford', stations: [...spine.slice(bakerStIdx, moorParkIdx+1), ...watfordArm] },
           chesham: { label: 'Aldgate – Chesham', stations: [...spine.slice(0, chalfontIdx+1), ...cheshamArm] }
+        }
+      };
+    })(),
+    // Central: West Ruislip–Epping is the main horizontal spine, per the
+    // agreed scope. Ealing Broadway joins at North Acton, Hainault joins
+    // at Woodford (via the Woodford side of the loop only — the Newbury
+    // Park side of the loop, Fairlop/Barkingside/Newbury Park/Gants
+    // Hill/Redbridge/Wanstead, is intentionally out of scope for now).
+    // Station order verified against lasttrain.co.uk's full station lists.
+    central: (function(){
+      const spine = [
+        "West Ruislip","Ruislip Gardens","South Ruislip","Northolt","Greenford","Perivale","Hanger Lane",
+        "North Acton","East Acton","White City","Shepherd's Bush","Holland Park","Notting Hill Gate",
+        "Queensway","Lancaster Gate","Marble Arch","Bond Street","Oxford Circus","Tottenham Court Road",
+        "Holborn","Chancery Lane","St. Paul's","Bank","Liverpool Street","Bethnal Green","Mile End",
+        "Stratford","Leyton","Leytonstone","Snaresbrook","South Woodford","Woodford",
+        "Buckhurst Hill","Loughton","Debden","Theydon Bois","Epping"
+      ];
+      const ealingArm = ["West Acton","Ealing Broadway"];
+      // the full Hainault loop, ordered Woodford-side to Leytonstone-side.
+      // "Via Woodford" services enter/leave via the first 4 stops
+      // (Roding Valley–Hainault); "via Redbridge" services use the other
+      // end (Wanstead–Hainault, entering from Leytonstone) — the real
+      // advertised route for Ealing Broadway–Hainault services.
+      const hainaultLoop = ["Roding Valley","Chigwell","Grange Hill","Hainault","Fairlop","Barkingside","Newbury Park","Gants Hill","Redbridge","Wanstead"];
+      const viaWoodford = hainaultLoop.slice(0, 4); // Roding Valley – Hainault
+      const viaRedbridge = hainaultLoop.slice(3).slice().reverse(); // Wanstead – Hainault
+      const northActonIdx = spine.indexOf('North Acton');
+      const woodfordIdx = spine.indexOf('Woodford');
+
+      const segments = [
+        { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
+        { id:'ealingArm', stations: ealingArm, parent:'spine', parentIndex: northActonIdx, dx:0, dy:-1, spacing:26 }
+      ];
+
+      return {
+        id: 'central',
+        label: 'Central',
+        color: '#DC241F',
+        layout: 'branch-tree',
+        segments: segments,
+        // a genuine rectangular loop (right angles only, no slants):
+        // down the right side from Woodford, across the bottom, up the
+        // left side to Leytonstone
+        loopRect: { stations: hainaultLoop, from: 'Woodford', to: 'Leytonstone', downCount: 4, acrossCount: 3, downSpacing: 20 },
+        spurCount: 0,
+        loopClosure: [],
+        defaultBranch: 'westRuislipEpping',
+        branches: {
+          westRuislipEpping: { label: 'West Ruislip – Epping', stations: spine },
+          westRuislipHainault: { label: 'West Ruislip – Hainault (via Woodford)', stations: [...spine.slice(0, woodfordIdx+1), ...viaWoodford] },
+          ealingEpping: { label: 'Ealing Broadway – Epping', stations: [...ealingArm.slice().reverse(), ...spine.slice(northActonIdx)] },
+          ealingHainault: { label: 'Ealing Broadway – Hainault', stations: [...ealingArm.slice().reverse(), ...spine.slice(northActonIdx, spine.indexOf('Leytonstone')+1), ...viaRedbridge] }
         }
       };
     })(),
@@ -1290,6 +1389,7 @@
     directionForwardBtnEl.classList.toggle('active', !reverseDirection);
     directionReverseBtnEl.classList.toggle('active', reverseDirection);
     updatePlayContextLabel();
+    drawRoutePreview();
     resetState();
     render();
   }
@@ -1743,6 +1843,7 @@
   $('lineHcBtn').addEventListener('click', function(){ setLine('hammersmithcity'); });
   $('lineDistrictBtn').addEventListener('click', function(){ setLine('district'); });
   $('lineMetropolitanBtn').addEventListener('click', function(){ setLine('metropolitan'); });
+  $('lineCentralBtn').addEventListener('click', function(){ setLine('central'); });
 
   // ---- secret: "The Drain" ----
   // a nearly-invisible drain-cover dot hides in the footer; clicking it
@@ -1864,20 +1965,34 @@
       // station gap in the diagram reads as visually equal
       const spurSpacing = 2 * r * Math.sin(Math.PI / loopN);
 
+      function spurLoopPos(i){
+        if(i < spurCount){
+          const k = (spurCount - 1) - i;
+          return { x: spurBaseX - (k+1)*spurSpacing, y: cy };
+        }
+        const j = i - spurCount;
+        const angleDeg = 180 + (j / loopN) * 360;
+        const angle = angleDeg * Math.PI / 180;
+        return { x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle) };
+      }
+
+      // fit the viewBox tightly around the actual station positions rather
+      // than a fixed generous box — a hardcoded '0 0 400 260' left the
+      // loop using barely half its declared canvas, making it look small
+      // and adrift within its own card
+      const allPos = [];
+      for(let i=0;i<LINE.N;i++) allPos.push(spurLoopPos(i));
+      const pad = 22;
+      const minX = Math.min(...allPos.map(p=>p.x)) - pad;
+      const maxX = Math.max(...allPos.map(p=>p.x)) + pad;
+      const minY = Math.min(...allPos.map(p=>p.y)) - pad;
+      const maxY = Math.max(...allPos.map(p=>p.y)) + pad;
+
       geo = {
-        viewBox: '0 0 400 260',
+        viewBox: minX + ' ' + minY + ' ' + (maxX-minX) + ' ' + (maxY-minY),
         hasClosingSegment: true,
         closingPair: [LINE.N - 1, spurCount],
-        stationPos(i){
-          if(i < spurCount){
-            const k = (spurCount - 1) - i;
-            return { x: spurBaseX - (k+1)*spurSpacing, y: cy };
-          }
-          const j = i - spurCount;
-          const angleDeg = 180 + (j / loopN) * 360;
-          const angle = angleDeg * Math.PI / 180;
-          return { x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle) };
-        },
+        stationPos: spurLoopPos,
         outwardDir(i){
           if(i < spurCount) return { dx: 0, dy: -1 };
           const j = i - spurCount;
@@ -1932,6 +2047,38 @@
       }
       segmentDefs.forEach(s => getSegPos(s.id));
 
+      if(LINE.def.loopRect){
+        const { stations: loopStations, from, to, downCount, acrossCount, downSpacing } = LINE.def.loopRect;
+        const p1 = globalPositions[from], p2 = globalPositions[to]; // p1: Woodford, p2: Leytonstone
+        const chordX = p1.x - p2.x; // horizontal distance to close the bottom side
+        const acrossSpacing = chordX / acrossCount;
+        // total drop must match on both sides so the bottom is level (no
+        // slant): downCount steps down, then acrossCount+1 steps' worth
+        // of vertical rise back up (the extra +1 accounts for closing
+        // the final gap up to p2, which isn't a named loop station)
+        const upSteps = loopStations.length - downCount - acrossCount; // stations on the "up" side
+        const totalDrop = downCount * downSpacing;
+        const upSpacing = totalDrop / (upSteps + 1);
+
+        let x = p1.x, y = p1.y;
+        let prev = p1;
+        loopStations.forEach((name, i) => {
+          if(i < downCount){
+            y += downSpacing; // straight down the right side
+          } else if(i < downCount + acrossCount){
+            x -= acrossSpacing; // straight across the bottom
+          } else {
+            y -= upSpacing; // straight up the left side
+          }
+          const pt = { x, y };
+          globalPositions[name] = pt;
+          outwardByName[name] = { dx: 0, dy: i < downCount ? 1 : (i < downCount+acrossCount ? 1 : -1) };
+          networkEdges.push([prev, pt]);
+          prev = pt;
+        });
+        networkEdges.push([prev, p2]);
+      }
+
       const xs = Object.values(globalPositions).map(p => p.x);
       const ys = Object.values(globalPositions).map(p => p.y);
       const pad = 45;
@@ -1981,8 +2128,10 @@
     // station — there's nothing else to dim in that case)
     const routeSet = new Set(LINE.stations);
     const DIM = 0.32;
+    const allSegments = []; // every drawn line, for label/arrow clearance testing
 
     function drawSeg(pa, pb, on){
+      allSegments.push([pa, pb]);
       const seg = document.createElementNS(ns,'line');
       seg.setAttribute('x1',pa.x); seg.setAttribute('y1',pa.y);
       seg.setAttribute('x2',pb.x); seg.setAttribute('y2',pb.y);
@@ -2031,9 +2180,11 @@
       dot.setAttribute('fill', color);
       dot.setAttribute('opacity', on ? 1 : DIM);
       dot.style.cursor = 'pointer';
-      dot.addEventListener('click', function(){ showStationPopup(name, dot); });
+      dot.addEventListener('mouseenter', function(){ showStationPopup(name, dot); });
+      dot.addEventListener('mouseleave', function(){ stationPopupEl.classList.add('hidden'); });
       svg.appendChild(dot);
     });
+
   }
 
   function showStationPopup(name, anchorEl){
@@ -2187,7 +2338,7 @@
         mark.setAttribute('x', gx); mark.setAttribute('y', gy);
         mark.setAttribute('text-anchor','middle');
         mark.setAttribute('dominant-baseline','middle');
-        mark.setAttribute('font-family',"'P22 Underground', 'Cabin', sans-serif");
+        mark.setAttribute('font-family','var(--font-main)');
         mark.setAttribute('font-size','9');
         mark.setAttribute('fill', result === 'ok' ? okColor : badColor);
         mark.textContent = result === 'ok' ? '✓' : '✕';
