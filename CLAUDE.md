@@ -48,12 +48,14 @@ the P22 Underground font actually loads (not silently falling back to Cabin), no
 console/JS errors, no horizontal overflow on the diagram card (the "no scroll boxes" rule
 above), and dot render size stays within 2x between a compact and a wide line. Two console
 messages are deliberately filtered as expected-not-broken: Chrome's notice that
-`frame-ancestors` is ignored when delivered via `<meta>` (a real CSP limitation — actually
-enforcing it would need Vercel to send CSP as an HTTP response header instead, which is
-currently NOT configured, so `frame-ancestors` in the meta tag today is inert/documentation-
-only), and resource-load failures scoped to the two optional external hosts (Google Fonts,
-Vercel Analytics), which restricted/proxied networks can fail to reach for reasons that have
-nothing to do with the app itself.
+`frame-ancestors` is ignored when delivered via `<meta>` (a real CSP limitation — the
+`<meta>` tag in `index.html` is a fallback for when the file is opened directly, e.g.
+`file://` or these very e2e tests; `vercel.json` ships the same policy as a real HTTP
+`Content-Security-Policy` header on the deployed site, which is what actually enforces
+`frame-ancestors`. `test/security.test.js` asserts the two stay byte-identical so they can't
+silently drift apart), and resource-load failures scoped to the two optional external hosts
+(Google Fonts, Vercel Analytics), which restricted/proxied networks can fail to reach for
+reasons that have nothing to do with the app itself.
 
 **How the tests reach internal state**: `index.html` intentionally exposes nothing on
 `window` — everything lives inside one closure. `test/test-utils.js` reads the real file,

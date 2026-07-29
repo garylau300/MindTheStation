@@ -11,6 +11,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const INDEX_HTML_PATH = path.join(__dirname, '..', 'index.html');
+const VERCEL_JSON_PATH = path.join(__dirname, '..', 'vercel.json');
 const html = fs.readFileSync(INDEX_HTML_PATH, 'utf8');
 
 function extractCsp(){
@@ -62,6 +63,23 @@ test('CSP origin allowances exactly match actual resource usage (no gaps, nothin
 
   assert.equal(missingFromCsp.length, 0, 'Origins used in the page but not allowed by CSP: ' + missingFromCsp.join(', '));
   assert.equal(unexpectedInCsp.length, 0, 'CSP allows origin(s) with no known justification (over-permissive, or update INDIRECT_KNOWN_ORIGINS if newly intentional): ' + unexpectedInCsp.join(', '));
+});
+
+test('vercel.json ships the same CSP as an HTTP header, byte-for-byte', () => {
+  // frame-ancestors (and CSP delivery generally) is only actually enforced
+  // via an HTTP response header — a <meta> tag is ignored for that one
+  // directive. The <meta> tag stays in index.html as a fallback for when
+  // the file is opened directly (e.g. file://, or our own e2e tests), but
+  // it's the header that does the real enforcing on the deployed site.
+  // Two copies of the same policy is only safe if they can never drift
+  // apart silently, hence this check.
+  const metaCsp = extractCsp();
+  const vercelConfig = JSON.parse(fs.readFileSync(VERCEL_JSON_PATH, 'utf8'));
+  const rule = vercelConfig.headers.find(h => h.source === '/(.*)');
+  assert.ok(rule, 'expected a catch-all header rule in vercel.json');
+  const header = rule.headers.find(h => h.key === 'Content-Security-Policy');
+  assert.ok(header, 'expected a Content-Security-Policy header in vercel.json');
+  assert.equal(header.value, metaCsp, 'vercel.json CSP header must exactly match the <meta> tag CSP in index.html');
 });
 
 test('referrer and robots meta tags stay locked down', () => {

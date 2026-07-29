@@ -38,7 +38,10 @@ Run `npm test` before committing any change to `index.html`.
 ## Deployment
 
 The GitHub repo is linked to Vercel for auto-deploy on push to `main` — no separate build
-or deploy step to run manually.
+or deploy step to run manually. [`vercel.json`](./vercel.json) sends the app's CSP as a real
+HTTP response header (needed for `frame-ancestors` to actually be enforced, which a `<meta>`
+tag alone can't do); `test/security.test.js` keeps it in sync with the `<meta>` tag in
+`index.html`.
 
 ## License
 
