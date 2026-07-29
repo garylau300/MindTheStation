@@ -1172,44 +1172,50 @@
         }
       };
     })(),
-    // Piccadilly: Cockfosters–Acton Town is the single, junction-free
-    // spine (per Wikipedia, Cockfosters is a plain terminus with no
-    // branching). At Acton Town it splits into the Uxbridge branch and the
-    // Heathrow branch; the Heathrow branch splits again at Heathrow
-    // Terminals 2 & 3 into Terminal 4 and Terminal 5. In real service,
-    // Terminal 4 is actually a one-way loop (Hatton Cross → T4 → T2&3) and
-    // Terminal 5 a dead-end spur beyond T2&3 — simplified here to two
-    // simple branches sharing T2&3 as their common stop, since both are
-    // named termini for this trainer's purposes, not full round-trip
-    // service patterns. Station order/branching verified station-by-station
-    // against each station's own Wikipedia infobox (preceding/following
-    // service chain), not assumed from memory.
+    // Piccadilly: per explicit request, the Heathrow–Cockfosters run is the
+    // main horizontal spine (Heathrow on the left, Cockfosters on the
+    // right) — Heathrow Terminals 2 & 3 is the spine's own leftmost station
+    // rather than either individual terminal, since both Terminal 4 and
+    // Terminal 5 are short stub branches off it (see below), not the spine
+    // itself. Acton Town, partway along the spine, is where the Uxbridge
+    // branch splits off. In real service, Terminal 4 is actually a one-way
+    // loop (Hatton Cross → T4 → T2&3) and Terminal 5 a dead-end spur beyond
+    // T2&3 — simplified here to two simple branches sharing T2&3 as their
+    // common stop, since both are named termini for this trainer's
+    // purposes, not full round-trip service patterns. Station order/
+    // branching verified station-by-station against each station's own
+    // Wikipedia infobox (preceding/following service chain), not assumed
+    // from memory.
     piccadilly: (function(){
-      const spine = [
+      const heathrowTrunk = [
+        "South Ealing","Northfields","Boston Manor","Osterley","Hounslow East","Hounslow Central",
+        "Hounslow West","Hatton Cross","Heathrow Terminals 2 & 3"
+      ];
+      const eastEnd = [
         "Cockfosters","Oakwood","Southgate","Arnos Grove","Bounds Green","Wood Green","Turnpike Lane",
         "Manor House","Finsbury Park","Arsenal","Holloway Road","Caledonian Road","King's Cross St. Pancras",
         "Russell Square","Holborn","Covent Garden","Leicester Square","Piccadilly Circus","Green Park",
         "Hyde Park Corner","Knightsbridge","South Kensington","Gloucester Road","Earl's Court","Barons Court",
         "Hammersmith","Acton Town"
       ];
+      // Heathrow Terminals 2 & 3 first (left end) through to Cockfosters
+      // (right end) — the reverse geographic direction of the two arrays
+      // above, which are each written in their own natural order
+      const spine = [...heathrowTrunk.slice().reverse(), ...eastEnd.slice().reverse()];
       const uxbridgeArm = [
         "Ealing Common","North Ealing","Park Royal","Alperton","Sudbury Town","Sudbury Hill","South Harrow",
         "Rayners Lane","Eastcote","Ruislip Manor","Ruislip","Ickenham","Hillingdon","Uxbridge"
       ];
-      const heathrowArm = [
-        "South Ealing","Northfields","Boston Manor","Osterley","Hounslow East","Hounslow Central",
-        "Hounslow West","Hatton Cross","Heathrow Terminals 2 & 3"
-      ];
       const terminal4Arm = ["Heathrow Terminal 4"];
       const terminal5Arm = ["Heathrow Terminal 5"];
       const actonTownIdx = spine.indexOf('Acton Town');
+      const t23Idx = spine.indexOf('Heathrow Terminals 2 & 3'); // 0 — the spine's own leftmost station
 
       const segments = [
         { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
         { id:'uxbridgeArm', stations: uxbridgeArm, parent:'spine', parentIndex: actonTownIdx, dx:0, dy:-1, spacing:16 },
-        { id:'heathrowArm', stations: heathrowArm, parent:'spine', parentIndex: actonTownIdx, dx:0, dy:1, spacing:16 },
-        { id:'terminal4Arm', stations: terminal4Arm, parent:'heathrowArm', parentIndex: heathrowArm.length-1, dx:-1, dy:1, spacing:22 },
-        { id:'terminal5Arm', stations: terminal5Arm, parent:'heathrowArm', parentIndex: heathrowArm.length-1, dx:1, dy:1, spacing:22 }
+        { id:'terminal4Arm', stations: terminal4Arm, parent:'spine', parentIndex: t23Idx, dx:0, dy:-1, spacing:22 },
+        { id:'terminal5Arm', stations: terminal5Arm, parent:'spine', parentIndex: t23Idx, dx:0, dy:1, spacing:22 }
       ];
 
       return {
@@ -1222,9 +1228,9 @@
         loopClosure: [],
         defaultBranch: 'uxbridge',
         branches: {
-          uxbridge: { label: 'Uxbridge – Cockfosters', stations: [...uxbridgeArm.slice().reverse(), ...spine.slice().reverse()] },
-          heathrowT4: { label: 'Heathrow Terminal 4 – Cockfosters', stations: [...terminal4Arm, ...heathrowArm.slice().reverse(), ...spine.slice().reverse()] },
-          heathrowT5: { label: 'Heathrow Terminal 5 – Cockfosters', stations: [...terminal5Arm, ...heathrowArm.slice().reverse(), ...spine.slice().reverse()] }
+          uxbridge: { label: 'Uxbridge – Cockfosters', stations: [...uxbridgeArm.slice().reverse(), ...spine.slice(actonTownIdx)] },
+          heathrowT4: { label: 'Heathrow Terminal 4 – Cockfosters', stations: [...terminal4Arm, ...spine] },
+          heathrowT5: { label: 'Heathrow Terminal 5 – Cockfosters', stations: [...terminal5Arm, ...spine] }
         }
       };
     })(),
