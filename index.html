@@ -1214,8 +1214,10 @@
       const segments = [
         { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
         { id:'uxbridgeArm', stations: uxbridgeArm, parent:'spine', parentIndex: actonTownIdx, dx:0, dy:-1, spacing:16 },
-        { id:'terminal4Arm', stations: terminal4Arm, parent:'spine', parentIndex: t23Idx, dx:0, dy:-1, spacing:22 },
-        { id:'terminal5Arm', stations: terminal5Arm, parent:'spine', parentIndex: t23Idx, dx:0, dy:1, spacing:22 }
+        // diagonal, not straight up/down, so the two terminals fork away
+        // from the spine's own leftward direction — a Y, not a T
+        { id:'terminal4Arm', stations: terminal4Arm, parent:'spine', parentIndex: t23Idx, dx:-1, dy:-1, spacing:22 },
+        { id:'terminal5Arm', stations: terminal5Arm, parent:'spine', parentIndex: t23Idx, dx:-1, dy:1, spacing:22 }
       ];
 
       return {
