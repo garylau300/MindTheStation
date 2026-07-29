@@ -37,3 +37,8 @@ Run `npm test` before committing any change to `index.html`.
 
 The GitHub repo is linked to Vercel for auto-deploy on push to `main` — no separate build
 or deploy step to run manually.
+
+## License
+
+MIT — see [`LICENSE`](./LICENSE). Note the carve-out: the embedded P22 Underground font is
+used under a separate license and isn't covered by the MIT grant.
