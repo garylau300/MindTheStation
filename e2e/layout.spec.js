@@ -212,3 +212,22 @@ for (const theme of ['light', 'dark']) {
     expect(failures).toEqual([]);
   });
 }
+
+// The train progress rail's SVG used width:100% with no cap, so it grew in
+// lockstep with .wrap's own wider breakpoints (up to 1180px) — the train
+// graphic ended up noticeably larger than it was designed to look.
+test('train progress rail stays capped on wide screens, unaffected on narrow ones', async ({ page }) => {
+  await page.click('#startPlayingBtn');
+  // not waitForSelector('#countdownOverlay.hidden') — its default "visible"
+  // state can never be satisfied by an element that's hidden by definition
+  await page.waitForFunction(() => document.getElementById('countdownOverlay').classList.contains('hidden'), { timeout: 8000 });
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const wide = await page.locator('#progressRailSvg').boundingBox();
+  expect(wide.width).toBeLessThanOrEqual(640);
+
+  await page.setViewportSize({ width: 390, height: 900 });
+  const narrow = await page.locator('#progressRailSvg').boundingBox();
+  expect(narrow.width).toBeGreaterThan(300); // still ~full-width on a real phone, cap shouldn't bind here
+  expect(narrow.width).toBeLessThanOrEqual(640);
+});

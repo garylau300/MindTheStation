@@ -51,7 +51,11 @@ responsive width breakpoints (720px base / 960px at 900px+ / 1180px at 1300px+, 
 larger screens use more space instead of staying capped at the mobile-era 720px) hit their
 exact expected values at phone/tablet/laptop/desktop widths with zero overflow at any of
 them, that text (not just the container) actually scales up at both breakpoints, and that
-the route-map station popup stays compact rather than the oversized bubble it once was.
+the route-map station popup stays compact rather than the oversized bubble it once was, the
+active line pill and primary buttons meet WCAG AA contrast for every line in both themes, and
+the train progress rail stays capped on wide screens (it once grew in lockstep with .wrap's
+own wider breakpoints, up to 1180px, making the train graphic noticeably larger than
+designed) while staying unaffected on narrow ones.
 Two console messages are deliberately filtered as expected-not-broken: Chrome's notice that
 `frame-ancestors` is ignored when delivered via `<meta>` (a real CSP limitation — the
 `<meta>` tag in `index.html` is a fallback for when the file is opened directly, e.g.

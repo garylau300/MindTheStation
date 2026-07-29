@@ -301,7 +301,11 @@
   svg{ width:100%; height:auto; display:block; }
 
   .progress-rail-wrap{ margin: 0 0 18px; }
-  .progress-rail-svg{ width:100%; height:auto; display:block; }
+  /* width:100% alone grew this in lockstep with .wrap's own wider
+     breakpoints (up to 1180px), making the train noticeably larger than
+     it was designed to look — capped back to roughly its original
+     proportions, centered within whatever width .wrap now allows */
+  .progress-rail-svg{ width:100%; max-width: 640px; height:auto; display:block; margin: 0 auto; }
   .rail-track{ stroke: var(--line); stroke-width:3; stroke-linecap:round; }
   .rail-fill{
     stroke: var(--line-accent); stroke-width:3; stroke-linecap:round;
