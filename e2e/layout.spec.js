@@ -135,8 +135,8 @@ test('station popup stays compact, not a large bubble', async ({ page }) => {
   await page.click('.pill[data-line-id="district"]');
   await page.click('#routePreviewSvg circle');
   const box = await page.locator('#stationPopup').boundingBox();
-  expect(box.width).toBeLessThan(220);
-  expect(box.height).toBeLessThan(120);
+  expect(box.width).toBeLessThan(320); // capped at 300px + a margin, even at the widest breakpoint
+  expect(box.height).toBeLessThan(160); // generous margin above a many-badge station like King's Cross (~105px)
 });
 
 // Widest real viewport this matters at: .wrap hits its largest breakpoint

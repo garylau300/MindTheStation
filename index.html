@@ -273,9 +273,9 @@
 
   .station-popup{
     position:fixed; left:0; top:0; z-index:150;
-    width: max-content; min-width: 120px; max-width: min(200px, calc(100vw - 24px));
+    width: max-content; min-width: 140px; max-width: min(230px, calc(100vw - 24px));
     background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
-    padding: 9px 26px 8px 11px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+    padding: 11px 30px 10px 13px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
   }
   .station-popup::before{
     content:''; position:absolute; width:12px; height:12px; background: var(--panel);
@@ -289,15 +289,15 @@
     display:block; bottom:-7px; border-left:none; border-top:none; transform: rotate(45deg);
   }
   .station-popup-close{
-    position:absolute; top:6px; right:6px; width:18px; height:18px; border-radius:50%;
+    position:absolute; top:7px; right:7px; width:20px; height:20px; border-radius:50%;
     background: var(--panel-2); border:1px solid var(--line); color: var(--ink-dim);
-    display:flex; align-items:center; justify-content:center; font-size:9px; cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center; font-size:10px; cursor:pointer; padding:0;
   }
   .station-popup-name{
-    font-family:var(--font-main); font-size:13.5px; color: var(--ink); margin-bottom:5px;
+    font-family:var(--font-main); font-size:14.5px; color: var(--ink); margin-bottom:5px;
   }
   .station-popup .interchange-row{ margin:0; }
-  .station-popup .interchange-chip{ font-size:9.5px; padding:4px 9px; }
+  .station-popup .interchange-chip{ font-size:10.5px; padding:5px 10px; }
   svg{ width:100%; height:auto; display:block; }
 
   .progress-rail-wrap{ margin: 0 0 18px; }
@@ -439,10 +439,7 @@
      whether the media condition matches. (Small caption-style labels like
      .eyebrow/.direction-label/.diagram-card h3 are left close to their
      original size on purpose — they're meant to read as quiet uppercase
-     microcopy, not body text. .station-popup's own text is deliberately
-     NOT included here — it was sized too large to begin with and was
-     tightened at its base size instead, not to be re-grown here.) The
-     clamp()-based h1/.prompt/.target-word sizes are overridden outright
+     microcopy, not body text.) The clamp()-based h1/.prompt/.target-word sizes are overridden outright
      rather than tuned via their vw component: clamp()'s vw math is
      relative to the true viewport, not to .wrap's now-capped width, so
      past the point .wrap stops growing, continuing to scale text by vw
@@ -471,6 +468,10 @@
     .mc-option{ font-size:16px; }
     .mc-context-node{ font-size:14px; }
     .back-btn{ font-size:13.5px; }
+    .station-popup{ max-width: min(270px, calc(100vw - 24px)); }
+    .station-popup-name{ font-size:16px; }
+    .station-popup .interchange-chip{ font-size:11.5px; padding:5px 11px; }
+    .station-popup-close{ width:22px; height:22px; font-size:10.5px; }
   }
   @media (min-width: 1300px){
     h1{ font-size:48px; }
@@ -496,6 +497,10 @@
     .mc-option{ font-size:17px; }
     .mc-context-node{ font-size:15px; }
     .back-btn{ font-size:14.5px; }
+    .station-popup{ max-width: min(300px, calc(100vw - 24px)); }
+    .station-popup-name{ font-size:17px; }
+    .station-popup .interchange-chip{ font-size:12.5px; padding:6px 12px; }
+    .station-popup-close{ width:24px; height:24px; font-size:11px; }
   }
 </style>
 <script>
