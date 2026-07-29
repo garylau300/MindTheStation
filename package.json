@@ -1,0 +1,12 @@
+{
+  "name": "underground-explorer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "London Underground station-memorization trainer (single-file app) plus its regression test suite.",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0"
+  }
+}
