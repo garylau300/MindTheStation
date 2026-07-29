@@ -161,3 +161,54 @@ test('station dot render size stays consistent (within 2x) across compact, wide,
   const ratio = Math.max(...Object.values(diameters)) / Math.min(...Object.values(diameters));
   expect(ratio).toBeLessThan(2); // Circle's spur-loop once measured ~2x bigger than other lines here
 });
+
+// The active line pill and primary buttons (Start playing, Enter) fill
+// solid with that line's own --line-accent color. A fixed near-black text
+// color was unreadable on several lines (Victoria, District, Bakerloo,
+// Metropolitan, Piccadilly, Central) — real WCAG contrast ratio, computed
+// independently here (not just re-running the app's own bestContrastInk()
+// helper), against every line in both themes, since --line-accent doesn't
+// change between themes but this is exactly the kind of thing worth
+// checking in both anyway.
+function relativeLuminance(hex){
+  const h = hex.replace('#', '');
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+  const linearize = c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+}
+function contrastRatio(hexA, hexB){
+  const lA = relativeLuminance(hexA), lB = relativeLuminance(hexB);
+  const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA];
+  return (lighter + 0.05) / (darker + 0.05);
+}
+function rgbStringToHex(rgb){
+  const [r, g, b] = rgb.match(/\d+/g).map(Number);
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+for (const theme of ['light', 'dark']) {
+  test('active line pill and primary button text meet WCAG AA contrast (' + theme + ' mode)', async ({ page }) => {
+    if (theme === 'dark') {
+      await page.click('#themeToggle');
+      await page.waitForTimeout(300); // let the background-color transition settle
+    }
+    const lineIds = await page.evaluate(() => Array.from(document.querySelectorAll('.line-select .pill[data-line-id]')).map(el => el.dataset.lineId));
+    const failures = [];
+    for (const lineId of lineIds) {
+      await page.click('.pill[data-line-id="' + lineId + '"]');
+      const { pillBg, pillColor, btnBg, btnColor } = await page.evaluate(() => {
+        const pill = document.querySelector('.pill.active');
+        const btn = document.getElementById('startPlayingBtn');
+        const pillCs = getComputedStyle(pill), btnCs = getComputedStyle(btn);
+        return { pillBg: pillCs.backgroundColor, pillColor: pillCs.color, btnBg: btnCs.backgroundColor, btnColor: btnCs.color };
+      });
+      const pillRatio = contrastRatio(rgbStringToHex(pillBg), rgbStringToHex(pillColor));
+      const btnRatio = contrastRatio(rgbStringToHex(btnBg), rgbStringToHex(btnColor));
+      // 3:1 is WCAG AA's minimum for large/bold text, which this is (pill
+      // labels ~12-15px bold-weight, button text ~15-17px)
+      if (pillRatio < 3) failures.push(lineId + ' pill: ' + pillRatio.toFixed(2) + ':1');
+      if (btnRatio < 3) failures.push(lineId + ' button: ' + btnRatio.toFixed(2) + ':1');
+    }
+    expect(failures).toEqual([]);
+  });
+}

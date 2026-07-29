@@ -33,7 +33,11 @@ separate real-browser suite (Playwright) for CSS-layout-dependent checks jsdom c
 `npm run test:all` runs both. All of this runs automatically on every push and pull request
 via GitHub Actions (`.github/workflows/test.yml`).
 
-Run `npm test` before committing any change to `index.html`.
+Each unit suite also runs standalone (`npm run test:geometry` / `test:gameplay` /
+`test:interchanges` / `test:security`) for a focused re-check while iterating on something
+scoped to just that concern — see `CLAUDE.md` for which tests a given change actually needs.
+When in doubt, or for anything touching station/branch data or gameplay logic, run the full
+suite before committing.
 
 ## Deployment
 

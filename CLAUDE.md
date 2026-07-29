@@ -86,8 +86,31 @@ Two non-obvious jsdom gotchas baked into `test-utils.js`, worth knowing before t
 
 When adding a line or changing geometry/interchange data, these three suites are the
 "standalone verification script" discipline described in `PROJECT_HISTORY.md` §13, now
-persisted and runnable instead of rewritten by hand each time — run `npm test` before
-committing any change to `index.html`.
+persisted and runnable instead of rewritten by hand each time.
+
+### Which tests a change actually needs
+
+Full `npm run test:all` (or at least `npm test`) is for anything that touches station data,
+branch/segment definitions, or gameplay/state logic — a new line, a new branch, edited
+`STATION_INTERCHANGES`, changes to `buildLineRuntime`/`setMode`/`submitAnswer`/etc. Those are
+exactly the changes where a gap is otherwise invisible (a missing interchange badge, a
+collided station, a broken journey sequence for one specific branch/direction/mode
+combination out of the ~90 this repo covers).
+
+A **narrower, single-suite run is enough** for a change that's genuinely scoped to one
+concern, each fast enough to run every time you touch that concern:
+
+- Per-file unit suites (`npm run test:geometry` / `test:gameplay` / `test:interchanges` /
+  `test:security`, each well under a second) — run whichever one matches what changed, e.g.
+  `test:security` after touching the CSP meta tag or `vercel.json`.
+- `npm run test:e2e` (~2-3 min, real Chromium) for anything CSS-only: font sizes, colors,
+  spacing, contrast, responsive breakpoints. This is also the one that actually catches a
+  contrast or overflow regression — the unit suites don't render anything.
+
+Reach for the full suite by default whenever you're not sure which category a change falls
+into, or if it touches more than one of the above — the cost of over-running is a couple of
+minutes; the cost of under-running is exactly the kind of invisible gap this suite exists to
+catch.
 
 ## Hard rules (violating these previously shipped real bugs — see PROJECT_HISTORY.md for each)
 

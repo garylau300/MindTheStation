@@ -132,7 +132,7 @@
   }
   .line-select{ display:flex; flex-wrap:wrap; gap:8px; margin-top:0; }
   .pill{ font-family:var(--font-main); font-weight:400; font-size:12px; padding:7px 12px; border-radius: 999px; border:1px solid var(--line); color: var(--pill-color, var(--ink-dim)); background: var(--panel); letter-spacing:.03em; cursor:pointer; appearance:none; -webkit-appearance:none; }
-  .pill.active{ background: var(--line-accent); color:#181818; border-color:var(--line-accent); font-weight:400; }
+  .pill.active{ background: var(--line-accent); color: var(--accent-fill-ink, #181818); border-color:var(--line-accent); font-weight:400; }
   .pill.soon{ opacity:.4; }
 
   .direction-row{ margin-bottom: 16px; }
@@ -151,7 +151,7 @@
   .mc-option{
     text-align:left; background: var(--panel-2); border: 2px solid var(--line); color: var(--ink);
     font-family:var(--font-main); font-weight:400; font-size:15px;
-    padding: 14px 14px; border-radius: 10px; cursor:pointer; transition: border-color .15s, background-color .15s;
+    padding: 14px 14px; border-radius: 10px; cursor:pointer; transition: border-color .15s, background-color .15s, transform .1s ease;
   }
   .mc-option:active{ transform: translateY(1px); }
   .mc-option.correct{ border-color: var(--green); background: rgba(124,203,107,0.14); }
@@ -247,7 +247,12 @@
 
   @keyframes shake{ 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-6px); } 75%{ transform: translateX(6px); } }
 
-  button{ font-family:var(--font-main); font-weight:400; font-size:15px; border:none; border-radius: 10px; padding: 0 20px; cursor:pointer; background: var(--line-accent); color:#181818; appearance:none; -webkit-appearance:none; }
+  button{ font-family:var(--font-main); font-weight:400; font-size:15px; border:none; border-radius: 10px; padding: 0 20px; cursor:pointer; background: var(--line-accent); color: var(--accent-fill-ink, #181818); appearance:none; -webkit-appearance:none; }
+  /* the translateY(1px) press-down on :active (below, and on the more
+     specific button variants further down) used to snap instantly with no
+     transition — a small, deliberately subtle click animation, not present
+     before, rather than a static state change */
+  button, .pill, .mode-btn, .direction-btn, .theme-toggle, .back-btn, .link-btn{ transition: transform .1s ease; }
   button:active{ transform: translateY(1px); }
 
   .row-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:16px; gap: 10px; flex-wrap:wrap; }
@@ -1387,6 +1392,31 @@
     return luminance > 0.6 ? '#14151a' : '#f5f4ef';
   }
 
+  // WCAG-accurate contrast ratio, for the one spot (solid --line-accent
+  // fills: the active line pill, primary buttons) where getting this
+  // genuinely right matters enough to not rely on readableTextOn()'s
+  // simpler luminance heuristic. That heuristic gets some real line colors
+  // wrong for this specific use — e.g. it measures Victoria's blue as
+  // "light enough" for dark text, but dark text against it is only a
+  // 2.96:1 real contrast ratio (below WCAG AA's 3:1 minimum even for large
+  // text), while light text reaches 5.59:1. readableTextOn() itself is
+  // left as-is for badges/chips, which already look fine and aren't what
+  // was reported.
+  function relativeLuminance(hex){
+    const {r,g,b} = hexToRgb(hex);
+    const linearize = v => { const c = v/255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+    return 0.2126*linearize(r) + 0.7152*linearize(g) + 0.0722*linearize(b);
+  }
+  function contrastRatio(hexA, hexB){
+    const lA = relativeLuminance(hexA), lB = relativeLuminance(hexB);
+    const [lighter, darker] = lA > lB ? [lA, lB] : [lB, lA];
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+  function bestContrastInk(hex){
+    const DARK = '#14151a', LIGHT = '#f5f4ef';
+    return contrastRatio(hex, DARK) >= contrastRatio(hex, LIGHT) ? DARK : LIGHT;
+  }
+
   let LINE = buildLineRuntime('circle');
 
   const $ = id => document.getElementById(id);
@@ -1494,6 +1524,12 @@
   function applyLineTheme(){
     document.body.style.setProperty('--line-accent', LINE.def.color);
     document.body.style.setProperty('--accent-ink', isLight ? darkenForLightMode(LINE.def.color) : LINE.def.color);
+    // text drawn directly on a solid --line-accent fill (the active line
+    // pill, primary buttons) needs to pick light-or-dark per line — a fixed
+    // near-black was unreadable on several lines' own accent colors.
+    // bestContrastInk() (real WCAG contrast ratio), not readableTextOn()'s
+    // simpler heuristic, which picks the wrong one for at least Victoria.
+    document.body.style.setProperty('--accent-fill-ink', bestContrastInk(LINE.def.color));
   }
 
   // each line pill's text is colored with that line's own brand color —
