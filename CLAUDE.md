@@ -31,6 +31,12 @@ dev dependency — no other test framework. Three suites:
   number of stops. Runs every line × branch × direction × mode (~90 sub-tests, ~40s).
 - `test/interchanges.test.js` — cross-references every line's station list against every
   other line's and asserts any shared station carries an interchange badge for both.
+- `test/security.test.js` — static checks over the raw HTML source (no browser needed):
+  CSP stays deny-by-default and its origin allowances exactly match actual resource usage
+  (no gaps, nothing over-permissive), no `eval`/`Function`/`document.write`/`javascript:`
+  URIs, no dynamically-created script/iframe/object tags, no client-side storage, and no
+  `innerHTML` assignment references raw user input directly. This is the §12 manual audit,
+  now automatic instead of something to remember to re-run.
 
 **How the tests reach internal state**: `index.html` intentionally exposes nothing on
 `window` — everything lives inside one closure. `test/test-utils.js` reads the real file,
