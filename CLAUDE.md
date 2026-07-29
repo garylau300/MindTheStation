@@ -106,9 +106,14 @@ committing any change to `index.html`.
   whose viewBox is small/fixed regardless of container width (Circle's old `r:75`) gets stretched
   disproportionately harder than a layout whose viewBox grows with real content (a long
   branch-tree spine) once `.wrap` is allowed to grow — station dots ended up ~2x bigger on Circle
-  than on every other line at the widest breakpoint. Sanity-check a layout constant by comparing
-  actual rendered dot `getBoundingClientRect()` width across several lines at a wide viewport
-  (1440px), not just by eyeballing the diagram at default size.
+  than on every other line at the widest breakpoint. The same thing can happen *within*
+  branch-tree too, not just between layout types: Metropolitan's spine is much shorter than
+  District/Central/Piccadilly's (23 vs 27-37 stations) at the same `spacing:16`/`26` convention,
+  so it hit the same ~2x-too-big problem despite using the "grows with content" layout — fixed by
+  scaling every one of its segments' `spacing` up by the same ~1.5x factor (24/39 instead of
+  16/26), not by changing the layout type. Sanity-check a layout constant by comparing actual
+  rendered dot `getBoundingClientRect()` width across several lines at a wide viewport (1440px),
+  not just by eyeballing the diagram at default size.
 - **Never derive "the true start/end station" from `LINE.stations[0]` / `[N-1]`.** For loop
   lines (Circle), the real journey start/end depends on `journeyIndices` (loop-aware), not
   raw station array position. Always go through `terminusNames()` / `journeyIndices`.

@@ -1172,14 +1172,22 @@
 
       const segments = [
         // dx:-1 so the spine runs right-to-left in the diagram — Aldgate
-        // (index 0) ends up on the right, Amersham on the left
-        { id:'spine', stations: spine, parent:null, dx:-1, dy:0, spacing:16, startX:60, startY:250 },
+        // (index 0) ends up on the right, Amersham on the left. Spacing is
+        // 1.5x District/Central/Piccadilly's own convention (16/26) since
+        // Metropolitan's much shorter spine (23 vs 27-37 stations) would
+        // otherwise produce a noticeably smaller viewBox — and since
+        // .diagram-card svg stretches to a fixed *percentage* of container
+        // width regardless of viewBox size, a smaller viewBox means bigger
+        // rendered dots (station dots measured ~23px here vs ~11-16px on
+        // every other line at a wide viewport, same class of bug as
+        // Circle's spur-loop radius).
+        { id:'spine', stations: spine, parent:null, dx:-1, dy:0, spacing:24, startX:60, startY:250 },
         // Uxbridge is drawn as an L: one step down from Harrow-on-the-Hill,
         // then left, rather than a straight vertical stub
-        { id:'uxbridgeDrop', stations: uxbridgeDrop, parent:'spine', parentIndex: harrowIdx, dx:0, dy:1, spacing:26 },
-        { id:'uxbridgeArm', stations: uxbridgeArm, parent:'uxbridgeDrop', parentIndex:0, dx:-1, dy:0, spacing:16 },
-        { id:'watfordArm', stations: watfordArm, parent:'spine', parentIndex: moorParkIdx, dx:0, dy:-1, spacing:26 },
-        { id:'cheshamArm', stations: cheshamArm, parent:'spine', parentIndex: chalfontIdx, dx:0, dy:1, spacing:26 }
+        { id:'uxbridgeDrop', stations: uxbridgeDrop, parent:'spine', parentIndex: harrowIdx, dx:0, dy:1, spacing:39 },
+        { id:'uxbridgeArm', stations: uxbridgeArm, parent:'uxbridgeDrop', parentIndex:0, dx:-1, dy:0, spacing:24 },
+        { id:'watfordArm', stations: watfordArm, parent:'spine', parentIndex: moorParkIdx, dx:0, dy:-1, spacing:39 },
+        { id:'cheshamArm', stations: cheshamArm, parent:'spine', parentIndex: chalfontIdx, dx:0, dy:1, spacing:39 }
       ];
 
       return {
