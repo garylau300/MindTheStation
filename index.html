@@ -1879,7 +1879,6 @@
     feedback.className = 'feedback';
 
     const list = seq();
-    const { start, end } = terminusNames();
 
     if(mode === 'warmup'){
       const dir = reverseDirection ? ' · reverse' : '';
@@ -1892,9 +1891,10 @@
     } else if(mode === 'quiz'){
       interchangeRow.classList.add('hidden');
       if(idx === 0){
-        contextLine.innerHTML = reverseDirection
-          ? end + ' — the terminus, where trains reverse'
-          : start + ' — where the line begins';
+        // no station name shown here — naming it would give away the
+        // answer to the very first question, unlike every question after
+        // it (which only ever shows the previous stop, never the target)
+        contextLine.innerHTML = '';
         promptLine.innerHTML = 'Type the <em>first</em> station' + (reverseDirection ? ' in reverse:' : ':');
       } else {
         const isRepeatVisit = list.slice(0, idx).includes(list[idx]);
