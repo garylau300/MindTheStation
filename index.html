@@ -536,7 +536,7 @@
       <button type="button" class="pill" id="lineMetropolitanBtn" data-line-id="metropolitan">Metropolitan — 34 stations</button>
       <button type="button" class="pill" id="lineCentralBtn" data-line-id="central">Central — 43 stations</button>
       <button type="button" class="pill" id="linePiccadillyBtn" data-line-id="piccadilly">Piccadilly — 52 stations</button>
-      <div class="pill soon">Northern — soon</div>
+      <button type="button" class="pill" id="lineNorthernBtn" data-line-id="northern">Northern — 52 stations</button>
       <div class="pill soon">Elizabeth — soon</div>
     </div>
   </header>
@@ -765,14 +765,14 @@
   const STATION_INTERCHANGES = {
     // ---- Victoria line ----
     "Brixton": [badge('nationalrail','National Rail')],
-    "Stockwell": [badge('northern','Northern')],
+    "Stockwell": [badge('victoria','Victoria'), badge('northern','Northern')],
     "Vauxhall": [badge('nationalrail','National Rail')],
     "Pimlico": [],
     "Victoria": [badge('circle','Circle'), badge('district','District'), badge('victoria','Victoria'), badge('nationalrail','National Rail')],
     "Green Park": [badge('piccadilly','Piccadilly'), badge('jubilee','Jubilee'), badge('victoria','Victoria')],
     "Oxford Circus": [badge('central','Central'), badge('bakerloo','Bakerloo'), badge('victoria','Victoria')],
-    "Warren Street": [badge('northern','Northern')],
-    "Euston": [badge('northern','Northern'), badge('lioness','Lioness'), badge('nationalrail','National Rail')],
+    "Warren Street": [badge('victoria','Victoria'), badge('northern','Northern')],
+    "Euston": [badge('victoria','Victoria'), badge('northern','Northern'), badge('lioness','Lioness'), badge('nationalrail','National Rail')],
     "King's Cross St. Pancras": [badge('circle','Circle'), badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('northern','Northern'), badge('piccadilly','Piccadilly'), badge('victoria','Victoria'), badge('nationalrail','National Rail')],
     "Highbury & Islington": [badge('mildmay','Mildmay'), badge('windrush','Windrush'), badge('nationalrail','National Rail')],
     "Finsbury Park": [badge('victoria','Victoria'), badge('piccadilly','Piccadilly'), badge('nationalrail','National Rail')],
@@ -833,7 +833,7 @@
     "Bond Street": [badge('central','Central'), badge('jubilee','Jubilee'), badge('elizabeth','Elizabeth')],
     "Waterloo": [badge('bakerloo','Bakerloo'), badge('northern','Northern'), badge('waterloocity','Waterloo & City'), badge('nationalrail','National Rail'), badge('jubilee','Jubilee')],
     "Southwark": [],
-    "London Bridge": [badge('northern','Northern'), badge('nationalrail','National Rail')],
+    "London Bridge": [badge('jubilee','Jubilee'), badge('northern','Northern'), badge('nationalrail','National Rail')],
     "Bermondsey": [],
     "Canada Water": [badge('windrush','Windrush')],
     "Canary Wharf": [badge('dlr','DLR'), badge('elizabeth','Elizabeth')],
@@ -859,9 +859,9 @@
     "Marylebone": [badge('nationalrail','National Rail')],
     "Regent's Park": [],
     "Piccadilly Circus": [badge('bakerloo','Bakerloo'), badge('piccadilly','Piccadilly')],
-    "Charing Cross": [badge('northern','Northern'), badge('nationalrail','National Rail')],
+    "Charing Cross": [badge('bakerloo','Bakerloo'), badge('northern','Northern'), badge('nationalrail','National Rail')],
     "Lambeth North": [],
-    "Elephant & Castle": [badge('northern','Northern'), badge('nationalrail','National Rail')],
+    "Elephant & Castle": [badge('bakerloo','Bakerloo'), badge('northern','Northern'), badge('nationalrail','National Rail')],
 
     // ---- Hammersmith & City line ----
     "Aldgate East": [badge('district','District'), badge('hammersmithcity','H&C')],
@@ -947,7 +947,7 @@
     "East Acton": [],
     "Holland Park": [],
     "Lancaster Gate": [],
-    "Tottenham Court Road": [badge('northern','Northern')],
+    "Tottenham Court Road": [badge('central','Central'), badge('northern','Northern')],
     "Holborn": [badge('central','Central'), badge('piccadilly','Piccadilly')],
     "Chancery Lane": [],
     "St. Paul's": [],
@@ -994,7 +994,7 @@
     "Caledonian Road": [],
     "Russell Square": [],
     "Covent Garden": [],
-    "Leicester Square": [],
+    "Leicester Square": [badge('piccadilly','Piccadilly'), badge('northern','Northern')],
     "Hyde Park Corner": [],
     "Knightsbridge": [],
     "North Ealing": [],
@@ -1017,7 +1017,53 @@
     // railway station on the mainline tunnel, not the same building
     "Heathrow Terminals 2 & 3": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
     "Heathrow Terminal 4": [],
-    "Heathrow Terminal 5": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')]
+    "Heathrow Terminal 5": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
+
+    // ---- Northern line ----
+    // Every station verified against its own Wikipedia infobox
+    // (preceding/following service chain), not assumed from memory —
+    // this line's real topology (two southern branches, two central
+    // London branches, two northern branches, one further spur) is the
+    // most complex in the network and easy to get subtly wrong.
+    "Morden": [],
+    "South Wimbledon": [],
+    "Colliers Wood": [],
+    "Tooting Broadway": [],
+    "Tooting Bec": [],
+    "Balham": [badge('nationalrail','National Rail')],
+    "Clapham South": [],
+    "Clapham Common": [],
+    "Clapham North": [],
+    "Oval": [],
+    "Kennington": [],
+    "Nine Elms": [],
+    "Battersea Power Station": [],
+    "Borough": [],
+    "Old Street": [badge('nationalrail','National Rail')],
+    "Angel": [],
+    "Goodge Street": [],
+    "Mornington Crescent": [],
+    "Camden Town": [],
+    "Chalk Farm": [],
+    "Belsize Park": [],
+    "Hampstead": [],
+    "Golders Green": [],
+    "Brent Cross": [],
+    "Hendon Central": [],
+    "Colindale": [],
+    "Burnt Oak": [],
+    "Edgware": [],
+    "Kentish Town": [badge('nationalrail','National Rail')],
+    "Tufnell Park": [],
+    "Archway": [],
+    "Highgate": [],
+    "East Finchley": [],
+    "Finchley Central": [],
+    "West Finchley": [],
+    "Woodside Park": [],
+    "Totteridge & Whetstone": [],
+    "High Barnet": [],
+    "Mill Hill East": []
   };
 
   const LINES = {
@@ -1157,6 +1203,10 @@
           wimbledonBarking: {
             label: 'Wimbledon – Barking',
             stations: [...wimbledonArm.slice().reverse(), ...trunk, ...eastCore]
+          },
+          wimbledonUpminster: {
+            label: 'Wimbledon – Upminster',
+            stations: [...wimbledonArm.slice().reverse(), ...trunk, ...eastCore, ...upminsterExt]
           },
           wimbledonEdgware: {
             label: 'Wimbledon – Edgware Road',
@@ -1341,6 +1391,97 @@
           uxbridge: { label: 'Uxbridge – Cockfosters', stations: [...uxbridgeArm.slice().reverse(), ...spine.slice(actonTownIdx)] },
           heathrowT4: { label: 'Heathrow Terminal 4 – Cockfosters', stations: [...terminal4Arm, ...spine] },
           heathrowT5: { label: 'Heathrow Terminal 5 – Cockfosters', stations: [...terminal5Arm, ...spine] }
+        }
+      };
+    })(),
+    // Northern: real topology is a genuine graph cycle — the Bank and
+    // Charing Cross branches diverge at Kennington and reconverge at
+    // Camden Town — which the branch-tree layout's parent→child segment
+    // tree structurally cannot represent (a station can't have two
+    // parents in a tree). Rather than force a misleading approximation
+    // (duplicating Camden Town/Euston as two disconnected tree nodes, or
+    // silently dropping one path from the diagram), this line uses the
+    // plain `linear` layout instead: it draws only the single currently-
+    // selected branch's own stations, with no "whole network, other
+    // branches dimmed" preview the way District/Metropolitan/Central/
+    // Piccadilly get. `buildLineRuntime`/`renderBranchRow` only look at
+    // `def.branches`, not `layout`, so branch selection works identically;
+    // the tradeoff is scoped entirely to the diagram's own richness, not
+    // gameplay. Exactly the 8 branches requested, matching the real
+    // service pattern: Battersea Power Station trains always run via the
+    // Charing Cross branch (never Bank — hence no "via" qualifier on
+    // those two), and every Bank/Charing Cross combination also comes in
+    // an Edgware/High Barnet/Mill Hill East northern-branch variant.
+    // Every station verified against its own Wikipedia infobox.
+    northern: (function(){
+      const southSpine = [
+        "Morden","South Wimbledon","Colliers Wood","Tooting Broadway","Tooting Bec","Balham",
+        "Clapham South","Clapham Common","Clapham North","Stockwell","Oval","Kennington"
+      ];
+      const batterseaArm = ["Nine Elms","Battersea Power Station"];
+      const bankMiddle = [
+        "Elephant & Castle","Borough","London Bridge","Bank","Moorgate","Old Street","Angel",
+        "King's Cross St. Pancras","Euston"
+      ];
+      // Mornington Crescent is served only by Charing Cross branch trains
+      // — Bank branch trains run Euston to Camden Town direct
+      const charingCrossMiddle = [
+        "Waterloo","Embankment","Charing Cross","Leicester Square","Tottenham Court Road",
+        "Goodge Street","Warren Street","Euston","Mornington Crescent"
+      ];
+      const edgwareArm = [
+        "Chalk Farm","Belsize Park","Hampstead","Golders Green","Brent Cross","Hendon Central",
+        "Colindale","Burnt Oak","Edgware"
+      ];
+      const highBarnetArm = [
+        "Kentish Town","Tufnell Park","Archway","Highgate","East Finchley","Finchley Central",
+        "West Finchley","Woodside Park","Totteridge & Whetstone","High Barnet"
+      ];
+      // Mill Hill East is a genuine dead-end spur off Finchley Central,
+      // not a stop on the way to High Barnet
+      const toFinchleyCentral = highBarnetArm.slice(0, highBarnetArm.indexOf('Finchley Central') + 1);
+
+      return {
+        id: 'northern',
+        label: 'Northern',
+        color: '#000000',
+        layout: 'linear',
+        spurCount: 0,
+        loopClosure: [],
+        defaultBranch: 'mordenHighBarnetBank',
+        branches: {
+          batterseaEdgware: {
+            label: 'Battersea Power Station – Edgware',
+            stations: [...batterseaArm.slice().reverse(), "Kennington", ...charingCrossMiddle, "Camden Town", ...edgwareArm]
+          },
+          batterseaHighBarnet: {
+            label: 'Battersea Power Station – High Barnet',
+            stations: [...batterseaArm.slice().reverse(), "Kennington", ...charingCrossMiddle, "Camden Town", ...highBarnetArm]
+          },
+          mordenEdgwareBank: {
+            label: 'Morden – Edgware via Bank',
+            stations: [...southSpine, ...bankMiddle, "Camden Town", ...edgwareArm]
+          },
+          mordenMillHillEastBank: {
+            label: 'Morden – Mill Hill East via Bank',
+            stations: [...southSpine, ...bankMiddle, "Camden Town", ...toFinchleyCentral, "Mill Hill East"]
+          },
+          mordenHighBarnetBank: {
+            label: 'Morden – High Barnet via Bank',
+            stations: [...southSpine, ...bankMiddle, "Camden Town", ...highBarnetArm]
+          },
+          mordenEdgwareCharingCross: {
+            label: 'Morden – Edgware via Charing Cross',
+            stations: [...southSpine, ...charingCrossMiddle, "Camden Town", ...edgwareArm]
+          },
+          mordenMillHillEastCharingCross: {
+            label: 'Morden – Mill Hill East via Charing Cross',
+            stations: [...southSpine, ...charingCrossMiddle, "Camden Town", ...toFinchleyCentral, "Mill Hill East"]
+          },
+          mordenHighBarnetCharingCross: {
+            label: 'Morden – High Barnet via Charing Cross',
+            stations: [...southSpine, ...charingCrossMiddle, "Camden Town", ...highBarnetArm]
+          }
         }
       };
     })(),
@@ -2093,6 +2234,7 @@
   $('lineMetropolitanBtn').addEventListener('click', function(){ setLine('metropolitan'); });
   $('lineCentralBtn').addEventListener('click', function(){ setLine('central'); });
   $('linePiccadillyBtn').addEventListener('click', function(){ setLine('piccadilly'); });
+  $('lineNorthernBtn').addEventListener('click', function(){ setLine('northern'); });
 
   // ---- secret: "The Drain" ----
   // a nearly-invisible drain-cover dot hides in the footer; clicking it

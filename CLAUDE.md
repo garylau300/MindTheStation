@@ -184,10 +184,22 @@ catch.
   lines' own interchange data (Finsbury Park/Piccadilly Circus/Ealing Common/Acton
   Town/Barons Court/Earl's Court/Holborn were all missing their *own* line's self-badge,
   surfaced only once Piccadilly's cross-reference made them into checked pairs).
-- **Northern** is not yet built and **needs a real architecture decision first**: its
-  Bank/Charing Cross branches diverge at Camden Town and *rejoin* at Kennington — a
-  genuine graph cycle the current parent→child `branch-tree` model can't represent.
-  Plan this explicitly before implementing.
+- **Northern** (52 stations) — the architecture decision flagged above was made: its real
+  topology (Bank/Charing Cross branches diverge at Kennington and rejoin at Camden Town —
+  a genuine graph cycle) can't be represented as the `branch-tree` layout's parent→child
+  segment tree (a station can't have two parents in a tree), so Northern uses the plain
+  `linear` layout instead. It draws only the single currently-selected branch's own
+  stations — no "whole network, other branches dimmed" preview the way District/
+  Metropolitan/Central/Piccadilly get, since any tree-shaped approximation of a real cycle
+  would have to either duplicate Camden Town/Euston as disconnected nodes or silently drop
+  one path from the diagram. `buildLineRuntime`/`renderBranchRow` only look at
+  `def.branches`, not `layout`, so branch selection works identically — the tradeoff is
+  scoped entirely to diagram richness, not gameplay. Exactly 8 branches, matching the real
+  service pattern: Battersea Power Station – Edgware, Battersea Power Station – High
+  Barnet, and Morden – {Edgware, Mill Hill East, High Barnet} × {via Bank, via Charing
+  Cross}. Battersea trains always run via the Charing Cross branch in reality (never
+  Bank), hence no "via" qualifier on those two. Every station verified against its own
+  Wikipedia infobox, same discipline as every other line.
 - Elizabeth line, DLR, and London Overground are discussed future extensions (see
   PROJECT_HISTORY.md §7) — Elizabeth needs its own (non-red-circle/blue-bar) roundel
   treatment when built; Overground is scoped as its own separate project phase.
