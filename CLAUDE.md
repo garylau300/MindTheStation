@@ -146,9 +146,34 @@ catch.
   raw station array position. Always go through `terminusNames()` / `journeyIndices`.
 - **Branch-tree geometry (`layout: 'branch-tree'`)**: a new branch arm must never point in a
   direction that could overlap the spine's own extent or another branch. Before editing
-  `segments` for District/Metropolitan/Central, verify with `npm test` (the geometry suite
-  now does the pairwise-distance check that used to be a throwaway Node script) — don't
-  just eyeball it.
+  `segments` for District/Metropolitan/Central/Northern, verify with `npm test` (the
+  geometry suite now does the pairwise-distance check that used to be a throwaway Node
+  script) — don't just eyeball it.
+- **A real graph cycle (two spine stations connected by two different paths) can't be a
+  plain parent→child segment — use `loopRect` instead**, the same mechanism Central's real
+  Hainault loop and Northern's real Bank/Charing Cross divergence both use. If one of the
+  two paths shares a named station with the spine itself (Northern's Euston sits on both
+  the spine's Bank route and the loop's Charing Cross route), list it in the loop's own
+  `stations` array too (at its real position in the sequence) rather than omitting it —
+  `setupGeometry()`'s loopRect handling recognizes any loop station that already has a
+  computed position as a **pass-through** and reuses that exact single dot instead of
+  creating a second one, so it renders once, shared, at its one real position, with edges
+  from both routes meeting there. (An earlier version of this omitted the shared station
+  entirely to sidestep the double-position problem — reused-position pass-through is the
+  more accurate fix once you actually want the shared station visible on the diagram.)
+  The pass-through's own position is fixed by wherever it sits on the spine, not free to
+  align with its loop neighbors, so the one edge connecting into it from the loop side may
+  not be perfectly rectilinear — `loopRect.allowedDiagonals` documents exactly how many
+  edges that's expected to affect (Northern: 1; every other loopRect line defaults to 0,
+  enforced by the geometry suite).
+- **`loopRect`'s closing edge can drift off-axis from float rounding, not just a config
+  mistake.** `acrossSpacing = chordX / acrossCount` isn't always an exact float (e.g.
+  `160/6`), and accumulating it via repeated subtraction across several stations can leave
+  the last "across" station a few `1e-14` units short of the target `x` — enough for the
+  geometry suite's strict `a.x !== b.x` diagonal check to fail even though the line is
+  visually dead straight. Fixed once in `setupGeometry()` by snapping to the exact target
+  `x` on the last across-step rather than trusting the accumulated float; don't reintroduce
+  a similar accumulate-by-subtraction pattern for a rectilinear edge without the same snap.
 - **New line/station added → run `npm test`.** The interchange suite catches missing
   badges mechanically; this caught real gaps by hand every single time historically (Bank
   had no interchange entry at all; Bond Street/Stratford were missing Jubilee badges).
@@ -184,22 +209,60 @@ catch.
   lines' own interchange data (Finsbury Park/Piccadilly Circus/Ealing Common/Acton
   Town/Barons Court/Earl's Court/Holborn were all missing their *own* line's self-badge,
   surfaced only once Piccadilly's cross-reference made them into checked pairs).
-- **Northern** (52 stations) — the architecture decision flagged above was made: its real
-  topology (Bank/Charing Cross branches diverge at Kennington and rejoin at Camden Town —
-  a genuine graph cycle) can't be represented as the `branch-tree` layout's parent→child
-  segment tree (a station can't have two parents in a tree), so Northern uses the plain
-  `linear` layout instead. It draws only the single currently-selected branch's own
-  stations — no "whole network, other branches dimmed" preview the way District/
-  Metropolitan/Central/Piccadilly get, since any tree-shaped approximation of a real cycle
-  would have to either duplicate Camden Town/Euston as disconnected nodes or silently drop
-  one path from the diagram. `buildLineRuntime`/`renderBranchRow` only look at
-  `def.branches`, not `layout`, so branch selection works identically — the tradeoff is
-  scoped entirely to diagram richness, not gameplay. Exactly 8 branches, matching the real
-  service pattern: Battersea Power Station – Edgware, Battersea Power Station – High
-  Barnet, and Morden – {Edgware, Mill Hill East, High Barnet} × {via Bank, via Charing
-  Cross}. Battersea trains always run via the Charing Cross branch in reality (never
-  Bank), hence no "via" qualifier on those two. Every station verified against its own
-  Wikipedia infobox, same discipline as every other line.
+- **Northern** (52 stations) — `branch-tree` layout, per explicit instruction: the main
+  horizontal spine is High Barnet (left) – Morden (right), routed via Bank in the middle
+  section. Real topology is a genuine graph cycle — Bank and Charing Cross branches
+  diverge at Kennington and reconverge at Camden Town — which a plain parent→child segment
+  tree can't represent directly (a station can't have two parents in a tree). Resolved the
+  same way Central's real Hainault loop is: the Charing Cross section is a `loopRect`, a
+  rectilinear detour connecting the same two named spine stations (Kennington, Camden
+  Town) that the Bank section already passes through directly as part of the spine. This
+  gets the full "whole network, other branches dimmed" preview like every other
+  branch-tree line — verified the loop and every arm highlight/dim correctly per selected
+  branch (e.g. selecting a Charing Cross branch lights up the loop and dims the High
+  Barnet side of the spine, and vice versa for a Bank branch). Per explicit instruction,
+  the loop's `downCount`/`acrossCount` are tuned to `1`/`6` (not the initial `3`/`2`) so it
+  drops only one station on the Kennington side, with most of the rest drawn horizontal
+  rather than as a squarer box. Don't read `downCount`/`acrossCount`/`(loopStations.length
+  - downCount - acrossCount)` as literally "how many stations render on each named side"
+  without accounting for the closing-corner overlap: the rectilinear box construction
+  always lands the *last* across-station in the same x column as whatever it's closing
+  on, so a named "up" station stacks on top of that in the same column — visually more
+  crowded there than the raw counts suggest.
+  The Edgware and Battersea arms are both drawn as an L rather than a straight vertical
+  stub, per explicit instruction — `edgwareDrop`/`batterseaDrop` (one station straight up
+  from the spine) then `edgwareLeftArm` (running left) / `batterseaRightArm` (running
+  right, since Kennington already sits at the network's right-hand end) — the same
+  two-segment pattern as Metropolitan's `uxbridgeDrop`/`uxbridgeArm`.
+  `edgwareDrop`'s spacing (40, wider than the arm's own 16) is deliberately oversized: at
+  16 it put `edgwareLeftArm`'s row close enough to `millHillEastArm`'s single station
+  (both landing on the same x column a grid-spacing convention away) to collide under the
+  geometry suite's threshold — a real instance of the "L-shaped branch-tree arm can
+  collide with an unrelated arm two rows away" case the Hard Rules above warn about, not
+  just a Morden/Charing-Cross-specific risk.
+  Morden itself stays a plain continuation of the horizontal trunk (not its own arm) —
+  an earlier attempt to pull it into an L off Kennington was reverted since it broke the
+  "High Barnet on the left, Morden on the right, one flat trunk" requirement; only the
+  Edgware/Battersea arms and the Charing Cross loop shape were meant to change, never the
+  trunk itself.
+  Euston is listed in the loop's own `stations` array (between Warren Street and
+  Mornington Crescent, its real position in the sequence) even though it's already a
+  spine station via the Bank route — `setupGeometry()`'s loopRect handling recognizes it
+  as a pass-through and reuses the exact same single dot rather than creating a second
+  one, per explicit instruction to show it as one stop, not two. The incoming edge from
+  Mornington Crescent can't be made perfectly rectilinear as a result (see
+  `allowedDiagonals` in the Hard Rules above) — a small, deliberate, documented exception,
+  not a bug. Gameplay is unaffected either way; every branch's own stop sequence (built
+  independently of the geometry tree) already included Euston correctly on both Bank and
+  Charing Cross branches before this.
+  Exactly 8 branches, matching the real service pattern: Battersea Power Station –
+  Edgware, Battersea Power Station – High Barnet, and Morden – {Edgware, Mill Hill East,
+  High Barnet} × {via Bank, via Charing Cross}. Battersea trains always run via the
+  Charing Cross branch in reality (never Bank), hence no "via" qualifier on those two.
+  Every station verified against its own Wikipedia infobox, same discipline as every other
+  line — including disambiguating a garbled AI-summarized source that briefly suggested
+  Mill Hill East was a through-station rather than the genuine dead-end spur off Finchley
+  Central it actually is.
 - Elizabeth line, DLR, and London Overground are discussed future extensions (see
   PROJECT_HISTORY.md §7) — Elizabeth needs its own (non-red-circle/blue-bar) roundel
   treatment when built; Overground is scoped as its own separate project phase.

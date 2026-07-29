@@ -1414,38 +1414,97 @@
     // an Edgware/High Barnet/Mill Hill East northern-branch variant.
     // Every station verified against its own Wikipedia infobox.
     northern: (function(){
-      const southSpine = [
-        "Morden","South Wimbledon","Colliers Wood","Tooting Broadway","Tooting Bec","Balham",
-        "Clapham South","Clapham Common","Clapham North","Stockwell","Oval","Kennington"
+      // Main horizontal spine, per explicit instruction: High Barnet (left)
+      // through to Morden (right), routed via Bank in the middle section
+      // (the historic original route). Real topology is a genuine graph
+      // cycle — Bank and Charing Cross diverge at Kennington and reconverge
+      // at Camden Town — which a plain parent→child segment tree can't
+      // represent directly. Resolved the same way Central's real Hainault
+      // loop is: the Charing Cross section is a `loopRect`, a rectilinear
+      // detour connecting the same two named spine stations (Kennington,
+      // Camden Town) that the Bank section already passes through directly.
+      // Euston is a real junction served by both the spine's Bank route and
+      // this loop's Charing Cross route, so it appears once in the loop's
+      // own `stations` list too — setupGeometry() treats a loop station
+      // that already has a computed position as a "pass-through" and reuses
+      // that exact single dot rather than drawing a second one. Not a
+      // station ever hidden from gameplay either way (every branch's own
+      // stop sequence below is unaffected by how the diagram draws it).
+      const highBarnetArm = [
+        "High Barnet","Totteridge & Whetstone","Woodside Park","West Finchley","Finchley Central",
+        "East Finchley","Highgate","Archway","Tufnell Park","Kentish Town"
       ];
-      const batterseaArm = ["Nine Elms","Battersea Power Station"];
-      const bankMiddle = [
-        "Elephant & Castle","Borough","London Bridge","Bank","Moorgate","Old Street","Angel",
-        "King's Cross St. Pancras","Euston"
+      const bankMiddleFromCamden = [
+        "Euston","King's Cross St. Pancras","Angel","Old Street","Moorgate","Bank","London Bridge",
+        "Borough","Elephant & Castle"
       ];
-      // Mornington Crescent is served only by Charing Cross branch trains
-      // — Bank branch trains run Euston to Camden Town direct
-      const charingCrossMiddle = [
-        "Waterloo","Embankment","Charing Cross","Leicester Square","Tottenham Court Road",
-        "Goodge Street","Warren Street","Euston","Mornington Crescent"
+      const southSpineFromKennington = [
+        "Oval","Stockwell","Clapham North","Clapham Common","Clapham South","Balham","Tooting Bec",
+        "Tooting Broadway","Colliers Wood","South Wimbledon","Morden"
       ];
+      const spine = [...highBarnetArm, "Camden Town", ...bankMiddleFromCamden, "Kennington", ...southSpineFromKennington];
+      const finchleyCentralIdx = spine.indexOf('Finchley Central');
+      const camdenTownIdx = spine.indexOf('Camden Town');
+      const kenningtonIdx = spine.indexOf('Kennington');
+
+      const millHillEastArm = ["Mill Hill East"];
       const edgwareArm = [
         "Chalk Farm","Belsize Park","Hampstead","Golders Green","Brent Cross","Hendon Central",
         "Colindale","Burnt Oak","Edgware"
       ];
-      const highBarnetArm = [
-        "Kentish Town","Tufnell Park","Archway","Highgate","East Finchley","Finchley Central",
-        "West Finchley","Woodside Park","Totteridge & Whetstone","High Barnet"
+      const batterseaArm = ["Nine Elms","Battersea Power Station"];
+      // Charing Cross branch stations for the loop detour, Kennington-
+      // adjacent first. Euston sits in the middle here even though it's
+      // already a spine station (see comment above) — setupGeometry()
+      // recognizes it as a "pass-through" and reuses its existing spine
+      // position instead of drawing a second dot for it.
+      const charingCrossLoop = [
+        "Waterloo","Embankment","Charing Cross","Leicester Square","Tottenham Court Road",
+        "Goodge Street","Warren Street","Euston","Mornington Crescent"
       ];
-      // Mill Hill East is a genuine dead-end spur off Finchley Central,
-      // not a stop on the way to High Barnet
-      const toFinchleyCentral = highBarnetArm.slice(0, highBarnetArm.indexOf('Finchley Central') + 1);
+
+      // Edgware drawn as an L: one step up from Camden Town (Chalk Farm),
+      // then left through the rest to Edgware — mirrors Metropolitan's
+      // Uxbridge L-shape (uxbridgeDrop/uxbridgeArm), per explicit instruction
+      // that it shouldn't just be a straight vertical stub.
+      const edgwareDrop = edgwareArm.slice(0, 1); // Chalk Farm
+      const edgwareLeftArm = edgwareArm.slice(1); // Belsize Park .. Edgware
+      // Battersea drawn as an L too, per explicit instruction — mirrored to
+      // the right instead of the left since Kennington already sits at the
+      // spine's right-hand end of the drawn network.
+      const batterseaDrop = batterseaArm.slice(0, 1); // Nine Elms
+      const batterseaRightArm = batterseaArm.slice(1); // Battersea Power Station
+
+      const segments = [
+        { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
+        { id:'millHillEastArm', stations: millHillEastArm, parent:'spine', parentIndex: finchleyCentralIdx, dx:0, dy:-1, spacing:22 },
+        { id:'edgwareDrop', stations: edgwareDrop, parent:'spine', parentIndex: camdenTownIdx, dx:0, dy:-1, spacing:40 },
+        { id:'edgwareLeftArm', stations: edgwareLeftArm, parent:'edgwareDrop', parentIndex:0, dx:-1, dy:0, spacing:16 },
+        { id:'batterseaDrop', stations: batterseaDrop, parent:'spine', parentIndex: kenningtonIdx, dx:0, dy:-1, spacing:26 },
+        { id:'batterseaRightArm', stations: batterseaRightArm, parent:'batterseaDrop', parentIndex:0, dx:1, dy:0, spacing:16 }
+      ];
+
+      // full station arrays for gameplay — independent of the geometry
+      // tree above, built directly from verified real sequences
+      const bankMiddle = bankMiddleFromCamden.slice().reverse(); // Kennington-adjacent first
+      const charingCrossMiddle = [
+        "Waterloo","Embankment","Charing Cross","Leicester Square","Tottenham Court Road",
+        "Goodge Street","Warren Street","Euston","Mornington Crescent"
+      ];
+      const highBarnetFull = highBarnetArm.slice().reverse(); // Camden-Town-adjacent first, ending High Barnet
+      const toFinchleyCentral = highBarnetFull.slice(0, highBarnetFull.indexOf('Finchley Central') + 1);
+      const southSpine = [...southSpineFromKennington.slice().reverse(), "Kennington"]; // Morden-first, ending Kennington
 
       return {
         id: 'northern',
         label: 'Northern',
         color: '#000000',
-        layout: 'linear',
+        layout: 'branch-tree',
+        segments: segments,
+        // allowedDiagonals: 1 — the Euston pass-through's incoming edge
+        // (from Mornington Crescent) can't stay perfectly rectilinear; see
+        // the pass-through comment in setupGeometry().
+        loopRect: { stations: charingCrossLoop, from: 'Kennington', to: 'Camden Town', downCount: 1, acrossCount: 6, downSpacing: 20, allowedDiagonals: 1 },
         spurCount: 0,
         loopClosure: [],
         defaultBranch: 'mordenHighBarnetBank',
@@ -1456,7 +1515,7 @@
           },
           batterseaHighBarnet: {
             label: 'Battersea Power Station – High Barnet',
-            stations: [...batterseaArm.slice().reverse(), "Kennington", ...charingCrossMiddle, "Camden Town", ...highBarnetArm]
+            stations: [...batterseaArm.slice().reverse(), "Kennington", ...charingCrossMiddle, "Camden Town", ...highBarnetFull]
           },
           mordenEdgwareBank: {
             label: 'Morden – Edgware via Bank',
@@ -1468,7 +1527,7 @@
           },
           mordenHighBarnetBank: {
             label: 'Morden – High Barnet via Bank',
-            stations: [...southSpine, ...bankMiddle, "Camden Town", ...highBarnetArm]
+            stations: [...southSpine, ...bankMiddle, "Camden Town", ...highBarnetFull]
           },
           mordenEdgwareCharingCross: {
             label: 'Morden – Edgware via Charing Cross',
@@ -1480,7 +1539,7 @@
           },
           mordenHighBarnetCharingCross: {
             label: 'Morden – High Barnet via Charing Cross',
-            stations: [...southSpine, ...charingCrossMiddle, "Camden Town", ...highBarnetArm]
+            stations: [...southSpine, ...charingCrossMiddle, "Camden Town", ...highBarnetFull]
           }
         }
       };
@@ -2441,23 +2500,46 @@
       if(LINE.def.loopRect){
         const { stations: loopStations, from, to, downCount, acrossCount, downSpacing } = LINE.def.loopRect;
         const p1 = globalPositions[from], p2 = globalPositions[to]; // p1: Woodford, p2: Leytonstone
-        const chordX = p1.x - p2.x; // horizontal distance to close the bottom side
+
+        // Optional: one "pass-through" station partway through the loop
+        // that's already drawn elsewhere in the network — a real junction
+        // shared with another route (Northern's Euston: served by both this
+        // loop's Charing Cross route and the spine's Bank route) rather
+        // than a fresh point this box computes. Its existing position (not
+        // `to`) becomes the across phase's target; any named stations after
+        // it are a short, separate dip back down to the loop's own row and
+        // up again to `to` — see `allowedDiagonals` below for the one edge
+        // this can't keep perfectly rectilinear.
+        const passIdx = loopStations.findIndex(name => globalPositions[name]);
+        const hasPassThrough = passIdx !== -1;
+        const acrossTarget = hasPassThrough ? globalPositions[loopStations[passIdx]] : p2;
+        const beforeCount = hasPassThrough ? passIdx : loopStations.length;
+        const afterCount = hasPassThrough ? loopStations.length - passIdx - 1 : 0;
+
+        const chordX = p1.x - acrossTarget.x; // horizontal distance to close the bottom side
         const acrossSpacing = chordX / acrossCount;
         // total drop must match on both sides so the bottom is level (no
         // slant): downCount steps down, then acrossCount+1 steps' worth
         // of vertical rise back up (the extra +1 accounts for closing
-        // the final gap up to p2, which isn't a named loop station)
-        const upSteps = loopStations.length - downCount - acrossCount; // stations on the "up" side
+        // the final gap up to the across target, which isn't itself a
+        // named loop station unless it's the pass-through)
+        const upSteps = beforeCount - downCount - acrossCount; // stations on the "up" side
         const totalDrop = downCount * downSpacing;
-        const upSpacing = totalDrop / (upSteps + 1);
+        const upSpacing = upSteps > 0 ? totalDrop / (upSteps + 1) : 0;
 
         let x = p1.x, y = p1.y;
         let prev = p1;
-        loopStations.forEach((name, i) => {
+        for(let i = 0; i < beforeCount; i++){
+          const name = loopStations[i];
           if(i < downCount){
             y += downSpacing; // straight down the right side
           } else if(i < downCount + acrossCount){
             x -= acrossSpacing; // straight across the bottom
+            // chordX/acrossCount isn't always an exact float (e.g. 160/6):
+            // snap the last across step to the target exactly so
+            // accumulated rounding error can't turn the closing edge into
+            // a diagonal.
+            if(i === downCount + acrossCount - 1) x = acrossTarget.x;
           } else {
             y -= upSpacing; // straight up the left side
           }
@@ -2466,7 +2548,22 @@
           outwardByName[name] = { dx: 0, dy: i < downCount ? 1 : (i < downCount+acrossCount ? 1 : -1) };
           networkEdges.push([prev, pt]);
           prev = pt;
-        });
+        }
+
+        if(hasPassThrough){
+          const passPt = globalPositions[loopStations[passIdx]]; // reuse, don't overwrite
+          networkEdges.push([prev, passPt]);
+          prev = passPt;
+          for(let k = 0; k < afterCount; k++){
+            const name = loopStations[passIdx + 1 + k];
+            const pt = { x: p2.x, y: p2.y + downSpacing * (k + 1) };
+            globalPositions[name] = pt;
+            outwardByName[name] = { dx: 0, dy: 1 };
+            networkEdges.push([prev, pt]);
+            prev = pt;
+          }
+        }
+
         networkEdges.push([prev, p2]);
       }
 

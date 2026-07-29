@@ -85,7 +85,14 @@ test('per-line diagram geometry has no station collisions or bad diagonals', asy
         const loopLen = line.def.loopRect.stations.length + 1; // +1: the final closing edge back to `to`
         const loopEdges = geo.networkEdges.slice(-loopLen);
         const diagonals = loopEdges.filter(([a, b]) => a.x !== b.x && a.y !== b.y);
-        assert.equal(diagonals.length, 0, lineId + ': loopRect must be strictly rectilinear, found diagonal edge(s): ' + JSON.stringify(diagonals));
+        // A loop with a "pass-through" station (a real junction reused from
+        // elsewhere in the network, e.g. Northern's Euston) can't keep every
+        // edge axis-aligned — the pass-through's own position is fixed by
+        // where it sits on the spine, not free to align with its loop
+        // neighbors. `allowedDiagonals` documents exactly how many edges
+        // that affects; every other line defaults to requiring zero.
+        const allowedDiagonals = line.def.loopRect.allowedDiagonals || 0;
+        assert.equal(diagonals.length, allowedDiagonals, lineId + ': loopRect rectilinear check failed (expected ' + allowedDiagonals + ' diagonal edge(s)), found: ' + JSON.stringify(diagonals));
       }
     });
   }
