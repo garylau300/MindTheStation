@@ -164,8 +164,26 @@ catch.
   The pass-through's own position is fixed by wherever it sits on the spine, not free to
   align with its loop neighbors, so the one edge connecting into it from the loop side may
   not be perfectly rectilinear — `loopRect.allowedDiagonals` documents exactly how many
-  edges that's expected to affect (Northern: 1; every other loopRect line defaults to 0,
-  enforced by the geometry suite).
+  edges that's expected to affect (Northern: 2; every other loopRect line defaults to 0,
+  enforced by the geometry suite). Two further optional fields tune how a pass-through
+  sits relative to the loop, both per explicit instruction for Northern's Euston:
+  `passThroughDy` nudges it off the spine's own row (mutating its shared position object
+  in place, so the spine's own edges on either side of it automatically follow) so it
+  visually sits between the spine and the loop rather than flush on the spine;
+  `beforeApproachOffset` keeps the station immediately before it (Warren Street) short of
+  landing directly underneath it (to its side instead) — folded into the across-phase's
+  own spacing target from the start, not patched on afterwards, since patching it on only
+  at the last step landed that station exactly on top of the previous one.
+- **A pass-through station breaks simple "both endpoints in the branch's station list"
+  edge highlighting — check for *consecutive* membership instead.** Northern's Euston is
+  a member of every branch's `stations` array (it's a real stop on both the Bank and
+  Charing Cross routes), but the spine's Camden Town–Euston edge is only actually
+  travelled by Bank-route branches; on a Charing Cross branch, Euston's real neighbours in
+  the sequence are Warren Street and Mornington Crescent, not Camden Town. `drawSeg`'s "on"
+  check in `drawRoutePreview()` builds a set of *consecutive* name-pairs from the current
+  branch's own `stations` array and checks pair membership, not just whether both station
+  names individually appear somewhere in it — the latter lit up Camden Town–Euston for
+  every branch regardless of which route it actually used.
 - **`loopRect`'s closing edge can drift off-axis from float rounding, not just a config
   mistake.** `acrossSpacing = chordX / acrossCount` isn't always an exact float (e.g.
   `160/6`), and accumulating it via repeated subtraction across several stations can leave
@@ -249,12 +267,22 @@ catch.
   Mornington Crescent, its real position in the sequence) even though it's already a
   spine station via the Bank route — `setupGeometry()`'s loopRect handling recognizes it
   as a pass-through and reuses the exact same single dot rather than creating a second
-  one, per explicit instruction to show it as one stop, not two. The incoming edge from
-  Mornington Crescent can't be made perfectly rectilinear as a result (see
-  `allowedDiagonals` in the Hard Rules above) — a small, deliberate, documented exception,
-  not a bug. Gameplay is unaffected either way; every branch's own stop sequence (built
-  independently of the geometry tree) already included Euston correctly on both Bank and
-  Charing Cross branches before this.
+  one, per explicit instruction to show it as one stop, not two. Per a follow-up
+  instruction, that shared dot is also nudged 10 units down off the spine's own row
+  (`loopRect.passThroughDy`) so it visually sits between the spine and the loop rather
+  than flush on the spine, with Warren Street pulled 24 units to its right
+  (`loopRect.beforeApproachOffset`) rather than sitting directly beneath it — together
+  reading as the point where the Bank and Charing Cross routes, both having called there,
+  split apart again toward Camden Town. This costs two edges their perfect
+  rectilinearity (Warren Street's approach, and Mornington Crescent's; see
+  `allowedDiagonals` in the Hard Rules above) — small, deliberate, documented exceptions,
+  not a bug. The highlighting had its own related fix: the Camden Town–Euston edge used to
+  light up for every branch (Euston is a member of every branch's station list), even
+  Charing Cross ones that never actually travel it — `drawRoutePreview()` now checks
+  *consecutive* pair membership in the current branch's own sequence instead of simple
+  membership (see the Hard Rules bullet above). Gameplay is unaffected by any of this;
+  every branch's own stop sequence (built independently of the geometry tree) already
+  included Euston correctly on both Bank and Charing Cross branches before it.
   Exactly 8 branches, matching the real service pattern: Battersea Power Station –
   Edgware, Battersea Power Station – High Barnet, and Morden – {Edgware, Mill Hill East,
   High Barnet} × {via Bank, via Charing Cross}. Battersea trains always run via the

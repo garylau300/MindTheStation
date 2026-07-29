@@ -1501,10 +1501,15 @@
         color: '#000000',
         layout: 'branch-tree',
         segments: segments,
-        // allowedDiagonals: 1 — the Euston pass-through's incoming edge
-        // (from Mornington Crescent) can't stay perfectly rectilinear; see
-        // the pass-through comment in setupGeometry().
-        loopRect: { stations: charingCrossLoop, from: 'Kennington', to: 'Camden Town', downCount: 1, acrossCount: 6, downSpacing: 20, allowedDiagonals: 1 },
+        // passThroughDy: 10 — nudges Euston down off the spine's own row so
+        // it visually sits between the spine and this loop's row, per
+        // explicit instruction. beforeApproachOffset: 24 — keeps Warren
+        // Street to the right of Euston instead of directly beneath it,
+        // also per explicit instruction. allowedDiagonals: 2 — the incoming
+        // edge from Warren Street and the outgoing edge to Mornington
+        // Crescent can't stay perfectly rectilinear as a result; see the
+        // pass-through comment in setupGeometry().
+        loopRect: { stations: charingCrossLoop, from: 'Kennington', to: 'Camden Town', downCount: 1, acrossCount: 6, downSpacing: 20, passThroughDy: 10, beforeApproachOffset: 24, allowedDiagonals: 2 },
         spurCount: 0,
         loopClosure: [],
         defaultBranch: 'mordenHighBarnetBank',
@@ -2498,7 +2503,7 @@
       segmentDefs.forEach(s => getSegPos(s.id));
 
       if(LINE.def.loopRect){
-        const { stations: loopStations, from, to, downCount, acrossCount, downSpacing } = LINE.def.loopRect;
+        const { stations: loopStations, from, to, downCount, acrossCount, downSpacing, passThroughDy, beforeApproachOffset } = LINE.def.loopRect;
         const p1 = globalPositions[from], p2 = globalPositions[to]; // p1: Woodford, p2: Leytonstone
 
         // Optional: one "pass-through" station partway through the loop
@@ -2508,15 +2513,31 @@
         // than a fresh point this box computes. Its existing position (not
         // `to`) becomes the across phase's target; any named stations after
         // it are a short, separate dip back down to the loop's own row and
-        // up again to `to` — see `allowedDiagonals` below for the one edge
+        // up again to `to` — see `allowedDiagonals` below for the edges
         // this can't keep perfectly rectilinear.
         const passIdx = loopStations.findIndex(name => globalPositions[name]);
         const hasPassThrough = passIdx !== -1;
+        if(hasPassThrough && passThroughDy){
+          // Nudge the pass-through down off the spine's own row, per
+          // explicit instruction, so it visually sits between the spine
+          // and this loop's row rather than sitting flush on the spine —
+          // mutating the shared position object in place means every edge
+          // already referencing it (the spine's own edges on either side,
+          // computed earlier by getSegPos) automatically follows.
+          globalPositions[loopStations[passIdx]].y += passThroughDy;
+        }
         const acrossTarget = hasPassThrough ? globalPositions[loopStations[passIdx]] : p2;
         const beforeCount = hasPassThrough ? passIdx : loopStations.length;
         const afterCount = hasPassThrough ? loopStations.length - passIdx - 1 : 0;
+        // The station immediately before the pass-through approaches it
+        // from `beforeApproachOffset` units short (Warren Street sitting to
+        // the right of Euston rather than directly beneath it) — folded
+        // into the target here so every across step is evenly spaced
+        // right up to that final position, not just patched on afterwards
+        // (which would otherwise land it on top of the previous station).
+        const acrossFinalX = acrossTarget.x + (beforeApproachOffset || 0);
 
-        const chordX = p1.x - acrossTarget.x; // horizontal distance to close the bottom side
+        const chordX = p1.x - acrossFinalX; // horizontal distance to close the bottom side
         const acrossSpacing = chordX / acrossCount;
         // total drop must match on both sides so the bottom is level (no
         // slant): downCount steps down, then acrossCount+1 steps' worth
@@ -2538,8 +2559,11 @@
             // chordX/acrossCount isn't always an exact float (e.g. 160/6):
             // snap the last across step to the target exactly so
             // accumulated rounding error can't turn the closing edge into
-            // a diagonal.
-            if(i === downCount + acrossCount - 1) x = acrossTarget.x;
+            // a diagonal. `beforeApproachOffset`, per explicit instruction,
+            // deliberately keeps this station short of the pass-through's
+            // own x (Warren Street sitting to the right of Euston) instead
+            // of landing flush on it.
+            if(i === downCount + acrossCount - 1) x = acrossFinalX;
           } else {
             y -= upSpacing; // straight up the left side
           }
@@ -2634,15 +2658,28 @@
     if(geo.networkStations){
       // branch-tree lines: the full network (every branch) is already
       // computed, regardless of which single branch is currently selected.
-      // An edge counts as "on" the current branch only if both of its
-      // endpoints are actually stations on it — shared trunk segments
+      // An edge counts as "on" the current branch only if its two endpoints
+      // are actually *consecutive* stops on it — shared trunk segments
       // light up for every branch that uses them, diverging arms don't.
+      // This has to be pair-based rather than simple membership: a
+      // pass-through junction (Northern's Euston, served by both the spine's
+      // Bank route and the Charing Cross loop) is a member of every branch's
+      // own station list, but the spine's Camden Town–Euston edge is only
+      // ever actually travelled by Bank-route branches — on a Charing Cross
+      // branch, Euston's real neighbours are Warren Street and Mornington
+      // Crescent, not Camden Town, even though Camden Town is also in that
+      // branch's station list (just not adjacent to Euston within it).
+      const pairKey = (a, b) => a < b ? a+'↔'+b : b+'↔'+a;
+      const routePairs = new Set();
+      for(let i = 0; i < LINE.stations.length - 1; i++){
+        routePairs.add(pairKey(LINE.stations[i], LINE.stations[i+1]));
+      }
       const posToName = new Map();
       geo.networkStations.forEach(s => posToName.set(s.x+','+s.y, s.name));
       geo.networkEdges.forEach(([a,b]) => {
         const nameA = posToName.get(a.x+','+a.y);
         const nameB = posToName.get(b.x+','+b.y);
-        drawSeg(a, b, routeSet.has(nameA) && routeSet.has(nameB));
+        drawSeg(a, b, routePairs.has(pairKey(nameA, nameB)));
       });
       stations = geo.networkStations;
     } else {
