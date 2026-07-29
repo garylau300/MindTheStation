@@ -76,6 +76,30 @@ for (const lineId of ['victoria', 'district', 'central', 'piccadilly']) {
   });
 }
 
+// The .wrap container widens in steps on larger viewports (tablet
+// landscape and up) so a laptop/desktop screen isn't left with the
+// mobile-era 720px cap and huge dead margins on either side — capped
+// short of full-bleed so it doesn't get uncomfortably wide on very large
+// monitors either. This locks in both the step values and the "never
+// causes overflow at any width" guarantee.
+test('page widens responsively on larger viewports without ever overflowing', async ({ page }) => {
+  const EXPECTED = [
+    { width: 375, wrap: 343 },  // phone: viewport minus body's 16px side padding, well under the 720px base cap
+    { width: 768, wrap: 720 },  // tablet: base cap
+    { width: 1024, wrap: 960 }, // laptop: first breakpoint (900px+)
+    { width: 1440, wrap: 1180 } // desktop: second breakpoint (1300px+)
+  ];
+  for (const { width, wrap } of EXPECTED) {
+    await page.setViewportSize({ width, height: 900 });
+    const info = await page.evaluate(() => ({
+      wrapWidth: document.querySelector('.wrap').getBoundingClientRect().width,
+      overflow: document.body.scrollWidth - document.body.clientWidth
+    }));
+    expect(info.overflow).toBeLessThanOrEqual(1); // allow 1px of sub-pixel rounding
+    expect(Math.round(info.wrapWidth)).toBe(wrap);
+  }
+});
+
 test('station dot render size stays consistent (within 2x) across a compact and a wide line', async ({ page }) => {
   const diameters = {};
   for (const lineId of ['victoria', 'district']) {

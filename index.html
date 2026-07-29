@@ -70,6 +70,15 @@
   }
 
   .wrap{ max-width: 720px; margin: 0 auto; }
+  /* Wider viewports (tablet landscape and up) get progressively more
+     breathing room instead of staying capped at the mobile-era 720px and
+     leaving most of a laptop/desktop screen as dead margin — capped short
+     of full-bleed so text lines and the diagram don't get uncomfortably
+     wide on very large monitors. The diagram SVG (width:92%, no separate
+     cap) and every clamp()-based font-size scale up along with this
+     automatically; nothing else needs to change per breakpoint. */
+  @media (min-width: 900px){ .wrap{ max-width: 960px; } }
+  @media (min-width: 1300px){ .wrap{ max-width: 1180px; } }
 
   header{ margin-bottom: 22px; }
   .roundel-row{ display:flex; align-items:center; gap:12px; margin-bottom: 18px; }
@@ -438,6 +447,7 @@
       <button type="button" class="pill" id="lineCentralBtn" data-line-id="central">Central — 43 stations</button>
       <button type="button" class="pill" id="linePiccadillyBtn" data-line-id="piccadilly">Piccadilly — 52 stations</button>
       <div class="pill soon">Northern — soon</div>
+      <div class="pill soon">Elizabeth — soon</div>
     </div>
   </header>
 

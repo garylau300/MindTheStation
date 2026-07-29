@@ -46,8 +46,11 @@ fixed-height sizing approach). Run it with `npm run test:e2e` (or `npm run test:
 both suites); it needs a real browser so it isn't part of the default `npm test`. It checks:
 the P22 Underground font actually loads (not silently falling back to Cabin), no unexpected
 console/JS errors, no horizontal overflow on the diagram card (the "no scroll boxes" rule
-above), and dot render size stays within 2x between a compact and a wide line. Two console
-messages are deliberately filtered as expected-not-broken: Chrome's notice that
+above), dot render size stays within 2x between a compact and a wide line, and `.wrap`'s
+responsive width breakpoints (720px base / 960px at 900px+ / 1180px at 1300px+, chosen so
+larger screens use more space instead of staying capped at the mobile-era 720px) hit their
+exact expected values at phone/tablet/laptop/desktop widths with zero overflow at any of
+them. Two console messages are deliberately filtered as expected-not-broken: Chrome's notice that
 `frame-ancestors` is ignored when delivered via `<meta>` (a real CSP limitation — the
 `<meta>` tag in `index.html` is a fallback for when the file is opened directly, e.g.
 `file://` or these very e2e tests; `vercel.json` ships the same policy as a real HTTP
