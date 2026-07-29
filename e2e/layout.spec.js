@@ -139,9 +139,14 @@ test('station popup stays compact, not a large bubble', async ({ page }) => {
   expect(box.height).toBeLessThan(120);
 });
 
-test('station dot render size stays consistent (within 2x) across a compact and a wide line', async ({ page }) => {
+// Widest real viewport this matters at: .wrap hits its largest breakpoint
+// (1180px) at 1300px+, which is exactly where a fixed/small-scale viewBox
+// (like Circle's spur-loop, or a short linear line) gets stretched hardest
+// relative to a big auto-computed branch-tree viewBox (like District's).
+test('station dot render size stays consistent (within 2x) across compact, wide, and loop lines', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   const diameters = {};
-  for (const lineId of ['victoria', 'district']) {
+  for (const lineId of ['victoria', 'district', 'circle']) {
     await page.click('.pill[data-line-id="' + lineId + '"]');
     diameters[lineId] = await page.evaluate(() => {
       const circle = document.querySelector('#routePreviewSvg circle');
@@ -152,5 +157,5 @@ test('station dot render size stays consistent (within 2x) across a compact and 
     expect(d).toBeGreaterThan(4); // catches a severe squeeze, not just any variation
   }
   const ratio = Math.max(...Object.values(diameters)) / Math.min(...Object.values(diameters));
-  expect(ratio).toBeLessThan(2); // the historical bug measured ~2.14x (4.71px vs 10.08px)
+  expect(ratio).toBeLessThan(2); // Circle's spur-loop once measured ~2x bigger than other lines here
 });

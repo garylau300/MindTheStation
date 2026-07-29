@@ -99,6 +99,16 @@ committing any change to `index.html`.
   text-scale-up block briefly was) silently loses to a later base rule even while its media
   condition matches. The fix: put breakpoint overrides last in the stylesheet, after every rule
   they touch — see the block just before `</style>` in `index.html`.
+- **A layout's internal viewBox scale (`r` for `spur-loop`, `vbW`/`vbH` for `linear`, segment
+  `spacing` for `branch-tree`) has to be picked relative to how wide `.wrap` can actually get, not
+  just relative to that one line's own station count.** `.diagram-card svg` stretches to a fixed
+  *percentage* of its container (deliberately — see the CSS-only sizing rule below), so a layout
+  whose viewBox is small/fixed regardless of container width (Circle's old `r:75`) gets stretched
+  disproportionately harder than a layout whose viewBox grows with real content (a long
+  branch-tree spine) once `.wrap` is allowed to grow — station dots ended up ~2x bigger on Circle
+  than on every other line at the widest breakpoint. Sanity-check a layout constant by comparing
+  actual rendered dot `getBoundingClientRect()` width across several lines at a wide viewport
+  (1440px), not just by eyeballing the diagram at default size.
 - **Never derive "the true start/end station" from `LINE.stations[0]` / `[N-1]`.** For loop
   lines (Circle), the real journey start/end depends on `journeyIndices` (loop-aware), not
   raw station array position. Always go through `terminusNames()` / `journeyIndices`.
