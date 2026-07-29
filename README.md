@@ -26,10 +26,12 @@ npm install
 npm test
 ```
 
-`npm test` runs the full regression suite (geometry, gameplay, interchange data — see
-`CLAUDE.md` for what each one checks) via Node's built-in test runner against the real
-`index.html`, driven through `jsdom`. It also runs automatically on every push and pull
-request via GitHub Actions (`.github/workflows/test.yml`).
+`npm test` runs the full regression suite (geometry, gameplay, interchange data, static
+security checks — see `CLAUDE.md` for what each one checks) via Node's built-in test
+runner against the real `index.html`, driven through `jsdom`. `npm run test:e2e` runs a
+separate real-browser suite (Playwright) for CSS-layout-dependent checks jsdom can't do;
+`npm run test:all` runs both. All of this runs automatically on every push and pull request
+via GitHub Actions (`.github/workflows/test.yml`).
 
 Run `npm test` before committing any change to `index.html`.
 

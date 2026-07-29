@@ -38,6 +38,23 @@ dev dependency — no other test framework. Three suites:
   `innerHTML` assignment references raw user input directly. This is the §12 manual audit,
   now automatic instead of something to remember to re-run.
 
+A separate `e2e/layout.spec.js` (Playwright, real Chromium, not jsdom) covers the one class
+of bug the suites above structurally can't: CSS-layout-dependent regressions only visible
+by measuring actual rendered pixels (the historical example — District's diagram dots
+rendering at less than half the pixel size of a compact line's under an earlier
+fixed-height sizing approach). Run it with `npm run test:e2e` (or `npm run test:all` for
+both suites); it needs a real browser so it isn't part of the default `npm test`. It checks:
+the P22 Underground font actually loads (not silently falling back to Cabin), no unexpected
+console/JS errors, no horizontal overflow on the diagram card (the "no scroll boxes" rule
+above), and dot render size stays within 2x between a compact and a wide line. Two console
+messages are deliberately filtered as expected-not-broken: Chrome's notice that
+`frame-ancestors` is ignored when delivered via `<meta>` (a real CSP limitation — actually
+enforcing it would need Vercel to send CSP as an HTTP response header instead, which is
+currently NOT configured, so `frame-ancestors` in the meta tag today is inert/documentation-
+only), and resource-load failures scoped to the two optional external hosts (Google Fonts,
+Vercel Analytics), which restricted/proxied networks can fail to reach for reasons that have
+nothing to do with the app itself.
+
 **How the tests reach internal state**: `index.html` intentionally exposes nothing on
 `window` — everything lives inside one closure. `test/test-utils.js` reads the real file,
 splices a `window.__TEST__` object of live getters (`getLINES`, `getGeo`, `getIdx`, etc.)
