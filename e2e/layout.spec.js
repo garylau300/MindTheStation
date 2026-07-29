@@ -65,7 +65,7 @@ test('page loads with no unexpected console/JS errors', async ({ page }) => {
 // deliberate product decision — this is the real-browser check that a
 // pure-CSS sizing regression (or a future line with an unusually wide
 // viewBox) hasn't reintroduced horizontal overflow.
-for (const lineId of ['victoria', 'district', 'central']) {
+for (const lineId of ['victoria', 'district', 'central', 'piccadilly']) {
   test('setup route-map preview never overflows horizontally: ' + lineId, async ({ page }) => {
     await page.click('.pill[data-line-id="' + lineId + '"]');
     const overflow = await page.evaluate(() => {

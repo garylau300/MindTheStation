@@ -436,7 +436,7 @@
       <button type="button" class="pill" id="lineDistrictBtn" data-line-id="district">District — 59 stations</button>
       <button type="button" class="pill" id="lineMetropolitanBtn" data-line-id="metropolitan">Metropolitan — 34 stations</button>
       <button type="button" class="pill" id="lineCentralBtn" data-line-id="central">Central — 43 stations</button>
-      <div class="pill soon">Piccadilly — soon</div>
+      <button type="button" class="pill" id="linePiccadillyBtn" data-line-id="piccadilly">Piccadilly — 52 stations</button>
       <div class="pill soon">Northern — soon</div>
     </div>
   </header>
@@ -675,7 +675,7 @@
     "Euston": [badge('northern','Northern'), badge('lioness','Lioness'), badge('nationalrail','National Rail')],
     "King's Cross St. Pancras": [badge('circle','Circle'), badge('hammersmithcity',"H&C"), badge('metropolitan','Metropolitan'), badge('northern','Northern'), badge('piccadilly','Piccadilly'), badge('victoria','Victoria'), badge('nationalrail','National Rail')],
     "Highbury & Islington": [badge('mildmay','Mildmay'), badge('windrush','Windrush'), badge('nationalrail','National Rail')],
-    "Finsbury Park": [badge('piccadilly','Piccadilly'), badge('nationalrail','National Rail')],
+    "Finsbury Park": [badge('victoria','Victoria'), badge('piccadilly','Piccadilly'), badge('nationalrail','National Rail')],
     "Seven Sisters": [badge('weaver','Weaver'), badge('nationalrail','National Rail')],
     "Tottenham Hale": [badge('nationalrail','National Rail')],
     "Blackhorse Road": [badge('suffragette','Suffragette')],
@@ -758,7 +758,7 @@
     "Warwick Avenue": [],
     "Marylebone": [badge('nationalrail','National Rail')],
     "Regent's Park": [],
-    "Piccadilly Circus": [badge('piccadilly','Piccadilly')],
+    "Piccadilly Circus": [badge('bakerloo','Bakerloo'), badge('piccadilly','Piccadilly')],
     "Charing Cross": [badge('northern','Northern'), badge('nationalrail','National Rail')],
     "Lambeth North": [],
     "Elephant & Castle": [badge('northern','Northern'), badge('nationalrail','National Rail')],
@@ -777,15 +777,15 @@
 
     // ---- District line ----
     "Ealing Broadway": [badge('central','Central'), badge('district','District'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
-    "Ealing Common": [badge('piccadilly','Piccadilly')],
-    "Acton Town": [badge('piccadilly','Piccadilly')],
+    "Ealing Common": [badge('district','District'), badge('piccadilly','Piccadilly')],
+    "Acton Town": [badge('district','District'), badge('piccadilly','Piccadilly')],
     "Chiswick Park": [],
     "Turnham Green": [badge('piccadilly','Piccadilly')],
     "Stamford Brook": [],
     "Ravenscourt Park": [],
-    "Barons Court": [badge('piccadilly','Piccadilly')],
+    "Barons Court": [badge('district','District'), badge('piccadilly','Piccadilly')],
     "West Kensington": [],
-    "Earl's Court": [badge('piccadilly','Piccadilly')],
+    "Earl's Court": [badge('district','District'), badge('piccadilly','Piccadilly')],
     "Upney": [],
     "Becontree": [],
     "Dagenham Heathway": [],
@@ -809,13 +809,17 @@
 
     // ---- Metropolitan line ----
     "West Harrow": [],
-    "Rayners Lane": [badge('piccadilly','Piccadilly')],
-    "Eastcote": [],
-    "Ruislip Manor": [],
-    "Ruislip": [],
-    "Ickenham": [],
-    "Hillingdon": [],
-    "Uxbridge": [badge('piccadilly','Piccadilly')],
+    "Rayners Lane": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
+    // Metropolitan and Piccadilly both stop at every station on this
+    // stretch (Eastcote–Hillingdon) — verified via each station's own
+    // Wikipedia service listing, not assumed from the branch sharing track
+    "Eastcote": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
+    "Ruislip Manor": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
+    "Ruislip": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
+    "Ickenham": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
+    "Hillingdon": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
+    // real dual terminus — also missing its own Metropolitan badge before now
+    "Uxbridge": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
     "North Harrow": [],
     "Pinner": [],
     "Northwood Hills": [],
@@ -844,7 +848,7 @@
     "Holland Park": [],
     "Lancaster Gate": [],
     "Tottenham Court Road": [badge('northern','Northern')],
-    "Holborn": [badge('piccadilly','Piccadilly')],
+    "Holborn": [badge('central','Central'), badge('piccadilly','Piccadilly')],
     "Chancery Lane": [],
     "St. Paul's": [],
     "Bethnal Green": [],
@@ -872,7 +876,48 @@
     // out-of-station interchange with the separate National Rail/Overground
     // Shepherd's Bush station on the West London Line — not the same
     // building as Shepherd's Bush Market (Circle/H&C), a third station
-    "Shepherd's Bush": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')]
+    "Shepherd's Bush": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
+
+    // ---- Piccadilly line ----
+    // Every station below verified against its own Wikipedia infobox
+    // (preceding/following station chain), not assumed from memory.
+    "Cockfosters": [],
+    "Oakwood": [],
+    "Southgate": [],
+    "Arnos Grove": [],
+    "Bounds Green": [],
+    "Wood Green": [],
+    "Turnpike Lane": [],
+    "Manor House": [],
+    "Arsenal": [],
+    "Holloway Road": [],
+    "Caledonian Road": [],
+    "Russell Square": [],
+    "Covent Garden": [],
+    "Leicester Square": [],
+    "Hyde Park Corner": [],
+    "Knightsbridge": [],
+    "North Ealing": [],
+    "Park Royal": [],
+    "Alperton": [],
+    "Sudbury Town": [],
+    "Sudbury Hill": [],
+    "South Harrow": [],
+    "South Ealing": [],
+    "Northfields": [],
+    "Boston Manor": [],
+    "Osterley": [],
+    "Hounslow East": [],
+    "Hounslow Central": [],
+    "Hounslow West": [],
+    "Hatton Cross": [],
+    // Heathrow Express + Elizabeth line both call at Terminals 2&3 and
+    // Terminal 5; Terminal 4's *tube* station is Piccadilly-only — the
+    // Elizabeth line's "Heathrow Terminal 4" stop is a separate, adjacent
+    // railway station on the mainline tunnel, not the same building
+    "Heathrow Terminals 2 & 3": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
+    "Heathrow Terminal 4": [],
+    "Heathrow Terminal 5": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')]
   };
 
   const LINES = {
@@ -1124,6 +1169,62 @@
           westRuislipHainault: { label: 'West Ruislip – Hainault (via Woodford)', stations: [...spine.slice(0, woodfordIdx+1), ...viaWoodford] },
           ealingEpping: { label: 'Ealing Broadway – Epping', stations: [...ealingArm.slice().reverse(), ...spine.slice(northActonIdx)] },
           ealingHainault: { label: 'Ealing Broadway – Hainault', stations: [...ealingArm.slice().reverse(), ...spine.slice(northActonIdx, spine.indexOf('Leytonstone')+1), ...viaRedbridge] }
+        }
+      };
+    })(),
+    // Piccadilly: Cockfosters–Acton Town is the single, junction-free
+    // spine (per Wikipedia, Cockfosters is a plain terminus with no
+    // branching). At Acton Town it splits into the Uxbridge branch and the
+    // Heathrow branch; the Heathrow branch splits again at Heathrow
+    // Terminals 2 & 3 into Terminal 4 and Terminal 5. In real service,
+    // Terminal 4 is actually a one-way loop (Hatton Cross → T4 → T2&3) and
+    // Terminal 5 a dead-end spur beyond T2&3 — simplified here to two
+    // simple branches sharing T2&3 as their common stop, since both are
+    // named termini for this trainer's purposes, not full round-trip
+    // service patterns. Station order/branching verified station-by-station
+    // against each station's own Wikipedia infobox (preceding/following
+    // service chain), not assumed from memory.
+    piccadilly: (function(){
+      const spine = [
+        "Cockfosters","Oakwood","Southgate","Arnos Grove","Bounds Green","Wood Green","Turnpike Lane",
+        "Manor House","Finsbury Park","Arsenal","Holloway Road","Caledonian Road","King's Cross St. Pancras",
+        "Russell Square","Holborn","Covent Garden","Leicester Square","Piccadilly Circus","Green Park",
+        "Hyde Park Corner","Knightsbridge","South Kensington","Gloucester Road","Earl's Court","Barons Court",
+        "Hammersmith","Acton Town"
+      ];
+      const uxbridgeArm = [
+        "Ealing Common","North Ealing","Park Royal","Alperton","Sudbury Town","Sudbury Hill","South Harrow",
+        "Rayners Lane","Eastcote","Ruislip Manor","Ruislip","Ickenham","Hillingdon","Uxbridge"
+      ];
+      const heathrowArm = [
+        "South Ealing","Northfields","Boston Manor","Osterley","Hounslow East","Hounslow Central",
+        "Hounslow West","Hatton Cross","Heathrow Terminals 2 & 3"
+      ];
+      const terminal4Arm = ["Heathrow Terminal 4"];
+      const terminal5Arm = ["Heathrow Terminal 5"];
+      const actonTownIdx = spine.indexOf('Acton Town');
+
+      const segments = [
+        { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
+        { id:'uxbridgeArm', stations: uxbridgeArm, parent:'spine', parentIndex: actonTownIdx, dx:0, dy:-1, spacing:16 },
+        { id:'heathrowArm', stations: heathrowArm, parent:'spine', parentIndex: actonTownIdx, dx:0, dy:1, spacing:16 },
+        { id:'terminal4Arm', stations: terminal4Arm, parent:'heathrowArm', parentIndex: heathrowArm.length-1, dx:-1, dy:1, spacing:22 },
+        { id:'terminal5Arm', stations: terminal5Arm, parent:'heathrowArm', parentIndex: heathrowArm.length-1, dx:1, dy:1, spacing:22 }
+      ];
+
+      return {
+        id: 'piccadilly',
+        label: 'Piccadilly',
+        color: '#003688',
+        layout: 'branch-tree',
+        segments: segments,
+        spurCount: 0,
+        loopClosure: [],
+        defaultBranch: 'uxbridge',
+        branches: {
+          uxbridge: { label: 'Uxbridge – Cockfosters', stations: [...uxbridgeArm.slice().reverse(), ...spine.slice().reverse()] },
+          heathrowT4: { label: 'Heathrow Terminal 4 – Cockfosters', stations: [...terminal4Arm, ...heathrowArm.slice().reverse(), ...spine.slice().reverse()] },
+          heathrowT5: { label: 'Heathrow Terminal 5 – Cockfosters', stations: [...terminal5Arm, ...heathrowArm.slice().reverse(), ...spine.slice().reverse()] }
         }
       };
     })(),
@@ -1844,6 +1945,7 @@
   $('lineDistrictBtn').addEventListener('click', function(){ setLine('district'); });
   $('lineMetropolitanBtn').addEventListener('click', function(){ setLine('metropolitan'); });
   $('lineCentralBtn').addEventListener('click', function(){ setLine('central'); });
+  $('linePiccadillyBtn').addEventListener('click', function(){ setLine('piccadilly'); });
 
   // ---- secret: "The Drain" ----
   // a nearly-invisible drain-cover dot hides in the footer; clicking it

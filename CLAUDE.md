@@ -113,10 +113,27 @@ committing any change to `index.html`.
 
 ## Roadmap context
 
-- Piccadilly and Northern are not yet built. **Northern needs a real architecture decision
-  first**: its Bank/Charing Cross branches diverge at Camden Town and *rejoin* at
-  Kennington — a genuine graph cycle the current parent→child `branch-tree` model can't
-  represent. Plan this explicitly before implementing.
+- **Piccadilly** (52 stations) — branch-tree, spine is Cockfosters–Acton Town (a
+  single, junction-free run per Wikipedia — Cockfosters is a plain terminus). Three
+  scoped branches, exactly as requested: Uxbridge–Cockfosters, Heathrow Terminal
+  4–Cockfosters, Heathrow Terminal 5–Cockfosters. The Heathrow branch splits again at
+  Heathrow Terminals 2 & 3 into Terminal 4 and Terminal 5 — both real terminal stubs
+  share T2&3 as their common stop, per explicit instruction that all Heathrow-bound
+  trains pass through it. **Simplified from real service pattern**: in reality Terminal 4
+  is a one-way loop (Hatton Cross → T4 → T2&3, no reverse-order return through T4) and
+  Terminal 5 is a dead-end spur beyond T2&3 requiring a reverse move to leave — this
+  trainer models both as simple two-way branch stubs off T2&3 instead, since round-trip
+  reversal isn't something any other line's branches model either. Station order and
+  branch topology were verified station-by-station against each station's own Wikipedia
+  infobox (preceding/following service listing), not assumed from memory or from the
+  branch-sharing-track alone — this caught several pre-existing gaps in already-shipped
+  lines' own interchange data (Finsbury Park/Piccadilly Circus/Ealing Common/Acton
+  Town/Barons Court/Earl's Court/Holborn were all missing their *own* line's self-badge,
+  surfaced only once Piccadilly's cross-reference made them into checked pairs).
+- **Northern** is not yet built and **needs a real architecture decision first**: its
+  Bank/Charing Cross branches diverge at Camden Town and *rejoin* at Kennington — a
+  genuine graph cycle the current parent→child `branch-tree` model can't represent.
+  Plan this explicitly before implementing.
 - Elizabeth line, DLR, and London Overground are discussed future extensions (see
   PROJECT_HISTORY.md §7) — Elizabeth needs its own (non-red-circle/blue-bar) roundel
   treatment when built; Overground is scoped as its own separate project phase.
