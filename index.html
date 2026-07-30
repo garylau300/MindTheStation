@@ -205,6 +205,13 @@
   .live-dot.ticking{ opacity:1; animation: dotpulse 1s ease-in-out infinite; }
   @keyframes dotpulse{ 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.5); opacity:.5; } }
 
+  #statBest.new-best{ animation: statBestPop .7s ease; }
+  @keyframes statBestPop{
+    0%{ color: var(--green); }
+    35%{ color: var(--green); transform: scale(1.22); }
+    100%{ color: inherit; transform: scale(1); }
+  }
+
   .card{ position:relative; background: var(--panel); border:1px solid var(--line); border-top: 3px solid var(--line-accent); border-radius: var(--radius); padding: 26px 22px; margin-bottom: 18px; }
 
   .countdown-overlay{
@@ -332,8 +339,14 @@
   .wheel-anim-3{ transform-origin: 5.5px 35.8px; }
   .wheel-anim-4{ transform-origin: 15.5px 35.8px; }
 
-  .summary h2{ font-family:var(--font-main); font-weight:400; font-size:26px; margin: 0 0 4px; }
+  .summary-title-row{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin: 0 0 4px; }
+  .summary h2{ font-family:var(--font-main); font-weight:400; font-size:26px; margin:0; }
   .summary p{ color: var(--ink-dim); margin: 0 0 18px; font-size:14px; }
+  .badge{
+    display:inline-flex; align-items:center; gap:4px; font-family:var(--font-main); font-weight:400;
+    font-size:12px; padding:4px 11px; border-radius:999px;
+    background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); border:1px solid var(--green);
+  }
   .summary-time{
     display:flex; align-items:baseline; gap:8px; background: var(--panel-2); border:1px solid var(--line);
     border-radius: 10px; padding: 12px 16px; margin: 0 0 18px;
@@ -675,7 +688,11 @@
     </div>
 
     <div id="summaryArea" class="card summary hidden">
-      <h2 id="summaryTitle">Run complete</h2>
+      <div class="summary-title-row">
+        <h2 id="summaryTitle">Run complete</h2>
+        <span class="badge hidden" id="newBestBadge">🏆 New best</span>
+        <span class="badge hidden" id="perfectBadge">✨ Flawless</span>
+      </div>
       <p id="summarySub"></p>
       <div class="summary-time hidden" id="summaryTime">
         <span class="summary-time-label">Time</span>
@@ -684,6 +701,7 @@
       <ul class="miss-list" id="missList"></ul>
       <div class="summary-actions">
         <button type="button" id="restartBtn">Play again</button>
+        <button type="button" id="copyResultBtn" class="ghost-btn">Copy result</button>
         <button type="button" id="backToSetupBtn2" class="ghost-btn">Change settings</button>
       </div>
     </div>
@@ -1680,7 +1698,7 @@
   let idx = 0;
   let streak = 0, bestStreak = 0, correctCount = 0, attempts = 0;
   let misses = [];
-  let startTime = null, charsTyped = 0, bestWpm = 0;
+  let startTime = null, charsTyped = 0, bestWpm = 0, lastRunWpm = 0;
   let wpmTimer = null;
   let mcOrder = [];         // shuffled true-station-indices, one per MC question
   // per-station outcome, keyed by true geographic index: 'ok' | 'bad'
@@ -1695,6 +1713,41 @@
     card.classList.remove('pop');
     void card.offsetWidth;
     card.classList.add('pop');
+  }
+
+  function flashNewBest(el){
+    el.classList.remove('new-best');
+    void el.offsetWidth; // restart the animation if it's already mid-flash
+    el.classList.add('new-best');
+  }
+
+  // Streak feedback, appended to the correct-answer message in quiz/mc
+  // modes (warmup doesn't display streak, so callers gate this to those
+  // two modes). A "new best" only counts from 3 in a row — celebrating a
+  // beaten record of 1 or 2 isn't meaningful — and only ever fires once
+  // per streak, at the exact point it first passes the prior session best.
+  const STREAK_MILESTONES = [3, 5, 10, 15, 20, 25, 30, 40, 50];
+  function streakSuffix(newStreak, priorBest){
+    if(newStreak > priorBest && newStreak >= 3){
+      flashNewBest(statBestEl);
+      return ' · 🏆 New best — ' + newStreak + ' in a row!';
+    }
+    if(STREAK_MILESTONES.includes(newStreak)){
+      return ' · 🔥 ' + newStreak + ' in a row!';
+    }
+    return '';
+  }
+
+  // A quiet nudge at the midpoint and near the end of a run, appended to
+  // the correct-answer message. Skipped on short journeys where "halfway"
+  // and "3 to go" wouldn't mean much.
+  function milestoneNote(completedCount, total){
+    if(total < 6) return '';
+    const remaining = total - completedCount;
+    if(remaining <= 0) return ''; // the summary screen covers the finish itself
+    if(completedCount === Math.round(total / 2)) return ' · 🚩 Halfway there!';
+    if(remaining === 3) return ' · Final stretch — 3 to go!';
+    return '';
   }
 
   function shuffle(arr){
@@ -2056,6 +2109,7 @@
 
     if(optIdx === correctIdx){
       correctCount++;
+      const priorBest = bestStreak;
       streak++;
       bestStreak = Math.max(bestStreak, streak);
       results[correctIdx] = 'ok';
@@ -2063,7 +2117,10 @@
       btn.classList.remove('disabled');
       btn.classList.add('correct');
       feedback.className = 'feedback ok';
-      feedback.textContent = '✓ Correct — ' + LINE.stations[correctIdx];
+      let msg = '✓ Correct — ' + LINE.stations[correctIdx];
+      msg += streakSuffix(streak, priorBest);
+      msg += milestoneNote(idx + 1, totalSteps());
+      feedback.textContent = msg;
       updateStats();
       drawDiagram();
       setTimeout(advance, 550);
@@ -2128,7 +2185,6 @@
   }
 
   function finishRun(){
-    updateStats();
     gameAreaEl.classList.add('hidden');
     const area = summaryAreaEl;
     area.classList.remove('hidden');
@@ -2145,17 +2201,27 @@
     const closureNote = hasClosure
       ? ' (' + LINE.N + ' stations, ' + LINE.def.loopClosure.map(i => LINE.stations[i]).join(' and ') + ' each twice)'
       : ' (' + LINE.N + ' stations)';
+    const newBestBadgeEl = $('newBestBadge');
+    const perfectBadgeEl = $('perfectBadge');
+    newBestBadgeEl.classList.add('hidden');
+    perfectBadgeEl.classList.add('hidden');
     if(mode === 'warmup'){
       const wpm = currentWpm();
+      const priorBestWpm = bestWpm;
       bestWpm = Math.max(bestWpm, wpm);
+      lastRunWpm = wpm;
       summaryTitleEl.textContent = 'Warm-up complete';
       summarySubEl.textContent = 'Typed the full ' + LINE.JOURNEY_LEN + '-stop journey' + closureNote + ' at ' + wpm + ' WPM · ' + acc + '% first-try accuracy. Try the recall quiz next.';
+      newBestBadgeEl.classList.toggle('hidden', !(priorBestWpm > 0 && wpm > priorBestWpm));
+      perfectBadgeEl.classList.toggle('hidden', acc !== 100);
     } else if(mode === 'quiz'){
       summaryTitleEl.textContent = misses.length === 0 ? 'Full journey, zero mistakes' : 'Quiz complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
+      perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     } else {
       summaryTitleEl.textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
+      perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     }
     const list = $('missList');
     list.innerHTML = '';
@@ -2177,6 +2243,11 @@
         list.appendChild(li);
       });
     }
+    // called after bestWpm/bestStreak are finalized above (not before, like
+    // the rest of the run) so the stats panel — a sibling of #gameArea, so
+    // still visible next to the summary card — shows the just-set record
+    // instead of the stale pre-finish one
+    updateStats();
     drawDiagram();
   }
 
@@ -2196,6 +2267,7 @@
     const isRight = normalize(val) === normalize(list[idx]);
     if(isRight){
       correctCount++;
+      const priorBest = bestStreak;
       streak++;
       bestStreak = Math.max(bestStreak, streak);
       charsTyped += list[idx].length + 1;
@@ -2203,7 +2275,10 @@
       if(mode === 'quiz') popCard();
       answerInput.className = 'right';
       feedback.className = 'feedback ok';
-      feedback.textContent = '✓ Correct — ' + list[idx];
+      let msg = '✓ Correct — ' + list[idx];
+      if(mode !== 'warmup') msg += streakSuffix(streak, priorBest);
+      msg += milestoneNote(idx + 1, totalSteps());
+      feedback.textContent = msg;
       updateStats();
       drawDiagram();
       setTimeout(advance, mode === 'warmup' ? 200 : 450);
@@ -2280,6 +2355,28 @@
 
   $('restartBtn').addEventListener('click', function(){
     beginRun();
+  });
+
+  $('copyResultBtn').addEventListener('click', function(){
+    const acc = attempts ? Math.round(100*correctCount/attempts) : 0;
+    let line;
+    if(mode === 'warmup'){
+      line = LINE.def.label + ' line · Warm-up · ' + lastRunWpm + ' WPM · ' + acc + '% accuracy';
+    } else if(mode === 'quiz'){
+      line = LINE.def.label + ' line · Recall quiz · ' + correctCount + '/' + LINE.JOURNEY_LEN + ' · ' + acc + '% accuracy · best streak ' + bestStreak;
+    } else {
+      line = LINE.def.label + ' line · Multiple choice · ' + correctCount + '/' + LINE.N + ' · ' + acc + '% accuracy · best streak ' + bestStreak;
+    }
+    line += ' — Underground Explorer';
+    const btn = this;
+    const original = 'Copy result';
+    navigator.clipboard.writeText(line).then(function(){
+      btn.textContent = 'Copied!';
+    }).catch(function(){
+      btn.textContent = 'Copy failed';
+    }).finally(function(){
+      setTimeout(function(){ btn.textContent = original; }, 1600);
+    });
   });
 
   modeWarmupBtnEl.addEventListener('click', function(){ setMode('warmup'); });

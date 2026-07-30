@@ -13,6 +13,39 @@ Pick a line (and branch/direction if applicable), then practice recalling statio
 **Warm-up** (target shown, type it), **Recall quiz** (previous station shown, type the
 next), **Multiple choice** (4 options). A 3-2-1 countdown precedes each run.
 
+### Gamification mechanics
+
+All session-only — `streak`/`bestStreak`/`bestWpm`/`lastRunWpm` are plain in-memory
+closure variables in the main `<script>`, not `localStorage`/cookies (see Security below);
+they reset on page refresh, not just on a new run. Within a session:
+- **Streak celebration** (`streakSuffix()`): appended to the correct-answer feedback text
+  in quiz/mc modes only (warmup doesn't display streak). Fires "🏆 New best" from 3 in a
+  row once `streak` exceeds the session's prior `bestStreak`, and a smaller "🔥 N in a row"
+  ping at fixed milestones (`STREAK_MILESTONES`) otherwise — a beaten record of 1 or 2
+  isn't meaningful, so those are excluded. Also flashes a brief pulse animation
+  (`flashNewBest()` → `.new-best` on `#statBest`) on an actual new-best moment.
+  Warm-up's equivalent is WPM, which isn't known until the run ends — that's a summary
+  badge instead, not a live mid-run flash (see below).
+- **Journey milestones** (`milestoneNote()`): a quiet "🚩 Halfway there!" / "Final stretch
+  — 3 to go!" appended to the same feedback text, based on `idx`/`totalSteps()`. Skipped
+  on journeys under 6 stops, where neither would mean much.
+- **Summary badges** (`#newBestBadge`, `#perfectBadge`, next to the summary title): the
+  perfect badge shows whenever `misses.length === 0` (already what the title text says in
+  quiz/mc, and `acc === 100` in warmup) — a visual, not just textual, confirmation. The
+  new-best badge is warmup-only (WPM is the thing being recorded there) and deliberately
+  requires a **prior nonzero** best — the very first run of a session trivially "beats" a
+  starting `bestWpm` of 0, which isn't a real accomplishment to celebrate.
+  `finishRun()`'s one call to `updateStats()` was moved from the top of the function to
+  the bottom, after `bestWpm`/`bestStreak` are finalized — the stats panel is a sibling of
+  `#gameArea`, not a child, so it's still visible next to the summary card, and it used to
+  show the stale pre-finish "Best WPM" for a run that just set a new one.
+- **Copy result** (`#copyResultBtn`): builds a plain-text one-liner (e.g. "Victoria line ·
+  Warm-up · 489 WPM · 100% accuracy — Underground Explorer") and writes it via
+  `navigator.clipboard.writeText()` — not gated by the CSP (that governs resource origins,
+  not this API) or the "no client-side storage" rule (the OS clipboard isn't app-persisted
+  state). Button text flips to "Copied!" (or "Copy failed" if the promise rejects) for
+  1.6s, then reverts.
+
 ## Running tests
 
 ```
