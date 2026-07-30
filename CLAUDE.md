@@ -22,6 +22,18 @@ next), **Multiple choice** (4 options). A 3-2-1 countdown precedes each run.
 All session-only — `streak`/`bestStreak`/`bestWpm`/`lastRunWpm` are plain in-memory
 closure variables in the main `<script>`, not `localStorage`/cookies (see Security below);
 they reset on page refresh, not just on a new run. Within a session:
+- **Feedback toast** (`showFeedback()`/`hideFeedback()`, `#feedback` → `.feedback-toast`):
+  the per-answer message (`✓ Correct — X`, `✕ It was — X`, hints, skips) renders as a small
+  card with its own fade-in and a fixed ~1.7s visible window, timed independently of
+  `advance()`/`render()`. It used to be plain text cleared by every `render()` call — fine
+  in quiz/mc (450-1100ms between questions) but in warmup (200ms) it was wiped almost
+  before it could render, making it effectively unreadable. `render()` no longer touches
+  `#feedback` at all; only `showFeedback()` (via its own `setTimeout`) and `resetState()`'s
+  `hideFeedback()` call (an instant clear with no fade, for a genuinely new run) do.
+  Calling `showFeedback()` again while a toast is already showing (e.g. answering fast in
+  warmup) restarts the timer and swaps the text without a re-trigger of the fade-in — only
+  a `hidden → shown` transition animates, so rapid consecutive answers read as one
+  continuously-updating toast rather than a flicker.
 - **Streak celebration** (`streakSuffix()`): appended to the correct-answer feedback text
   in quiz/mc modes only (warmup doesn't display streak). Fires "🏆 New best" from 3 in a
   row once `streak` exceeds the session's prior `bestStreak`, and a smaller "🔥 N in a row"

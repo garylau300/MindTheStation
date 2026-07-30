@@ -274,9 +274,16 @@
     cursor:pointer; padding:8px 14px; border-radius: 999px;
   }
   .link-btn:active{ transform: translateY(1px); }
-  .feedback{ margin-top: 14px; font-size: 13.5px; font-family:var(--font-main); min-height: 18px; }
-  .feedback.ok{ color: var(--green); }
-  .feedback.bad{ color: var(--red); }
+  .feedback{ margin-top: 14px; min-height: 42px; display:flex; align-items:center; }
+  .feedback-toast{
+    display:inline-flex; align-items:center; font-family:var(--font-main); font-weight:400;
+    font-size:14px; line-height:1.4; padding: 10px 16px; border-radius: 10px;
+    background: var(--panel-2); border:1px solid var(--line); color: var(--ink);
+    opacity:0; transform: translateY(6px); transition: opacity .22s ease, transform .22s ease;
+  }
+  .feedback-toast.show{ opacity:1; transform: translateY(0); }
+  .feedback-toast.ok{ background: color-mix(in srgb, var(--green) 14%, var(--panel-2)); border-color: var(--green); color: var(--green); }
+  .feedback-toast.bad{ background: color-mix(in srgb, var(--red) 14%, var(--panel-2)); border-color: var(--red); color: var(--red); }
 
   .diagram-card{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; }
   .diagram-card svg{ display:block; width: 92%; max-width: 92%; height: auto; margin: 0 auto; }
@@ -678,7 +685,7 @@
           <button type="button" class="link-btn" id="hintBtn">Show hint</button>
           <button type="button" class="link-btn" id="skipBtn">Skip →</button>
         </div>
-        <div class="feedback" id="feedback"></div>
+        <div class="feedback"><span class="feedback-toast" id="feedback"></span></div>
       </div>
 
       <div class="diagram-card">
@@ -1721,6 +1728,31 @@
     el.classList.add('new-best');
   }
 
+  // Per-answer feedback as a small toast that fades in and lingers on its
+  // own timer, independent of how fast the game advances to the next
+  // question — the old plain-text version got wiped by the very next
+  // render() call, which in warmup (200ms between questions) meant it was
+  // essentially unreadable. kind: 'ok' | 'bad' | 'neutral'.
+  let feedbackHideTimer = null;
+  function showFeedback(text, kind){
+    clearTimeout(feedbackHideTimer);
+    feedback.textContent = text;
+    feedback.className = 'feedback-toast' + (kind ? ' ' + kind : '');
+    // force a reflow so re-triggering 'show' on an already-visible toast
+    // (rapid consecutive answers) still restarts the transition cleanly
+    void feedback.offsetWidth;
+    feedback.classList.add('show');
+    feedbackHideTimer = setTimeout(function(){
+      feedback.classList.remove('show');
+    }, 1700);
+  }
+
+  function hideFeedback(){
+    clearTimeout(feedbackHideTimer);
+    feedback.classList.remove('show');
+    feedback.textContent = '';
+  }
+
   // Streak feedback, appended to the correct-answer message in quiz/mc
   // modes (warmup doesn't display streak, so callers gate this to those
   // two modes). A "new best" only counts from 3 in a row — celebrating a
@@ -1785,6 +1817,7 @@
   function resetState(){
     idx = 0; streak = 0; correctCount = 0; attempts = 0; misses = [];
     startTime = null; charsTyped = 0; results = {};
+    hideFeedback();
     if(mode === 'mc') mcOrder = shuffle([...Array(LINE.N).keys()]);
     statTimeEl.textContent = '0:00';
     liveDotEl.classList.remove('ticking');
@@ -2116,11 +2149,10 @@
       popCard();
       btn.classList.remove('disabled');
       btn.classList.add('correct');
-      feedback.className = 'feedback ok';
       let msg = '✓ Correct — ' + LINE.stations[correctIdx];
       msg += streakSuffix(streak, priorBest);
       msg += milestoneNote(idx + 1, totalSteps());
-      feedback.textContent = msg;
+      showFeedback(msg, 'ok');
       updateStats();
       drawDiagram();
       setTimeout(advance, 550);
@@ -2130,8 +2162,7 @@
       misses.push({you: LINE.stations[optIdx], correct: LINE.stations[correctIdx]});
       btn.classList.add('wrong');
       allBtns.forEach(b => { if(b.textContent === LINE.stations[correctIdx]) b.classList.add('correct'); });
-      feedback.className = 'feedback bad';
-      feedback.textContent = '✕ It was — ' + LINE.stations[correctIdx];
+      showFeedback('✕ It was — ' + LINE.stations[correctIdx], 'bad');
       updateStats();
       drawDiagram();
       setTimeout(advance, 1100);
@@ -2141,8 +2172,10 @@
   function render(shouldFocus){
     answerInput.value = '';
     answerInput.className = '';
-    feedback.textContent = '';
-    feedback.className = 'feedback';
+    // the feedback toast deliberately isn't cleared here — it has its own
+    // independent show/hide timer (see showFeedback()) so it stays
+    // readable across the transition to the next question instead of
+    // vanishing the instant render() runs
 
     const list = seq();
 
@@ -2274,11 +2307,10 @@
       results[trueIdx] = 'ok';
       if(mode === 'quiz') popCard();
       answerInput.className = 'right';
-      feedback.className = 'feedback ok';
       let msg = '✓ Correct — ' + list[idx];
       if(mode !== 'warmup') msg += streakSuffix(streak, priorBest);
       msg += milestoneNote(idx + 1, totalSteps());
-      feedback.textContent = msg;
+      showFeedback(msg, 'ok');
       updateStats();
       drawDiagram();
       setTimeout(advance, mode === 'warmup' ? 200 : 450);
@@ -2287,8 +2319,7 @@
       results[trueIdx] = 'bad';
       misses.push({you: val, correct: list[idx]});
       answerInput.className = 'wrong';
-      feedback.className = 'feedback bad';
-      feedback.textContent = '✕ It was — ' + list[idx];
+      showFeedback('✕ It was — ' + list[idx], 'bad');
       updateStats();
       drawDiagram();
       setTimeout(advance, 900);
@@ -2309,8 +2340,7 @@
         .filter(b => b.textContent !== correctName && !b.classList.contains('disabled'));
       if(wrongBtns.length){
         wrongBtns[Math.floor(Math.random()*wrongBtns.length)].classList.add('disabled');
-        feedback.className = 'feedback';
-        feedback.textContent = 'Eliminated one wrong option.';
+        showFeedback('Eliminated one wrong option.', 'neutral');
       }
       updateStats();
       return;
@@ -2318,8 +2348,7 @@
     streak = Math.max(0, streak - 1);
     const len = list[idx].length;
     const reveal = Math.min(len - 1, Math.max(2, Math.round(len*0.35)));
-    feedback.className = 'feedback';
-    feedback.textContent = 'Hint: starts with "' + list[idx].slice(0, reveal) + '…" (' + len + ' letters)';
+    showFeedback('Hint: starts with "' + list[idx].slice(0, reveal) + '…" (' + len + ' letters)', 'neutral');
     updateStats();
     answerInput.focus();
   });
@@ -2337,8 +2366,7 @@
         b.classList.add('disabled');
         if(b.textContent === correctName) b.classList.add('correct');
       });
-      feedback.className = 'feedback bad';
-      feedback.textContent = 'Skipped — ' + correctName;
+      showFeedback('Skipped — ' + correctName, 'bad');
       updateStats();
       drawDiagram();
       setTimeout(advance, 700);
@@ -2346,8 +2374,7 @@
     }
     results[origIndex(idx)] = 'bad';
     misses.push({you: answerInput.value.trim(), correct: list[idx]});
-    feedback.className = 'feedback bad';
-    feedback.textContent = 'Skipped — ' + list[idx];
+    showFeedback('Skipped — ' + list[idx], 'bad');
     updateStats();
     drawDiagram();
     setTimeout(advance, 500);
