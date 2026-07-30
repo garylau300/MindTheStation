@@ -212,6 +212,13 @@
     100%{ color: inherit; transform: scale(1); }
   }
 
+  #statAcc.score-pop{ animation: scorePop .45s ease; }
+  @keyframes scorePop{
+    0%{ color: var(--green); }
+    40%{ color: var(--green); transform: scale(1.3); }
+    100%{ color: inherit; transform: scale(1); }
+  }
+
   .card{ position:relative; background: var(--panel); border:1px solid var(--line); border-top: 3px solid var(--line-accent); border-radius: var(--radius); padding: 26px 22px; margin-bottom: 18px; }
 
   .countdown-overlay{
@@ -619,7 +626,7 @@
     <div class="stats">
       <div class="stat"><b id="statProgress">0/35</b><span>Stations</span></div>
       <div class="stat"><b id="statMid">0</b><span id="statMidLabel">WPM</span></div>
-      <div class="stat"><b id="statAcc">—</b><span>Accuracy</span></div>
+      <div class="stat"><b id="statAcc">—</b><span id="statAccLabel">Accuracy</span></div>
       <div class="stat"><b id="statBest">0</b><span id="statBestLabel">Best WPM</span></div>
     </div>
     <div class="stat-row-time">
@@ -1707,6 +1714,10 @@
   let misses = [];
   let startTime = null, charsTyped = 0, bestWpm = 0, lastRunWpm = 0;
   let wpmTimer = null;
+  // combo score (quiz/mc only — see awardPoints()): a per-run running total,
+  // session-only like every other stat here, reset each new run
+  let score = 0;
+  let questionStartTime = null, hintUsedThisQuestion = false;
   let mcOrder = [];         // shuffled true-station-indices, one per MC question
   // per-station outcome, keyed by true geographic index: 'ok' | 'bad'
   let results = {};
@@ -1782,6 +1793,36 @@
     return '';
   }
 
+  // Combo score, quiz/mc only (warmup's own speed metric is WPM — see
+  // CLAUDE.md on why warmup doesn't get streak/combo treatment either).
+  // Rewards answering fast *and* keeping a streak alive at the same time,
+  // rather than either alone: a quick answer that also extends a long
+  // streak is worth far more than either quality in isolation. Taking a
+  // hint gives away part of the answer, so it forfeits the speed bonus for
+  // that question (the streak-based part of the multiplier still applies).
+  const SCORE_BASE = 100;
+  function speedMultiplier(elapsedMs){
+    if(elapsedMs <= 2000) return 3;
+    if(elapsedMs <= 4000) return 2;
+    if(elapsedMs <= 8000) return 1.5;
+    return 1;
+  }
+  function awardPoints(newStreak){
+    const elapsed = questionStartTime ? Date.now() - questionStartTime : 8000;
+    const speedMult = hintUsedThisQuestion ? 1 : speedMultiplier(elapsed);
+    const comboMult = Math.min(1 + (newStreak - 1) * 0.1, 2);
+    const points = Math.round(SCORE_BASE * speedMult * comboMult);
+    score += points;
+    return points;
+  }
+
+  function flashScore(){
+    const el = $('statAcc');
+    el.classList.remove('score-pop');
+    void el.offsetWidth; // restart the animation if it's already mid-flash
+    el.classList.add('score-pop');
+  }
+
   function shuffle(arr){
     for(let i=arr.length-1;i>0;i--){
       const j = Math.floor(Math.random()*(i+1));
@@ -1817,6 +1858,7 @@
   function resetState(){
     idx = 0; streak = 0; correctCount = 0; attempts = 0; misses = [];
     startTime = null; charsTyped = 0; results = {};
+    score = 0; questionStartTime = null; hintUsedThisQuestion = false;
     hideFeedback();
     if(mode === 'mc') mcOrder = shuffle([...Array(LINE.N).keys()]);
     statTimeEl.textContent = '0:00';
@@ -2004,6 +2046,7 @@
     modeMcBtnEl.classList.toggle('active', mode === 'mc');
     $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Streak';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
+    $('statAccLabel').textContent = mode === 'warmup' ? 'Accuracy' : 'Score';
     promptLine.classList.toggle('hidden', mode !== 'quiz');
     targetWord.classList.toggle('hidden', mode !== 'warmup');
     inputRow.classList.toggle('hidden', mode === 'mc');
@@ -2034,11 +2077,12 @@
 
   function updateStats(){
     $('statProgress').textContent = idx + '/' + totalSteps();
-    $('statAcc').textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
     if(mode === 'warmup'){
+      $('statAcc').textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
       statMidEl.textContent = currentWpm();
       statBestEl.textContent = bestWpm;
     } else {
+      $('statAcc').textContent = score;
       statMidEl.textContent = streak;
       statBestEl.textContent = bestStreak;
     }
@@ -2145,14 +2189,16 @@
       const priorBest = bestStreak;
       streak++;
       bestStreak = Math.max(bestStreak, streak);
+      const points = awardPoints(streak);
       results[correctIdx] = 'ok';
       popCard();
       btn.classList.remove('disabled');
       btn.classList.add('correct');
-      let msg = '✓ Correct';
+      let msg = '✓ Correct +' + points;
       msg += streakSuffix(streak, priorBest);
       msg += milestoneNote(idx + 1, totalSteps());
       showFeedback(msg, 'ok');
+      flashScore();
       updateStats();
       drawDiagram();
       setTimeout(advance, 550);
@@ -2209,6 +2255,10 @@
       renderMcOptions();
       renderMcContext(targetIdx);
     }
+    if(mode !== 'warmup'){
+      questionStartTime = Date.now();
+      hintUsedThisQuestion = false;
+    }
     updateStats();
     drawDiagram();
     // only pull focus (and pop the mobile keyboard) when continuing an
@@ -2249,11 +2299,11 @@
       perfectBadgeEl.classList.toggle('hidden', acc !== 100);
     } else if(mode === 'quiz'){
       summaryTitleEl.textContent = misses.length === 0 ? 'Full journey, zero mistakes' : 'Quiz complete';
-      summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
+      summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
       perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     } else {
       summaryTitleEl.textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
-      summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + '.';
+      summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
       perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     }
     const list = $('missList');
@@ -2308,7 +2358,12 @@
       if(mode === 'quiz') popCard();
       answerInput.className = 'right';
       let msg = '✓ Correct';
-      if(mode !== 'warmup') msg += streakSuffix(streak, priorBest);
+      if(mode !== 'warmup'){
+        const points = awardPoints(streak);
+        msg += ' +' + points;
+        msg += streakSuffix(streak, priorBest);
+        flashScore();
+      }
       msg += milestoneNote(idx + 1, totalSteps());
       showFeedback(msg, 'ok');
       updateStats();
@@ -2333,6 +2388,7 @@
 
   hintBtnEl.addEventListener('click', function(){
     const list = seq();
+    hintUsedThisQuestion = true;
     if(mode === 'mc'){
       streak = Math.max(0, streak - 1);
       const correctName = LINE.stations[mcOrder[idx]];
@@ -2390,9 +2446,9 @@
     if(mode === 'warmup'){
       line = LINE.def.label + ' line · Warm-up · ' + lastRunWpm + ' WPM · ' + acc + '% accuracy';
     } else if(mode === 'quiz'){
-      line = LINE.def.label + ' line · Recall quiz · ' + correctCount + '/' + LINE.JOURNEY_LEN + ' · ' + acc + '% accuracy · best streak ' + bestStreak;
+      line = LINE.def.label + ' line · Recall quiz · ' + correctCount + '/' + LINE.JOURNEY_LEN + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
     } else {
-      line = LINE.def.label + ' line · Multiple choice · ' + correctCount + '/' + LINE.N + ' · ' + acc + '% accuracy · best streak ' + bestStreak;
+      line = LINE.def.label + ' line · Multiple choice · ' + correctCount + '/' + LINE.N + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
     }
     line += ' — Mind the Station';
     const btn = this;

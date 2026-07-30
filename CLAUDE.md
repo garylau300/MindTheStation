@@ -41,7 +41,30 @@ they reset on page refresh, not just on a new run. Within a session:
   isn't meaningful, so those are excluded. Also flashes a brief pulse animation
   (`flashNewBest()` → `.new-best` on `#statBest`) on an actual new-best moment.
   Warm-up's equivalent is WPM, which isn't known until the run ends — that's a summary
-  badge instead, not a live mid-run flash (see below).
+  badge instead, not a live mid-run flash (see below). The correct-answer message itself is
+  just "✓ Correct" (plus these suffixes) — it deliberately omits the station name, which is
+  redundant with what's already on screen (the word just typed, the highlighted MC button,
+  or the next question's own "Previous:" line). Wrong-answer and skip messages keep the
+  station name, since there it's genuinely new information.
+- **Combo score** (`awardPoints()`, `SCORE_BASE`/`speedMultiplier()`): a running per-run
+  point total, quiz/mc only (same warmup exclusion as streak — WPM already covers "reward
+  speed" there). Rewards fast *and* streaky answers together rather than either alone:
+  `points = SCORE_BASE(100) × speedMultiplier(elapsed) × comboMultiplier(streak)`, where
+  `speedMultiplier` steps down from 3× (≤2s) to 1× (>8s) based on time since the question
+  was shown (`questionStartTime`, stamped in `render()`), and `comboMultiplier` is
+  `1 + 0.1×(streak-1)`, capped at 2× so a very long streak doesn't dwarf the speed
+  component. Taking a hint (`hintUsedThisQuestion`) zeroes out the speed bonus for that one
+  question — the streak multiplier still applies — since part of the answer was given
+  away. The point gain is appended right after "✓ Correct" (e.g. "✓ Correct +330"), and the
+  live `#statAcc` stat cell — which shows plain Accuracy% in warmup — shows the running
+  score in quiz/mc instead (`$('statAccLabel')` toggles the cell's label the same way
+  `statMidLabel`/`statBestLabel` already do per mode), with a short scale/color pop
+  (`flashScore()` → `.score-pop`) on every increment so the number visibly "ticks up" rather
+  than silently changing. `score` resets to 0 in `resetState()` like every other per-run
+  counter; it isn't tracked as a cross-run session best (no `bestScore`), so there's no
+  score-based summary badge — only `misses`/streak/WPM have that "compare to prior runs
+  this session" treatment. Final score is folded into the quiz/mc summary sub-text and the
+  copy-result string alongside accuracy and best streak.
 - **Journey milestones** (`milestoneNote()`): a quiet "🚩 Halfway there!" / "Final stretch
   — 3 to go!" appended to the same feedback text, based on `idx`/`totalSteps()`. Skipped
   on journeys under 6 stops, where neither would mean much.
