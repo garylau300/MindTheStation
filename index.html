@@ -1330,7 +1330,7 @@
       return {
         id: 'central',
         label: 'Central',
-        color: '#DC241F',
+        color: '#E32017',
         layout: 'branch-tree',
         segments: segments,
         // a genuine rectangular loop (right angles only, no slants):
@@ -2732,7 +2732,9 @@
     svg.innerHTML = '';
     svg.setAttribute('viewBox', geo.viewBox);
     const ns = 'http://www.w3.org/2000/svg';
-    const color = isLight ? darkenForLightMode(LINE.def.color) : LINE.def.color;
+    // the true line color, in both themes -- the route map is meant to
+    // show what the line actually looks like, same as the real network map
+    const color = LINE.def.color;
     // the currently selected branch (or, for non-branching lines, every
     // station — there's nothing else to dim in that case)
     const routeSet = new Set(LINE.stations);
@@ -2864,11 +2866,9 @@
     const c = isLight
       ? { pending: '#d9d5c8', dot: '#c7c2b2', ink: '#17181c', inkDim: '#6b6d76' }
       : { pending: '#2c2e37', dot: '#3a3d47', ink: '#F4F2EA', inkDim: '#9a9ba3' };
-    // pale line colors (Circle's yellow, H&C's pink, Waterloo & City's teal)
-    // wash out against a white panel, so light mode gets the same darkened
-    // variant already used for accent-ink text; dark mode keeps the vivid
-    // brand color, which reads fine against a near-black panel
-    const done = isLight ? darkenForLightMode(LINE.def.color) : LINE.def.color;
+    // the true line color, in both themes -- same reasoning as
+    // drawRoutePreview(): the diagram should show the line's real color
+    const done = LINE.def.color;
     const current = '#E32017';
     const okColor = isLight ? '#1E8A46' : '#7CCB6B', badColor = '#E32017';
 

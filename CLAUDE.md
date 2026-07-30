@@ -163,6 +163,20 @@ catch.
   text-scale-up block briefly was) silently loses to a later base rule even while its media
   condition matches. The fix: put breakpoint overrides last in the stylesheet, after every rule
   they touch — see the block just before `</style>` in `index.html`.
+- **Every `LINES.<id>.color` must be the line's real, current TfL brand hex — and must match
+  `LINE_BADGE_COLORS[id]` exactly**, since the two are meant to be the same color used in two
+  places (a line's own diagram vs. its interchange badge shown on other lines). Central's own
+  `color` drifted to `#DC241F` (an old/retired TfL red) while its badge color was the current
+  `#E32017` — a real, silent mismatch, fixed by making them match.
+- **The route map (`drawRoutePreview()`) and in-game "Line progress" diagram
+  (`drawDiagram()`) always draw a line in its true, undarkened color — in both themes.**
+  `darkenForLightMode()` exists for *text/accent* uses (`--accent-ink`, inactive line-pill
+  text) where a vivid color like Circle's yellow would be illegible as thin text on white —
+  but a route-map line is a thick stroke with real dots, not text, and stays clearly legible
+  at full brightness; darkening it there just makes Circle read as a muddy olive instead of
+  actually looking like Circle's line, defeating the point of a map. Don't reach for
+  `darkenForLightMode()` for a new diagram/map feature without checking whether it's text
+  (needs it) or a drawn line/shape (almost certainly doesn't).
 - **A layout's internal viewBox scale (`r` for `spur-loop`, `vbW`/`vbH` for `linear`, segment
   `spacing` for `branch-tree`) has to be picked relative to how wide `.wrap` can actually get, not
   just relative to that one line's own station count.** `.diagram-card svg` stretches to a fixed
