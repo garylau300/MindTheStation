@@ -1,6 +1,10 @@
-# Underground Explorer
+# Mind the Station
 
 A station-memorization trainer for the London Underground, built for Studio Espero.
+Formerly named "Underground Explorer" — renamed 2026-07-30; `PROJECT_HISTORY.md` keeps the
+old name throughout as a historical record (see the note at the top of that file). The
+GitHub repo itself may still be at the old slug until manually renamed (outside what this
+session's tools can do) — see the handoff note for exact steps if that hasn't happened yet.
 Zero-dependency, single self-contained `index.html` (plain HTML/CSS/JS, no build step),
 deployed to Vercel via GitHub auto-redeploy. `PROJECT_HISTORY.md` in this repo is the full
 narrative handoff (architecture, every bug that shipped and how it was fixed, design
@@ -40,7 +44,7 @@ they reset on page refresh, not just on a new run. Within a session:
   `#gameArea`, not a child, so it's still visible next to the summary card, and it used to
   show the stale pre-finish "Best WPM" for a run that just set a new one.
 - **Copy result** (`#copyResultBtn`): builds a plain-text one-liner (e.g. "Victoria line ·
-  Warm-up · 489 WPM · 100% accuracy — Underground Explorer") and writes it via
+  Warm-up · 489 WPM · 100% accuracy — Mind the Station") and writes it via
   `navigator.clipboard.writeText()` — not gated by the CSP (that governs resource origins,
   not this API) or the "no client-side storage" rule (the OS clipboard isn't app-persisted
   state). Button text flips to "Copied!" (or "Copy failed" if the promise rejects) for

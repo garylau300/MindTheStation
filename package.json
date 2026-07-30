@@ -1,5 +1,5 @@
 {
-  "name": "underground-explorer",
+  "name": "mind-the-station",
   "private": true,
   "version": "1.0.0",
   "description": "London Underground station-memorization trainer (single-file app) plus its regression test suite.",

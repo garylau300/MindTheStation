@@ -1,4 +1,4 @@
-# Underground Explorer
+# Mind the Station
 
 A station-memorization trainer for the London Underground, built for Studio Espero. Pick a
 line (and branch/direction if it has one), then practice recalling station order in

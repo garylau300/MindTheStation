@@ -1,5 +1,10 @@
 # Underground Explorer — Project History & Context
 
+> **Note (2026-07-30):** this project was renamed to **"Mind the Station"**. This document is
+> left as a historical record of the original build and intentionally keeps the "Underground
+> Explorer" name throughout, since that's what the project was called at the time everything
+> below happened. See `CLAUDE.md` for the current name and working rules.
+
 **Purpose of this document:** a comprehensive handoff of everything built, decided, and learned
 across the full development history of this project (spanning multiple chat sessions before this
 export), written for a fresh Claude Code session to read as project context. It captures

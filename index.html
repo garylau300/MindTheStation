@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; connect-src https://vitals.vercel-insights.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<title>Circle Line — Underground Explorer</title>
+<title>Circle Line — Mind the Station</title>
 <!-- Roundel favicon: same ring/bar design and colors (#E32017/#113A8F) as
      the header .roundel, inlined as a data URI so the single-file app
      never needs an external asset -->
@@ -533,7 +533,7 @@
     <div class="roundel-row">
       <div class="roundel"><div class="ring"></div><div class="bar"></div></div>
       <div style="flex:1;">
-        <div class="eyebrow">Underground Explorer</div>
+        <div class="eyebrow">Mind the Station</div>
         <h1><span id="lineNameSpan">Circle</span> <span>Line</span></h1>
       </div>
       <button type="button" id="themeToggle" class="theme-toggle">☀ Light</button>
@@ -593,7 +593,7 @@
 
   <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing →</button>
 
-  <footer>Underground Explorer <button type="button" id="drainEgg" class="drain-egg" aria-label="Hidden feature"></button> © 2026 Studio Espero · <button type="button" id="termsLink" class="terms-link">Terms of Use</button></footer>
+  <footer>Mind the Station <button type="button" id="drainEgg" class="drain-egg" aria-label="Hidden feature"></button> © 2026 Studio Espero · <button type="button" id="termsLink" class="terms-link">Terms of Use</button></footer>
   </div>
 
   <main id="playPage" class="hidden">
@@ -718,7 +718,7 @@
       <div class="terms-body">
         <p class="terms-updated">Last updated 2026</p>
 
-        <p><strong>Underground Explorer</strong> ("the site") is an independent, fan-made study tool created by Studio Espero to help people learn London Underground station names and network layout. It is not affiliated with, endorsed by, or connected to Transport for London (TfL) or any train operating company. Line names, station names, and general route information reflect publicly available knowledge of the network and are used here for educational purposes only.</p>
+        <p><strong>Mind the Station</strong> ("the site") is an independent, fan-made study tool created by Studio Espero to help people learn London Underground station names and network layout. It is not affiliated with, endorsed by, or connected to Transport for London (TfL) or any train operating company. Line names, station names, and general route information reflect publicly available knowledge of the network and are used here for educational purposes only.</p>
 
         <h3>No official transit information</h3>
         <p>This site is a memory-training tool, not a live travel planner. Station order, interchanges, and route details may contain errors or become outdated as real services change. Always check TfL's official channels before travelling.</p>
@@ -1879,7 +1879,7 @@
       btn.classList.toggle('active', btn.dataset.lineId === id);
     });
     $('lineNameSpan').textContent = LINE.def.label;
-    document.title = LINE.def.label + ' Line — Underground Explorer';
+    document.title = LINE.def.label + ' Line — Mind the Station';
     renderBranchRow();
     updateDirectionLabels();
     applyLineTheme();
@@ -2367,7 +2367,7 @@
     } else {
       line = LINE.def.label + ' line · Multiple choice · ' + correctCount + '/' + LINE.N + ' · ' + acc + '% accuracy · best streak ' + bestStreak;
     }
-    line += ' — Underground Explorer';
+    line += ' — Mind the Station';
     const btn = this;
     const original = 'Copy result';
     navigator.clipboard.writeText(line).then(function(){
