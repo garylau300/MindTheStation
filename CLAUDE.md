@@ -65,6 +65,21 @@ they reset on page refresh, not just on a new run. Within a session:
   score-based summary badge — only `misses`/streak/WPM have that "compare to prior runs
   this session" treatment. Final score is folded into the quiz/mc summary sub-text and the
   copy-result string alongside accuracy and best streak.
+- **Streak flame badge** (`updateStreakFlame()`, `#streakFlame` top-right of `#gameCard`):
+  unlike `streakSuffix()`'s toast text and the combo score above (both quiz/mc only), this
+  one is a purely visual cue and deliberately runs in **all three modes, including
+  warmup** — `streak` itself was already tracked there (`submitAnswer()`'s correct/wrong
+  branches update it regardless of mode; only the *display* was previously gated), so
+  surfacing it needed no new state, just a new element. Appears at the same ≥3 threshold as
+  `streakSuffix`'s "New best" celebration and disappears the instant the streak breaks
+  (`classList.toggle('hidden', streak < 3)` — an instant hide, not a fade, so a broken
+  streak reads as "off" rather than lingering) — called from the same central
+  `updateStats()` every other stat already goes through, so every streak-changing action
+  (correct/wrong answer, hint, skip) keeps it in sync for free. The flame icon itself
+  flickers continuously via a CSS animation (`flameFlicker`) whenever visible; the count
+  additionally pops (`.bump` → `streakBump`) on every increment while active, not just on
+  first appearing. Session-only, like every other gamification stat here — no persistence
+  across a page refresh.
 - **Journey milestones** (`milestoneNote()`): a quiet "🚩 Halfway there!" / "Final stretch
   — 3 to go!" appended to the same feedback text, based on `idx`/`totalSteps()`. Skipped
   on journeys under 6 stops, where neither would mean much.
