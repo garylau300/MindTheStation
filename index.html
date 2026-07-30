@@ -2149,7 +2149,7 @@
       popCard();
       btn.classList.remove('disabled');
       btn.classList.add('correct');
-      let msg = '✓ Correct — ' + LINE.stations[correctIdx];
+      let msg = '✓ Correct';
       msg += streakSuffix(streak, priorBest);
       msg += milestoneNote(idx + 1, totalSteps());
       showFeedback(msg, 'ok');
@@ -2307,7 +2307,7 @@
       results[trueIdx] = 'ok';
       if(mode === 'quiz') popCard();
       answerInput.className = 'right';
-      let msg = '✓ Correct — ' + list[idx];
+      let msg = '✓ Correct';
       if(mode !== 'warmup') msg += streakSuffix(streak, priorBest);
       msg += milestoneNote(idx + 1, totalSteps());
       showFeedback(msg, 'ok');
