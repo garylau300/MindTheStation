@@ -255,7 +255,7 @@
   .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ color:#FF9500; font-size:16px; letter-spacing:.02em; }
   .led-dest, .led-via{ white-space:nowrap; }
   .led-num, .led-right{ flex:none; }
-  .led-calling-viewport{ display:block; overflow:hidden; margin-top:2px; }
+  .led-calling-viewport{ display:block; overflow:hidden; margin-top:0; }
   .led-calling-scroll{ display:inline-block; white-space:nowrap; opacity:.9; }
 
   /* Branch: a compact 2-column grid of squared chips (not the old stadium
@@ -2304,6 +2304,10 @@
   // order used everywhere else in the app (seq()) — reverseDirection
   // flips it exactly like a real destination board's stopping list would
   // read differently depending on which way the train is actually going.
+  // It deliberately starts from the *second* station in that order: a
+  // real "calling at" board never lists the station the train is
+  // currently standing at (only the stops still ahead of it), and the
+  // first entry is always the current journey's own origin.
   function updateDirectionBoard(){
     const { start, end } = terminusNames();
     const fromName = reverseDirection ? end : start;
@@ -2312,7 +2316,7 @@
     const via = viaText();
     ledViaEl.textContent = via;
     ledViaEl.classList.toggle('hidden', !via);
-    const callingNames = reverseDirection ? LINE.reversedJourneyNames : LINE.journeyNames;
+    const callingNames = (reverseDirection ? LINE.reversedJourneyNames : LINE.journeyNames).slice(1);
     ledCallingScrollEl.textContent = 'Calling at: ' + callingNames.join(', ');
     directionBoardEl.setAttribute('aria-label',
       'Direction: ' + fromName + ' to ' + destination + (via ? (' ' + via) : '') + '. Press to reverse.');
