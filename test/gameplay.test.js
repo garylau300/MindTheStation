@@ -11,8 +11,8 @@ const assert = require('node:assert/strict');
 const { loadPage, closePage, waitFor, sleep } = require('./test-utils');
 
 function selectLine(page, lineId){
-  const btn = page.document.querySelector('.pill[data-line-id="' + lineId + '"]');
-  assert.ok(btn, 'expected a setup pill for ' + lineId);
+  const btn = page.document.querySelector('.line-chip[data-line-id="' + lineId + '"]');
+  assert.ok(btn, 'expected a setup line chip for ' + lineId);
   btn.click();
 }
 

@@ -30,8 +30,8 @@ test('per-line diagram geometry has no station collisions or bad diagonals', asy
 
   for(const lineId of lineIds){
     await t.test(lineId, () => {
-      const btn = page.document.querySelector('.pill[data-line-id="' + lineId + '"]');
-      assert.ok(btn, 'expected a setup-page pill for line ' + lineId);
+      const btn = page.document.querySelector('.line-chip[data-line-id="' + lineId + '"]');
+      assert.ok(btn, 'expected a setup-page line chip for line ' + lineId);
       btn.click();
 
       const line = hooks.getLine();
@@ -104,8 +104,8 @@ test('waterloocity (hidden egg line) geometry has no collisions', async (t) => {
   t.after(() => closePage(page));
 
   doc.getElementById('drainEgg').click();
-  const btn = doc.querySelector('.pill[data-line-id="waterloocity"]');
-  assert.ok(btn, 'expected the Drain egg to reveal a waterloocity pill');
+  const btn = doc.querySelector('.line-chip[data-line-id="waterloocity"]');
+  assert.ok(btn, 'expected the Drain egg to reveal a waterloocity line chip');
   btn.click();
 
   const line = hooks.getLine();

@@ -67,7 +67,7 @@ test('page loads with no unexpected console/JS errors', async ({ page }) => {
 // viewBox) hasn't reintroduced horizontal overflow.
 for (const lineId of ['victoria', 'district', 'central', 'piccadilly']) {
   test('setup route-map preview never overflows horizontally: ' + lineId, async ({ page }) => {
-    await page.click('.pill[data-line-id="' + lineId + '"]');
+    await page.click('.line-chip[data-line-id="' + lineId + '"]');
     const overflow = await page.evaluate(() => {
       const card = document.getElementById('routePreviewSvg').closest('.diagram-card');
       return card.scrollWidth - card.clientWidth;
@@ -107,11 +107,11 @@ test('page widens responsively on larger viewports without ever overflowing', as
 // actually take effect. This pins down that it really does, at both
 // breakpoints, rather than silently no-op'ing the way it did once already.
 test('text scales up at both width breakpoints, not just the container', async ({ page }) => {
-  await page.click('.pill[data-line-id="district"]');
+  await page.click('.line-chip[data-line-id="district"]');
   const sizeAt = async (width) => {
     await page.setViewportSize({ width, height: 900 });
     return page.evaluate(() => ({
-      pill: parseFloat(getComputedStyle(document.querySelector('.pill')).fontSize),
+      chip: parseFloat(getComputedStyle(document.querySelector('.line-chip')).fontSize),
       h1: parseFloat(getComputedStyle(document.querySelector('h1')).fontSize)
     }));
   };
@@ -119,9 +119,9 @@ test('text scales up at both width breakpoints, not just the container', async (
   const mid = await sizeAt(1024);   // between the two breakpoints
   const wide = await sizeAt(1440);  // above the 1300px breakpoint
 
-  expect(base.pill).toBe(12);
-  expect(mid.pill).toBeGreaterThan(base.pill);
-  expect(wide.pill).toBeGreaterThan(mid.pill);
+  expect(base.chip).toBe(12);
+  expect(mid.chip).toBeGreaterThan(base.chip);
+  expect(wide.chip).toBeGreaterThan(mid.chip);
 
   expect(mid.h1).toBeGreaterThan(base.h1);
   expect(wide.h1).toBeGreaterThan(mid.h1);
@@ -132,7 +132,7 @@ test('text scales up at both width breakpoints, not just the container', async (
 // it can't silently creep back up.
 test('station popup stays compact, not a large bubble', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.click('.pill[data-line-id="district"]');
+  await page.click('.line-chip[data-line-id="district"]');
   await page.click('#routePreviewSvg circle');
   const box = await page.locator('#stationPopup').boundingBox();
   expect(box.width).toBeLessThan(320); // capped at 300px + a margin, even at the widest breakpoint
@@ -149,7 +149,7 @@ test('station dot render size stays consistent (within 2x) across compact, wide,
   await page.setViewportSize({ width: 1440, height: 900 });
   const diameters = {};
   for (const lineId of ['victoria', 'district', 'circle', 'metropolitan']) {
-    await page.click('.pill[data-line-id="' + lineId + '"]');
+    await page.click('.line-chip[data-line-id="' + lineId + '"]');
     diameters[lineId] = await page.evaluate(() => {
       const circle = document.querySelector('#routePreviewSvg circle');
       return circle.getBoundingClientRect().width;
@@ -162,12 +162,13 @@ test('station dot render size stays consistent (within 2x) across compact, wide,
   expect(ratio).toBeLessThan(2); // Circle's spur-loop once measured ~2x bigger than other lines here
 });
 
-// The active line pill and primary buttons (Start playing, Enter) fill
-// solid with that line's own --line-accent color. A fixed near-black text
-// color was unreadable on several lines (Victoria, District, Bakerloo,
-// Metropolitan, Piccadilly, Central) — real WCAG contrast ratio, computed
-// independently here (not just re-running the app's own bestContrastInk()
-// helper), against every line in both themes, since --line-accent doesn't
+// Every line-ribbon chip (not just the active one — the ribbon shows all
+// line colours at once) and the primary buttons (Start playing, Enter) fill
+// solid with that line's own true colour. A fixed near-black text color was
+// unreadable on several lines (Victoria, District, Bakerloo, Metropolitan,
+// Piccadilly, Central) — real WCAG contrast ratio, computed independently
+// here (not just re-running the app's own bestContrastInk() helper),
+// against every line in both themes, since a line's own colour doesn't
 // change between themes but this is exactly the kind of thing worth
 // checking in both anyway.
 function relativeLuminance(hex){
@@ -187,26 +188,30 @@ function rgbStringToHex(rgb){
 }
 
 for (const theme of ['light', 'dark']) {
-  test('active line pill and primary button text meet WCAG AA contrast (' + theme + ' mode)', async ({ page }) => {
+  test('every line chip and primary button text meet WCAG AA contrast (' + theme + ' mode)', async ({ page }) => {
     if (theme === 'dark') {
       await page.click('#themeToggle');
       await page.waitForTimeout(300); // let the background-color transition settle
     }
-    const lineIds = await page.evaluate(() => Array.from(document.querySelectorAll('.line-select .pill[data-line-id]')).map(el => el.dataset.lineId));
+    const lineIds = await page.evaluate(() => Array.from(document.querySelectorAll('.line-select .line-chip[data-line-id]')).map(el => el.dataset.lineId));
     const failures = [];
     for (const lineId of lineIds) {
-      await page.click('.pill[data-line-id="' + lineId + '"]');
-      const { pillBg, pillColor, btnBg, btnColor } = await page.evaluate(() => {
-        const pill = document.querySelector('.pill.active');
+      // every chip always shows its own true colour regardless of selection
+      // (that's the point of a ribbon palette), but #startPlayingBtn's fill
+      // tracks whichever line is currently selected, so it still needs a
+      // click per line to check the button for every line in turn
+      await page.click('.line-chip[data-line-id="' + lineId + '"]');
+      const { chipBg, chipColor, btnBg, btnColor } = await page.evaluate((id) => {
+        const chip = document.querySelector('.line-chip[data-line-id="' + id + '"]');
         const btn = document.getElementById('startPlayingBtn');
-        const pillCs = getComputedStyle(pill), btnCs = getComputedStyle(btn);
-        return { pillBg: pillCs.backgroundColor, pillColor: pillCs.color, btnBg: btnCs.backgroundColor, btnColor: btnCs.color };
-      });
-      const pillRatio = contrastRatio(rgbStringToHex(pillBg), rgbStringToHex(pillColor));
+        const chipCs = getComputedStyle(chip), btnCs = getComputedStyle(btn);
+        return { chipBg: chipCs.backgroundColor, chipColor: chipCs.color, btnBg: btnCs.backgroundColor, btnColor: btnCs.color };
+      }, lineId);
+      const chipRatio = contrastRatio(rgbStringToHex(chipBg), rgbStringToHex(chipColor));
       const btnRatio = contrastRatio(rgbStringToHex(btnBg), rgbStringToHex(btnColor));
-      // 3:1 is WCAG AA's minimum for large/bold text, which this is (pill
+      // 3:1 is WCAG AA's minimum for large/bold text, which this is (chip
       // labels ~12-15px bold-weight, button text ~15-17px)
-      if (pillRatio < 3) failures.push(lineId + ' pill: ' + pillRatio.toFixed(2) + ':1');
+      if (chipRatio < 3) failures.push(lineId + ' chip: ' + chipRatio.toFixed(2) + ':1');
       if (btnRatio < 3) failures.push(lineId + ' button: ' + btnRatio.toFixed(2) + ':1');
     }
     expect(failures).toEqual([]);

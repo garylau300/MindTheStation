@@ -155,8 +155,8 @@ responsive width breakpoints (720px base / 960px at 900px+ / 1180px at 1300px+, 
 larger screens use more space instead of staying capped at the mobile-era 720px) hit their
 exact expected values at phone/tablet/laptop/desktop widths with zero overflow at any of
 them, that text (not just the container) actually scales up at both breakpoints, and that
-the route-map station popup stays compact rather than the oversized bubble it once was, the
-active line pill and primary buttons meet WCAG AA contrast for every line in both themes, and
+the route-map station popup stays compact rather than the oversized bubble it once was, every
+line-ribbon chip and primary button meets WCAG AA contrast for every line in both themes, and
 the train progress rail stays capped on wide screens (it once grew in lockstep with .wrap's
 own wider breakpoints, up to 1180px, making the train graphic noticeably larger than
 designed) while staying unaffected on narrow ones.
@@ -253,13 +253,44 @@ catch.
   `#E32017` — a real, silent mismatch, fixed by making them match.
 - **The route map (`drawRoutePreview()`) and in-game "Line progress" diagram
   (`drawDiagram()`) always draw a line in its true, undarkened color — in both themes.**
-  `darkenForLightMode()` exists for *text/accent* uses (`--accent-ink`, inactive line-pill
-  text) where a vivid color like Circle's yellow would be illegible as thin text on white —
-  but a route-map line is a thick stroke with real dots, not text, and stays clearly legible
-  at full brightness; darkening it there just makes Circle read as a muddy olive instead of
-  actually looking like Circle's line, defeating the point of a map. Don't reach for
-  `darkenForLightMode()` for a new diagram/map feature without checking whether it's text
-  (needs it) or a drawn line/shape (almost certainly doesn't).
+  `darkenForLightMode()` exists for *text/accent* uses (`--accent-ink`, e.g. the active
+  mode/direction button's own text) where a vivid color like Circle's yellow would be
+  illegible as thin text on white — but a route-map line is a thick stroke with real dots,
+  not text, and stays clearly legible at full brightness; darkening it there just makes
+  Circle read as a muddy olive instead of actually looking like Circle's line, defeating the
+  point of a map. Don't reach for `darkenForLightMode()` for a new diagram/map feature
+  without checking whether it's text (needs it) or a drawn line/shape (almost certainly
+  doesn't). The line-ribbon chips (see below) are the same call as the route map: a *fill*,
+  not text, so they use `bestContrastInk()` against each line's true color rather than
+  `darkenForLightMode()`.
+- **The Setup screen's line picker (`.line-select`) is a horizontal ribbon of solid line
+  colors, not a wrapping row of pills.** Every line is always on screen at once, on any
+  viewport, with no horizontal scrolling — `.line-chip`'s width is a pure flex-grow ratio
+  (`flex: 1 1 0%`, `7 1 0%` for the expanded one, `0.6 1 0%` for the disabled "soon" sliver)
+  that always sums to exactly the container's width, rather than a fixed pixel size that
+  could overflow a narrow phone. A 2px `gap` plus the container's own `--line` background
+  showing through it is what actually keeps neighboring colors visually distinct (this
+  matters for Northern's near-black next to anything) — not a per-chip border, which would
+  fight the "always show the true color" rule above. Only one chip is ever expanded
+  (showing its name/count) at a time: the selected line stays expanded always (so a phone
+  with no hover still always has the current selection's name visible), and hovering/
+  focusing any other chip previews it expanded instead, collapsing back to the actual
+  selection on mouseleave/blur (`collapseChipsToActive()`) — this is a desktop-only bonus,
+  never the only way to identify a line, since color plus the "✓" prefix on the active
+  chip's name (`.line-chip.active .chip-name::before`) already fully identify it without
+  hover. The active chip is marked with a neutral inset ring (`box-shadow` in `--ink`), not
+  a colored bar or border, since the ring has to read the same way regardless of which of
+  the 10 different hues it's drawn against — an earlier version used a thin bottom accent
+  line and it wasn't reliably legible on every color. Selecting a *different* line also
+  plays a one-shot scale/brightness "pop" (`.pop` → `chipPop`, restarted via the same
+  remove-class/reflow/add-class trick as `popCard()`/`flashScore()`) on the newly-active
+  chip only, not the one being deselected. `paintLineChips()` sets each chip's
+  `--chip-color`/`--chip-ink` once (colors don't change with the light/dark theme toggle,
+  so unlike the old pills' `applyPillColors()` this never needs to re-run on theme
+  switch — only once at startup and once more after the Waterloo & City egg chip is
+  appended). The class was renamed from `.pill` to `.line-chip` throughout — including
+  `test/gameplay.test.js`, `test/geometry.test.js`, and `e2e/layout.spec.js`'s selectors —
+  since it's no longer pill-shaped; don't reintroduce `.pill` as a name for anything here.
 - **A layout's internal viewBox scale (`r` for `spur-loop`, `vbW`/`vbH` for `linear`, segment
   `spacing` for `branch-tree`) has to be picked relative to how wide `.wrap` can actually get, not
   just relative to that one line's own station count.** `.diagram-card svg` stretches to a fixed
