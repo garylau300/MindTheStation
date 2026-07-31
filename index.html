@@ -2342,6 +2342,14 @@
     }
     return tickerStyleEl;
   }
+  // A monotonic accelerate-only curve for the scroll segment: ramps up
+  // faster than a plain "ease-in" would right from the start (x1 pulled
+  // in from ease-in's default 0.42 to 0.15, so it isn't nearly stationary
+  // for the first chunk of the segment) and keeps climbing all the way to
+  // t=1 at full speed (y2=1, x2=1) — deliberately no ease-out hump before
+  // the hold, so the scroll doesn't visibly slow down before it stops;
+  // it just stops, right when the hold-at-end keyframe takes over.
+  const TICKER_SCROLL_EASING = 'cubic-bezier(0.15, 0, 1, 1)';
   // Builds one @keyframes rule (if needed) and applies it to scrollEl.
   // The scroll segment's own duration is distance/speed, so longer
   // overflows take proportionally longer to cross rather than racing at
@@ -2365,8 +2373,8 @@
     const cPct = ((TICKER_HOLD_START_MS + scrollMs + TICKER_HOLD_END_MS) / total * 100).toFixed(3);
     scrollEl.style.animation = keyframeName + ' ' + (total / 1000).toFixed(3) + 's linear infinite';
     return '@keyframes ' + keyframeName + '{' +
-      '0%{ transform:translateX(0); animation-timing-function: ease-in-out; }' +
-      aPct + '%{ transform:translateX(0); animation-timing-function: ease-in-out; }' +
+      '0%{ transform:translateX(0); animation-timing-function: ' + TICKER_SCROLL_EASING + '; }' +
+      aPct + '%{ transform:translateX(0); animation-timing-function: ' + TICKER_SCROLL_EASING + '; }' +
       bPct + '%{ transform:translateX(' + distance + 'px); animation-timing-function: linear; }' +
       cPct + '%{ transform:translateX(' + distance + 'px); animation-timing-function: steps(1, jump-start); }' +
       '100%{ transform:translateX(0); }' +
