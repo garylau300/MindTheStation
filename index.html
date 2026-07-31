@@ -1791,6 +1791,27 @@
     return contrastRatio(hex, DARK) >= contrastRatio(hex, LIGHT) ? DARK : LIGHT;
   }
 
+  // darkenForLightMode()'s dark-mode counterpart, for the same --accent-ink
+  // use (text/borders drawn directly on the app's own background, not a
+  // solid fill — bestContrastInk() already handles fills). Most line colors
+  // are bright enough to read as-is on the dark background, but a genuinely
+  // dark one (Northern's pure black) rendered as literal black text on the
+  // near-black --bg (#121317) is essentially invisible — this progressively
+  // lightens toward white only as much as needed to clear WCAG AA (4.5:1)
+  // against that background, preserving the line's own hue as far as
+  // possible rather than jumping straight to a fixed ink like
+  // bestContrastInk() does.
+  const DARK_MODE_BG = '#121317';
+  function lightenForDarkMode(hex){
+    if(contrastRatio(hex, DARK_MODE_BG) >= 4.5) return hex;
+    const {r,g,b} = hexToRgb(hex);
+    for(let amount = 0.05; amount <= 1; amount += 0.05){
+      const candidate = rgbToHex(r + (255-r)*amount, g + (255-g)*amount, b + (255-b)*amount);
+      if(contrastRatio(candidate, DARK_MODE_BG) >= 4.5) return candidate;
+    }
+    return '#f5f4ef';
+  }
+
   let LINE = buildLineRuntime('circle');
 
   const $ = id => document.getElementById(id);
@@ -2047,7 +2068,7 @@
 
   function applyLineTheme(){
     document.body.style.setProperty('--line-accent', LINE.def.color);
-    document.body.style.setProperty('--accent-ink', isLight ? darkenForLightMode(LINE.def.color) : LINE.def.color);
+    document.body.style.setProperty('--accent-ink', isLight ? darkenForLightMode(LINE.def.color) : lightenForDarkMode(LINE.def.color));
     // text drawn directly on a solid --line-accent fill (the active line
     // pill, primary buttons) needs to pick light-or-dark per line — a fixed
     // near-black was unreadable on several lines' own accent colors.

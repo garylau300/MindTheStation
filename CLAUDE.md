@@ -263,6 +263,20 @@ catch.
   doesn't). The line-ribbon chips (see below) are the same call as the route map: a *fill*,
   not text, so they use `bestContrastInk()` against each line's true color rather than
   `darkenForLightMode()`.
+- **`--accent-ink` needs its own dark-mode adjustment too, not just light-mode's
+  `darkenForLightMode()`.** `applyLineTheme()` used to set dark mode's `--accent-ink`
+  straight to the line's true color, unadjusted, on the assumption that any line color is
+  bright enough to read as text against the dark `--bg` (#121317) — true for most lines,
+  but Northern's true color is pure black, making its own line name in the header, its
+  active mode/direction/branch buttons, etc. render as literal black-on-near-black: real,
+  reported illegible text. `lightenForDarkMode()` is the dark-mode counterpart:
+  progressively lightens a color toward white only as far as needed to clear real WCAG AA
+  contrast (4.5:1, `contrastRatio()` against `DARK_MODE_BG`) against the dark background,
+  leaving already-legible colors (most lines) at their true, unmodified color — checked for
+  all 10 real lines, not just Northern, since a few others (Central, Bakerloo, District,
+  Piccadilly, Metropolitan) were also just under the threshold and got a small nudge too.
+  Light mode's `darkenForLightMode()` is untouched by this — Northern's black already reads
+  fine as text on a light background, it's only ever a dark-mode problem.
 - **The Setup screen's line picker (`.line-select`) is a horizontal ribbon of solid line
   colors, not a wrapping row of pills.** Chips run in rainbow (ROYGBIV hue) order —
   `LINE_RAINBOW_ORDER` — not the order their buttons happen to be declared in: Central,
