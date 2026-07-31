@@ -112,7 +112,7 @@ test('text scales up at both width breakpoints, not just the container', async (
     await page.setViewportSize({ width, height: 900 });
     return page.evaluate(() => ({
       chip: parseFloat(getComputedStyle(document.querySelector('.line-chip')).fontSize),
-      logo: document.querySelector('.logo-img').getBoundingClientRect().height
+      logo: parseFloat(getComputedStyle(document.querySelector('.page-title')).fontSize)
     }));
   };
   const base = await sizeAt(800);   // below the 900px breakpoint
