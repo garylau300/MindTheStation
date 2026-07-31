@@ -71,11 +71,18 @@ they reset on page refresh, not just on a new run. Within a session:
   warmup** — `streak` itself was already tracked there (`submitAnswer()`'s correct/wrong
   branches update it regardless of mode; only the *display* was previously gated), so
   surfacing it needed no new state, just a new element. Appears at the same ≥3 threshold as
-  `streakSuffix`'s "New best" celebration and disappears the instant the streak breaks
-  (`classList.toggle('hidden', streak < 3)` — an instant hide, not a fade, so a broken
-  streak reads as "off" rather than lingering) — called from the same central
-  `updateStats()` every other stat already goes through, so every streak-changing action
-  (correct/wrong answer, hint, skip) keeps it in sync for free. Stacked two-line layout: a
+  `streakSuffix`'s "New best" celebration — called from the same central `updateStats()`
+  every other stat already goes through, so every streak-changing action (correct/wrong
+  answer, hint, skip) keeps it in sync for free. When the streak breaks, the badge doesn't
+  just vanish: `.extinguishing` (added in `updateStreakFlame()`, tracked via the `flameActive`
+  flag so a re-ignition — e.g. an MC hint dropping streak 3→2 immediately followed by a
+  correct answer back to 3 — cancels the pending hide via `clearTimeout` instead of racing
+  it) plays the flame icon visibly dying out first (`flameDie`: scale/desaturate/dim over
+  ~420ms, while the badge itself stays put) and only then, with a matching animation delay,
+  collapses and fades the whole badge (`badgeCollapse`, ~250ms) — a `FLAME_EXTINGUISH_MS`
+  (650ms) `setTimeout` finally adds `hidden` once both finish. `resetStreakFlame()` (called
+  from `resetState()`) is the instant, un-animated reset for a genuinely new run, so starting
+  over never plays a leftover extinguish from the previous run. Stacked two-line layout: a
   large flickering flame icon (`.flame-icon`, `flameFlicker` animating scale/rotate/glow on
   top of the emoji) above the streak count (`.flame-count`), which pops (`.bump` →
   `streakBump`) on every increment while active, not just on first appearing. Session-only,

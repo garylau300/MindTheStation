@@ -244,7 +244,30 @@
     75%{ transform: scale(1.12) rotate(7deg) translateY(-1px) scaleY(1.08); filter: drop-shadow(0 0 7px rgba(255,100,10,1)); }
     100%{ transform: scale(1.04) rotate(-4deg) translateY(0) scaleY(1.02); filter: drop-shadow(0 0 4px rgba(255,150,40,.7)); }
   }
-  .flame-count{ display:block; font-size:15px; margin-top:1px; }
+  .flame-count{ display:block; font-size:15px; margin-top:1px; transition: opacity .3s ease .1s; }
+
+  /* Streak-break sequence: the fire dies out first (flame-icon shrinks,
+     desaturates, goes dark over ~420ms while the badge itself stays put),
+     then only after that does the whole badge collapse and fade away
+     (~250ms, delayed to start once the flame has visibly died) — two
+     distinct stages, not one simultaneous fade. JS (updateStreakFlame())
+     adds 'hidden' once both animations finish. Placed after .bump/.flame-icon's
+     own rules so it wins the animation-shorthand tie on source order alone
+     if this class is ever combined with them. */
+  .streak-flame.extinguishing{ animation: badgeCollapse .25s ease-in .38s forwards; }
+  .streak-flame.extinguishing .flame-icon{ animation: flameDie .42s ease-in forwards; }
+  .streak-flame.extinguishing .flame-count{ opacity:.35; }
+  @keyframes flameDie{
+    0%{ transform: scale(1) rotate(0deg) translateY(0); filter: drop-shadow(0 0 5px rgba(255,140,30,.9)) saturate(1) brightness(1); }
+    20%{ transform: scale(1.18) rotate(-5deg) translateY(-2px); filter: drop-shadow(0 0 7px rgba(255,120,20,1)) saturate(1) brightness(1.05); }
+    45%{ transform: scale(0.75) rotate(4deg) translateY(1px); filter: drop-shadow(0 0 3px rgba(200,140,90,.6)) saturate(.4) brightness(.8); }
+    70%{ transform: scale(0.4) rotate(-2deg) translateY(3px); filter: grayscale(.8) brightness(.6); opacity:.5; }
+    100%{ transform: scale(0.05) translateY(5px); filter: grayscale(1) brightness(.4); opacity:0; }
+  }
+  @keyframes badgeCollapse{
+    0%{ transform: scale(1); opacity:1; }
+    100%{ transform: scale(0.82); opacity:0; }
+  }
 
   /* reserved when the flame badge is showing, so its top-right corner never
      paints over question text — see the .streak-active toggle in updateStreakFlame() */
@@ -1755,6 +1778,9 @@
   // session-only like every other stat here, reset each new run
   let score = 0;
   let questionStartTime = null, hintUsedThisQuestion = false;
+  // mirrors whether the flame badge is currently on screen (including
+  // mid-extinguish) — see updateStreakFlame()
+  let flameActive = false, flameExtinguishTimer = null;
   let mcOrder = [];         // shuffled true-station-indices, one per MC question
   // per-station outcome, keyed by true geographic index: 'ok' | 'bad'
   let results = {};
@@ -1864,22 +1890,48 @@
   // the streakSuffix()/score text (quiz/mc only), this is a purely visual
   // cue so it's allowed in warmup too. Only appears from 3 in a row (same
   // threshold as streakSuffix's own "New best" celebration — 1-2 in a row
-  // isn't a streak worth flagging) and disappears the instant the streak
-  // breaks (wrong answer, skip, or a hint eating into it) rather than
-  // fading out, since it should read as "off", not "fading".
+  // isn't a streak worth flagging). When the streak breaks (wrong answer,
+  // skip, or a hint eating into it) the fire visibly dies out first
+  // (.extinguishing, see its CSS) and only once that's finished does the
+  // badge actually get 'hidden' — a dead flame, not an instant vanish.
+  const FLAME_EXTINGUISH_MS = 650;
   function updateStreakFlame(){
     const active = streak >= 3;
-    streakFlameEl.classList.toggle('hidden', !active);
     // reserves a right-side gutter on the question-content elements (.qc)
     // so the badge's own corner never paints over prompt/context text —
-    // see the #gameCard.streak-active rule
-    $('gameCard').classList.toggle('streak-active', active);
+    // see the #gameCard.streak-active rule. Kept reserved through the
+    // extinguish animation too, so text doesn't jump until the badge is
+    // actually gone.
+    $('gameCard').classList.toggle('streak-active', active || flameActive);
     if(active){
+      clearTimeout(flameExtinguishTimer);
+      streakFlameEl.classList.remove('extinguishing');
+      streakFlameEl.classList.remove('hidden');
       streakFlameCountEl.textContent = streak;
       streakFlameEl.classList.remove('bump');
       void streakFlameEl.offsetWidth; // restart the pop on every increment, not just on first appearance
       streakFlameEl.classList.add('bump');
+      flameActive = true;
+    } else if(flameActive){
+      flameActive = false;
+      streakFlameEl.classList.remove('bump');
+      streakFlameEl.classList.add('extinguishing');
+      flameExtinguishTimer = setTimeout(function(){
+        streakFlameEl.classList.add('hidden');
+        streakFlameEl.classList.remove('extinguishing');
+        $('gameCard').classList.remove('streak-active');
+      }, FLAME_EXTINGUISH_MS);
     }
+  }
+
+  // Instantly resets the flame badge with no extinguish animation — for a
+  // genuinely new run (resetState()), not a mid-run streak break.
+  function resetStreakFlame(){
+    clearTimeout(flameExtinguishTimer);
+    streakFlameEl.classList.add('hidden');
+    streakFlameEl.classList.remove('extinguishing', 'bump');
+    $('gameCard').classList.remove('streak-active');
+    flameActive = false;
   }
 
   function shuffle(arr){
@@ -1918,6 +1970,7 @@
     idx = 0; streak = 0; correctCount = 0; attempts = 0; misses = [];
     startTime = null; charsTyped = 0; results = {};
     score = 0; questionStartTime = null; hintUsedThisQuestion = false;
+    resetStreakFlame();
     hideFeedback();
     if(mode === 'mc') mcOrder = shuffle([...Array(LINE.N).keys()]);
     statTimeEl.textContent = '0:00';
