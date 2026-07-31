@@ -185,16 +185,10 @@
   .line-chip.expand .chip-label{ opacity:1; transform:translateY(0); transition-delay:.08s; }
   .chip-name{ font-size:1em; font-weight:700; line-height:1.2; }
   .chip-count{ display:block; font-size:.82em; font-weight:400; opacity:.85; margin-top:1px; font-variant-numeric: tabular-nums; }
-  /* selection ring: a neutral ink outline (not another colour swatch) so
-     "which one is selected" reads the same way regardless of the chip's
-     own colour, instead of a thin bottom bar that only worked on some hues */
-  .line-chip.active{ box-shadow: inset 0 0 0 2px var(--panel), inset 0 0 0 3.5px var(--ink); z-index:2; }
-  .line-chip.pop{ animation: chipPop .4s cubic-bezier(.34,1.56,.64,1); }
-  @keyframes chipPop{
-    0%{ transform: scale(1); }
-    35%{ transform: scale(1.07); filter: brightness(1.18); }
-    100%{ transform: scale(1); }
-  }
+  /* No ring, no tick, no pop-then-shrink scale animation on the active chip
+     by explicit instruction — being the one chip that's expanded at rest
+     (see .expand above) is the only "this is selected" signal now, and the
+     flex-grow width transition alone is what plays when you click a line. */
   /* flat, not hatched: a diagonal-stripe pattern left the expanded label
      half-illegible (white text vanishing over the lighter stripe bands) —
      now that the chip is genuinely interactive and its name/"soon" is
@@ -680,15 +674,15 @@
     </div>
     <span class="direction-label section-label line-select-label">Line</span>
     <div class="line-select" role="group" aria-label="Choose a line">
-      <button type="button" class="line-chip active expand" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">H&amp;C</b><span class="chip-count">29 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
       <button type="button" class="line-chip" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
+      <button type="button" class="line-chip active expand" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
       <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">H&amp;C</b><span class="chip-count">29 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
       <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
       <button type="button" class="line-chip soon" id="lineElizabethBtn" data-line-id="elizabeth" title="Elizabeth line — coming soon"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">soon</span></span></button>
     </div>
@@ -2069,6 +2063,40 @@
   // all: bestContrastInk() picks whichever of near-black/near-white ink
   // actually reads on that one true colour, once, and it stays correct in
   // both themes since the swatch itself never changes.
+  // Ribbon order, by hue (ROYGBIV) rather than the alphabetical/random
+  // order the buttons happen to be declared in below — Waterloo & City
+  // slots in with the real lines (between District and Victoria, its own
+  // teal sitting between green and cyan-blue) even though its chip isn't
+  // in the DOM until the Drain egg is found; jubilee's silver and
+  // northern's black have no real hue, so they sit after the spectrum
+  // rather than arbitrarily mixed into it. Elizabeth (not a real line yet)
+  // always stays last regardless, via insertLineChipInRainbowOrder() below.
+  const LINE_RAINBOW_ORDER = [
+    'central', 'bakerloo', 'circle', 'district', 'waterloocity', 'victoria',
+    'piccadilly', 'metropolitan', 'hammersmithcity', 'jubilee', 'northern'
+  ];
+
+  // Inserts a dynamically-created chip (currently just the Waterloo & City
+  // egg) at its correct spot in LINE_RAINBOW_ORDER among whichever chips
+  // are already in the DOM, rather than just appending it at the end —
+  // and always before the Elizabeth "soon" chip, which stays last no
+  // matter what else gets unlocked.
+  function insertLineChipInRainbowOrder(chip, lineId){
+    const container = document.querySelector('.line-select');
+    const myPos = LINE_RAINBOW_ORDER.indexOf(lineId);
+    const existing = Array.from(container.querySelectorAll('.line-chip[data-line-id]'));
+    const nextChip = existing.find(el => {
+      const pos = LINE_RAINBOW_ORDER.indexOf(el.dataset.lineId);
+      return pos !== -1 && pos > myPos;
+    });
+    if(nextChip){
+      container.insertBefore(chip, nextChip);
+    } else {
+      const soon = container.querySelector('.line-chip.soon');
+      container.insertBefore(chip, soon || null);
+    }
+  }
+
   function paintLineChips(){
     document.querySelectorAll('.line-select .line-chip[data-line-id]').forEach(function(chip){
       const def = LINES[chip.dataset.lineId];
@@ -2166,17 +2194,9 @@
     directionForwardBtnEl.classList.add('active');
     directionReverseBtnEl.classList.remove('active');
     document.querySelectorAll('.line-select .line-chip[id^="line"]').forEach(btn => {
-      const wasActive = btn.classList.contains('active');
       const nowActive = btn.dataset.lineId === id;
       btn.classList.toggle('active', nowActive);
       btn.classList.toggle('expand', nowActive);
-      if(nowActive && !wasActive){
-        // a quick, dynamic scale/brightness pop on the newly-selected
-        // chip — same restart-the-animation trick as popCard()/flashScore()
-        btn.classList.remove('pop');
-        void btn.offsetWidth;
-        btn.classList.add('pop');
-      }
     });
     $('lineNameSpan').textContent = LINE.def.label;
     document.title = LINE.def.label + ' Line — Mind the Station';
@@ -2783,7 +2803,7 @@
       label.appendChild(count);
       chip.appendChild(label);
       chip.addEventListener('click', function(){ setLine('waterloocity'); });
-      document.querySelector('.line-select').appendChild(chip);
+      insertLineChipInRainbowOrder(chip, 'waterloocity');
       paintLineChips();
       wireLineChipHover(chip);
     }

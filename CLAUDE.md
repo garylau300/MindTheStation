@@ -264,8 +264,19 @@ catch.
   not text, so they use `bestContrastInk()` against each line's true color rather than
   `darkenForLightMode()`.
 - **The Setup screen's line picker (`.line-select`) is a horizontal ribbon of solid line
-  colors, not a wrapping row of pills.** Every line is always on screen at once, on any
-  viewport, with no horizontal scrolling — `.line-chip`'s width is a pure flex-grow ratio
+  colors, not a wrapping row of pills.** Chips run in rainbow (ROYGBIV hue) order —
+  `LINE_RAINBOW_ORDER` — not the order their buttons happen to be declared in: Central,
+  Bakerloo, Circle, District, Waterloo & City, Victoria, Piccadilly, Metropolitan, H&C,
+  then Jubilee's silver and Northern's black (no real hue, so they sit after the spectrum
+  rather than arbitrarily mixed into it) last, with Elizabeth's "soon" chip pinned after
+  all of them regardless of its own hue, since it isn't a real destination. Waterloo & City
+  isn't in the DOM until the Drain egg is found, so its egg-creation code calls
+  `insertLineChipInRainbowOrder()` rather than a plain `appendChild()`, walking the already-
+  present chips to find the first one whose `LINE_RAINBOW_ORDER` position is greater than
+  its own (falling back to just before the Elizabeth chip) — a new hidden/egg line needs the
+  same treatment, not an append, or it'll land at the wrong end of the spectrum. Every line
+  is always on screen at once, on any viewport, with no horizontal scrolling — `.line-chip`'s
+  width is a pure flex-grow ratio
   (`flex: 1 1 0%`, `7 1 0%` for the expanded one, `0.6 1 0%` for the "soon" sliver) that
   always sums to exactly the container's width, rather than a fixed pixel size that could
   overflow a narrow phone. Chips sit flush against each other by explicit instruction — no
@@ -279,16 +290,13 @@ catch.
   expanded always (so a phone with no hover still always has the current selection's name
   visible), and hovering/focusing any other chip previews it expanded instead, collapsing
   back to the actual selection on mouseleave/blur (`collapseChipsToActive()`) — this is a
-  desktop-only bonus, never the only way to identify a line, since the color itself plus
-  the neutral inset selection ring (`box-shadow` in `--ink`) already fully identify the
-  active line without hover; an earlier version also added a "✓" before the active chip's
-  name, removed by explicit instruction (the ring alone was judged sufficient). The ring
-  reads the same way regardless of which of the 10 hues it's drawn against — an earlier
-  version used a thin bottom accent line and it wasn't reliably legible on every color.
-  Selecting a *different* line also plays a one-shot scale/brightness "pop" (`.pop` →
-  `chipPop`, restarted via the same remove-class/reflow/add-class trick as
-  `popCard()`/`flashScore()`) on the newly-active chip only, not the one being deselected.
-  `paintLineChips()` sets each chip's `--chip-color`/`--chip-ink` once (colors don't change
+  desktop-only bonus, never the only way to identify a line, since simply *being the one
+  chip expanded at rest* (when nothing is hovered) is the only "this is selected" signal
+  now, by explicit instruction: an earlier version also had a "✓" before the active chip's
+  name and a neutral inset ring (`box-shadow`) around it, both removed since the rest-state
+  expansion alone was judged sufficient, and selecting a line no longer plays any scale/pop
+  animation on the chip either — only the flex-grow width transition. `paintLineChips()`
+  sets each chip's `--chip-color`/`--chip-ink` once (colors don't change
   with the light/dark theme toggle, so unlike the old pills' `applyPillColors()` this never
   needs to re-run on theme switch — only once at startup and once more after the Waterloo &
   City egg chip is appended). The class was renamed from `.pill` to `.line-chip` throughout
