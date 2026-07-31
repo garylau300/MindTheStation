@@ -222,15 +222,27 @@
      applyLineTheme() — pure near-black reads fine against the app's own
      dark background but was a jarring slab against the light theme's
      cream page, so light mode gets a softer charcoal) with bright amber
-     text in the embedded LT Railway font, one line: "1  <destination>"
-     left-justified, "Arriving" right-justified, same layout convention as
-     a real indicator. The colour is a fixed amber regardless of which
-     line is selected — real LED indicators are always amber, never
-     line-tinted, unlike the rest of this app's "true line colour"
-     elements. Tapping the whole board reverses the practice direction;
-     the destination text itself is deliberately the only thing that
-     changes (not a repositioned pair of names) since a real "next train
-     to X" board only ever shows the one current destination. */
+     text in the embedded LT Railway font. Line one is "1  <destination>
+     [via X]" left-justified, "Arriving" right-justified, same layout
+     convention as a real indicator; line two is "Calling at: A, B, C…",
+     the full station list in current-direction order. The colour is a
+     fixed amber regardless of which line is selected — real LED
+     indicators are always amber, never line-tinted, unlike the rest of
+     this app's "true line colour" elements. Tapping the whole board
+     reverses the practice direction; the destination text itself is
+     deliberately the only thing that changes on line one (not a
+     repositioned pair of names) since a real "next train to X" board
+     only ever shows the one current destination.
+     Either line can be longer than the board is wide (a long destination
+     name plus "via X", or a 50+ station "Calling at" list) — rather than
+     truncating with an ellipsis, an overflowing line becomes a ticker
+     (see refreshTickers()/applyTicker() in the script): it holds at its
+     start position, scrolls left to reveal the rest, holds at the end,
+     then snaps instantly back to the start and repeats — each line's
+     ticker runs independently, timed by its own overflow distance and
+     its own speed, so the two lines drift in and out of phase with each
+     other exactly like a real dual-line indicator's would. A line that
+     already fits stays static, left-aligned, with no animation at all. */
   .dest-board{
     display:block; width:100%;
     background: var(--board-bg, #101114); border:none; border-radius: var(--radius); padding:14px 16px;
@@ -238,9 +250,13 @@
   }
   .led-row{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
   .led-left{ display:flex; align-items:baseline; gap:16px; min-width:0; overflow:hidden; }
-  .led-num, .led-dest, .led-right{ color:#FF9500; font-size:16px; letter-spacing:.02em; }
-  .led-dest{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .led-scroll-viewport{ flex:1 1 auto; min-width:0; overflow:hidden; }
+  .led-scroll{ display:flex; align-items:baseline; gap:16px; white-space:nowrap; flex:none; }
+  .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ color:#FF9500; font-size:16px; letter-spacing:.02em; }
+  .led-dest, .led-via{ white-space:nowrap; }
   .led-num, .led-right{ flex:none; }
+  .led-calling-viewport{ display:block; overflow:hidden; margin-top:2px; }
+  .led-calling-scroll{ display:inline-block; white-space:nowrap; opacity:.9; }
 
   /* Branch: a compact 2-column grid of squared chips (not the old stadium
      pills) — rounded only at the whole grid's 4 true outer corners
@@ -663,7 +679,7 @@
     .line-chip{ font-size:13.5px; }
     .line-select{ height:62px; }
     .branch-chip{ font-size:14px; }
-    .led-num, .led-dest, .led-right{ font-size:17px; }
+    .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ font-size:17px; }
     .direction-label{ font-size:11.5px; }
     .mode-btn{ font-size:15px; padding:13px 12px; }
     .mode-btn small{ font-size:12px; }
@@ -694,7 +710,7 @@
     .line-chip{ font-size:15px; }
     .line-select{ height:68px; }
     .branch-chip{ font-size:15.5px; }
-    .led-num, .led-dest, .led-right{ font-size:18px; }
+    .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ font-size:18px; }
     .direction-label{ font-size:12px; }
     .mode-btn{ font-size:16.5px; padding:15px 14px; }
     .mode-btn small{ font-size:13px; }
@@ -777,9 +793,17 @@
       <span class="led-row">
         <span class="led-left">
           <span class="led-num">1</span>
-          <span class="led-dest" id="ledDest">Edgware Road</span>
+          <span class="led-scroll-viewport" id="ledScrollViewport">
+            <span class="led-scroll" id="ledScroll">
+              <span class="led-dest" id="ledDest">Edgware Road</span>
+              <span class="led-via hidden" id="ledVia"></span>
+            </span>
+          </span>
         </span>
         <span class="led-right">Arriving</span>
+      </span>
+      <span class="led-calling-viewport" id="ledCallingViewport">
+        <span class="led-calling-scroll" id="ledCallingScroll">Calling at: </span>
       </span>
     </button>
   </div>
@@ -1552,7 +1576,7 @@
         defaultBranch: 'westRuislipEpping',
         branches: {
           westRuislipEpping: { label: 'West Ruislip – Epping', stations: spine },
-          westRuislipHainault: { label: 'West Ruislip – Hainault (via Woodford)', stations: [...spine.slice(0, woodfordIdx+1), ...viaWoodford] },
+          westRuislipHainault: { label: 'West Ruislip – Hainault via Woodford', stations: [...spine.slice(0, woodfordIdx+1), ...viaWoodford] },
           ealingEpping: { label: 'Ealing Broadway – Epping', stations: [...ealingArm.slice().reverse(), ...spine.slice(northActonIdx)] },
           ealingHainault: { label: 'Ealing Broadway – Hainault', stations: [...ealingArm.slice().reverse(), ...spine.slice(northActonIdx, spine.indexOf('Leytonstone')+1), ...viaRedbridge] }
         }
@@ -1934,6 +1958,11 @@
   const modeMcBtnEl = $('modeMcBtn');
   const directionBoardEl = $('directionBoard');
   const ledDestEl = $('ledDest');
+  const ledViaEl = $('ledVia');
+  const ledScrollViewportEl = $('ledScrollViewport');
+  const ledScrollEl = $('ledScroll');
+  const ledCallingViewportEl = $('ledCallingViewport');
+  const ledCallingScrollEl = $('ledCallingScroll');
 
   let isLight = true;
   let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc'
@@ -2253,18 +2282,113 @@
     return { start, end };
   }
 
+  // The current branch's own label already carries its real-world "via X"
+  // qualifier where one applies (Northern's "via Bank"/"via Charing Cross",
+  // Central's "via Woodford") — extracted here rather than duplicated as
+  // separate branch metadata, so the LED board and the branch chip text
+  // can never drift out of sync with each other. Lines/branches with no
+  // "via" in their label (the vast majority) simply show none.
+  function viaText(){
+    if(!LINE.def.branches) return '';
+    const m = LINE.def.branches[LINE.branchId].label.match(/\bvia\s+(.+)$/i);
+    return m ? 'via ' + m[1].trim() : '';
+  }
+
   // Real "next train to X" boards only ever show the one current
   // destination, so ledDest is deliberately the only thing that changes
   // here — there's no fixed pair of names to keep in place like the
   // earlier two-terminus board had. The destination is whichever end of
   // terminusNames() the current reverseDirection is currently heading
   // toward; the aria-label spells out the full from/to for assistive tech.
+  // Line two ("Calling at: …") is the same current-direction station
+  // order used everywhere else in the app (seq()) — reverseDirection
+  // flips it exactly like a real destination board's stopping list would
+  // read differently depending on which way the train is actually going.
   function updateDirectionBoard(){
     const { start, end } = terminusNames();
     const fromName = reverseDirection ? end : start;
     const destination = reverseDirection ? start : end;
     ledDestEl.textContent = destination;
-    directionBoardEl.setAttribute('aria-label', 'Direction: ' + fromName + ' to ' + destination + '. Press to reverse.');
+    const via = viaText();
+    ledViaEl.textContent = via;
+    ledViaEl.classList.toggle('hidden', !via);
+    const callingNames = reverseDirection ? LINE.reversedJourneyNames : LINE.journeyNames;
+    ledCallingScrollEl.textContent = 'Calling at: ' + callingNames.join(', ');
+    directionBoardEl.setAttribute('aria-label',
+      'Direction: ' + fromName + ' to ' + destination + (via ? (' ' + via) : '') + '. Press to reverse.');
+    refreshTickers();
+  }
+
+  // ---- LED board tickers ----
+  // Either LED line can be wider than the board (a long destination name
+  // plus "via X", or a 50+ station "Calling at" list) — rather than
+  // truncating with an ellipsis, an overflowing line scrolls right-to-left
+  // to reveal the rest, holds briefly at the end, then snaps instantly
+  // back to the start and holds there before looping — matching a real
+  // dual-line platform indicator. Each line's ticker is computed and timed
+  // independently from its own overflow distance and its own speed (the
+  // "Calling at" line runs faster than the destination line), so the two
+  // naturally drift in and out of phase with each other rather than
+  // staying in lockstep. A line that already fits its viewport is left
+  // completely alone: no animation, just static left-aligned text.
+  const TICKER_HOLD_START_MS = 900;
+  const TICKER_HOLD_END_MS = 700;
+  let tickerStyleEl = null;
+  function tickerStyleTag(){
+    if(!tickerStyleEl){
+      tickerStyleEl = document.createElement('style');
+      tickerStyleEl.id = 'tickerKeyframes';
+      document.head.appendChild(tickerStyleEl);
+    }
+    return tickerStyleEl;
+  }
+  // Builds one @keyframes rule (if needed) and applies it to scrollEl.
+  // The scroll segment's own duration is distance/speed, so longer
+  // overflows take proportionally longer to cross rather than racing at
+  // a fixed duration regardless of length; the two hold segments stay a
+  // fixed, near-constant wall-clock length by construction (they're
+  // computed in ms up front, not as a fixed % of a length-dependent
+  // total). The snap-back is a real instant jump, not a fast reverse
+  // scroll: the keyframe just before 100% uses steps(1, jump-start), so
+  // the translateX value jumps straight back to 0 the instant that
+  // keyframe is reached, with no interpolated motion in between.
+  function applyTicker(viewportEl, scrollEl, keyframeName, speedPxPerSec){
+    scrollEl.style.animation = 'none';
+    scrollEl.style.transform = '';
+    const overflow = scrollEl.scrollWidth - viewportEl.clientWidth;
+    if(overflow <= 1) return '';
+    const distance = -overflow;
+    const scrollMs = Math.max(400, (overflow / speedPxPerSec) * 1000);
+    const total = TICKER_HOLD_START_MS + scrollMs + TICKER_HOLD_END_MS + 60;
+    const aPct = (TICKER_HOLD_START_MS / total * 100).toFixed(3);
+    const bPct = ((TICKER_HOLD_START_MS + scrollMs) / total * 100).toFixed(3);
+    const cPct = ((TICKER_HOLD_START_MS + scrollMs + TICKER_HOLD_END_MS) / total * 100).toFixed(3);
+    scrollEl.style.animation = keyframeName + ' ' + (total / 1000).toFixed(3) + 's linear infinite';
+    return '@keyframes ' + keyframeName + '{' +
+      '0%{ transform:translateX(0); animation-timing-function: ease-in-out; }' +
+      aPct + '%{ transform:translateX(0); animation-timing-function: ease-in-out; }' +
+      bPct + '%{ transform:translateX(' + distance + 'px); animation-timing-function: linear; }' +
+      cPct + '%{ transform:translateX(' + distance + 'px); animation-timing-function: steps(1, jump-start); }' +
+      '100%{ transform:translateX(0); }' +
+    '}';
+  }
+  function refreshTickers(){
+    const rules = [
+      applyTicker(ledScrollViewportEl, ledScrollEl, 'ledTickerDest', 55),
+      applyTicker(ledCallingViewportEl, ledCallingScrollEl, 'ledTickerCalling', 90)
+    ].filter(Boolean);
+    tickerStyleTag().textContent = rules.join('\n');
+  }
+  // The board's own width tracks .wrap's responsive breakpoints (and font
+  // sizes step up at the same breakpoints), so re-measuring on any resize
+  // of the board itself — not just a fixed window-resize listener — keeps
+  // ticker distances correct at every viewport width. Guarded: jsdom (the
+  // unit test harness) has no ResizeObserver global at all — the tests
+  // don't do real CSS layout anyway, so ticker overflow always measures
+  // as zero there regardless; only e2e/layout.spec.js's real Chromium
+  // exercises actual scrolling behaviour.
+  if(typeof ResizeObserver !== 'undefined'){
+    new ResizeObserver(refreshTickers).observe(directionBoardEl);
   }
 
   // Rounds only the branch grid's 4 true outer corners. The grid always

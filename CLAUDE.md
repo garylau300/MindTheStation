@@ -347,21 +347,67 @@ catch.
   the practice direction; a short instruction is appended to the section label itself
   (`.direction-hint`, e.g. "Direction (tap the board to change direction)") since the
   board's own clickability isn't otherwise obvious the way two separate buttons were. The
-  board shows one line, `"1  <destination>"` left-justified and `"Arriving"` right-justified
-  (`.led-row`/`.led-left`/`.led-num`/`.led-dest`/`.led-right`) — a real "next train to X"
+  board is two lines. Line one is `"1  <destination> [via X]"` left-justified and `"Arriving"`
+  right-justified (`.led-row`/`.led-left`/`.led-num`/`.led-scroll-viewport`/`.led-scroll`/
+  `.led-dest`/`.led-via`/`.led-right`) — a real "next train to X"
   board only ever shows the *one* current destination, so `updateDirectionBoard()`
   deliberately only updates `#ledDest` to whichever end of `terminusNames()` the current
   `reverseDirection` is heading toward, rather than keeping a fixed pair of names in place
   the way an earlier two-terminus-board version did (that version's "don't swap the names"
   constraint doesn't apply here — there's only one destination field now, and it changing
   to reflect the current direction is exactly correct, same as a real platform board shows
-  a different destination depending on which physical direction you're viewing). The LED
-  text is a fixed bright amber (`#FF9500`) in the embedded `LT Railway` font
+  a different destination depending on which physical direction you're viewing). `via X`
+  (`#ledVia`, `viaText()`) is parsed straight out of the current branch's own label wherever
+  one contains "via" (Northern's "via Bank"/"via Charing Cross", Central's "via Woodford" —
+  its label had its parentheses deliberately removed, `'West Ruislip – Hainault via
+  Woodford'` not `'(via Woodford)'`, so `viaText()`'s regex and the branch chip text read
+  identically) rather than as separate per-branch metadata, so the two can never drift
+  apart; branches with no "via" in their label show none, and hide `#ledVia` entirely
+  (`display:none`, not just empty text, since a lone stray gap would still show in the flex
+  row otherwise). Line two is `"Calling at: "` plus every station in the current
+  branch/direction's own order (the same `reverseDirection ? LINE.reversedJourneyNames :
+  LINE.journeyNames` list everything else in the app already uses), comma-separated
+  (`.led-calling-viewport`/`.led-calling-scroll`). The platform number `"1"` is **not** part
+  of either line's scrolling content — it's a separate, always-visible flex sibling of
+  `.led-scroll-viewport` inside `.led-left`, exactly like `"Arriving"` is a fixed sibling of
+  the whole row — only `.led-scroll` (destination + via) actually scrolls under it. Both
+  lines render at the *same* font size (`.led-num`/`.led-dest`/`.led-via`/`.led-right`/
+  `.led-calling-scroll` share one selector, at both responsive breakpoints too) — an earlier
+  version made line two visibly smaller as a "secondary line" convention, reverted by
+  explicit instruction — and sit close together (`.led-calling-viewport{margin-top:2px}`,
+  down from an initial 6px, again by explicit instruction) so the two read as one cohesive
+  two-line indicator, not a headline-plus-caption. The LED text is a fixed bright amber
+  (`#FF9500`) in the embedded `LT Railway` font
   (`@font-face`, a data-URI OTF alongside P22 Underground's — same embedding pattern,
   `format('opentype')` not `format('truetype')`) — **not** a per-line contrast-computed
   colour like the rest of this app's line-tinted elements, since a real LED indicator is
   always amber regardless of which line it's on; verified >4.5:1 against both plate colors
   (8.59:1 dark, 6.51:1 light). No glow/text-shadow on the LED text, by explicit instruction.
+  Either line can be wider than the board (a long destination name plus "via X", or a 50+
+  station "Calling at" list on a line like Piccadilly/Northern) — rather than truncating
+  with an ellipsis, an overflowing line becomes a **ticker** (`refreshTickers()`/
+  `applyTicker()`): it holds at its start position, scrolls left (`ease-in-out`) to reveal
+  the rest, holds at the fully-scrolled end, then **snaps instantly back** to the start (a
+  real jump via a `steps(1, jump-start)` keyframe stop, not a fast reverse-scroll — confirmed
+  by sampling `getComputedStyle(...).transform` over time in a real browser) and loops, by
+  explicit instruction on both the snap style and the loop shape. The destination line and
+  the "Calling at" line tick **independently** (also by explicit instruction) — each is timed
+  from its own measured overflow distance and its own speed (`ledTickerCalling` runs faster
+  than `ledTickerDest`, since the calling-at list is typically much longer and would
+  otherwise feel sluggish), so the two naturally drift in and out of phase with each other
+  rather than staying in lockstep, same as a real dual-line indicator would. A line that
+  already fits its viewport is left alone entirely — no animation, no transform, just static
+  left-aligned text — checked via `scrollWidth` vs the viewport's own `clientWidth`, not any
+  fixed text-length threshold, so it stays correct at every branch/direction/viewport-width
+  combination rather than just the ones tested by hand. Each keyframes rule is generated
+  per-refresh into a dynamically created `<style id="tickerKeyframes">` (not the committed
+  stylesheet — animation distances/durations are runtime-measured pixel values, not
+  constants) and re-run on every `updateDirectionBoard()` call (line/branch/direction
+  change) and on a `ResizeObserver` watching `#directionBoard` itself (guarded with a
+  `typeof ResizeObserver !== 'undefined'` check — jsdom, the unit-test harness, has no such
+  global; the unit suites don't do real CSS layout anyway, so ticker overflow always
+  measures as zero there regardless, and only `e2e/layout.spec.js`'s real Chromium exercises
+  actual scrolling).
   The board's plate is still a dark colour by design (echoing a real platform departure
   board), but **not the same dark for both app themes** — `--board-bg` is `BOARD_BG_DARK`
   (`#101114`) in dark mode but a softer charcoal `BOARD_BG_LIGHT` (`#2c2a27`) in light mode,
