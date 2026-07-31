@@ -157,21 +157,26 @@
      never wraps and never scrolls — every line is always on screen, on any
      viewport, because widths are pure flex-grow ratios summing to exactly
      the container width rather than fixed pixel sizes; see .line-chip
-     below). gap+background shows a thin neutral seam between each colour,
-     which is what actually keeps neighbouring swatches (e.g. Northern's
-     near-black next to anything) visually distinct, not per-chip borders. */
+     below). Chips sit flush against each other (no gap, no seam) so it
+     reads as one continuous strip of colour, not a row of separate tiles. */
   .line-select{
-    display:flex; gap:2px; background: var(--line);
-    margin-top:0; height:56px; overflow:visible;
+    display:flex; gap:0; margin-top:0; height:56px; overflow:visible;
   }
   .line-chip{
-    flex: 1 1 0%; min-width:0; position:relative; border:none; padding:0; margin:0;
+    flex: 1 1 0%; min-width:0; position:relative; border:none; border-radius:0; padding:0; margin:0;
     background: var(--chip-color, var(--panel)); color: var(--chip-ink, var(--ink-dim));
     font-family:var(--font-main); font-size:12px; cursor:pointer; appearance:none; -webkit-appearance:none;
     display:flex; align-items:flex-end; justify-content:flex-start; overflow:hidden;
     transition: flex-grow .32s cubic-bezier(.2,.8,.2,1), transform .1s ease;
   }
-  .line-chip.expand{ flex: 7 1 0%; }
+  /* every internal seam between chips stays perfectly square (flush, no
+     gap) — only the ribbon's two outer ends round off, so the whole strip
+     still reads as one rounded-rect container, not a row of square tiles.
+     :first-child/:last-child are more specific than the plain .line-chip
+     rule above, so this wins regardless of which other state classes
+     (.active/.expand/.soon) are also present. */
+  .line-chip:first-child{ border-radius: var(--radius) 0 0 var(--radius); }
+  .line-chip:last-child{ border-radius: 0 var(--radius) var(--radius) 0; }
   .chip-label{
     display:flex; flex-direction:column; padding:8px 10px 7px; white-space:nowrap;
     opacity:0; transform: translateY(4px);
@@ -180,7 +185,6 @@
   .line-chip.expand .chip-label{ opacity:1; transform:translateY(0); transition-delay:.08s; }
   .chip-name{ font-size:1em; font-weight:700; line-height:1.2; }
   .chip-count{ display:block; font-size:.82em; font-weight:400; opacity:.85; margin-top:1px; font-variant-numeric: tabular-nums; }
-  .line-chip.active .chip-name::before{ content:'✓ '; }
   /* selection ring: a neutral ink outline (not another colour swatch) so
      "which one is selected" reads the same way regardless of the chip's
      own colour, instead of a thin bottom bar that only worked on some hues */
@@ -191,10 +195,19 @@
     35%{ transform: scale(1.07); filter: brightness(1.18); }
     100%{ transform: scale(1); }
   }
-  .line-chip.soon{
-    flex: 0.6 1 0%; cursor:not-allowed; opacity:.4;
-    background: repeating-linear-gradient(135deg, var(--chip-color, currentColor) 0 3px, transparent 3px 8px);
-  }
+  /* flat, not hatched: a diagonal-stripe pattern left the expanded label
+     half-illegible (white text vanishing over the lighter stripe bands) —
+     now that the chip is genuinely interactive and its name/"soon" is
+     meant to be read on hover, a plain dimmed fill of its own true colour
+     (opacity, same as before) reads clearly everywhere instead */
+  .line-chip.soon{ flex: 0.6 1 0%; opacity:.4; }
+  /* .expand has to come after .soon: both are two-class selectors of equal
+     specificity, and Elizabeth's chip carries both classes at once (it's
+     .soon but still fully hoverable) — CSS breaks a specificity tie by
+     source order, so whichever of these two rules is written last is the
+     one that actually wins the "flex" shorthand on that chip. Placed here,
+     .expand's flex:7 correctly overrides .soon's flex:0.6 while hovered. */
+  .line-chip.expand{ flex: 7 1 0%; }
 
   .direction-row{ margin-bottom: 16px; }
   .direction-label{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color: var(--ink-dim); }
@@ -551,7 +564,7 @@
   .egg-toast b{ color: var(--accent-ink); }
 
   @media (hover: hover) and (pointer: fine){
-    .line-chip:not(.soon):hover{ filter: brightness(1.12); }
+    .line-chip:hover{ filter: brightness(1.12); }
     .mode-btn:not(.active):hover{ border-color: var(--ink-dim); color: var(--ink); }
     .direction-btn:not(.active):hover{ border-color: var(--ink-dim); color: var(--ink); }
     .link-btn:hover{ border-color: var(--ink-dim); color: var(--ink); }
@@ -677,7 +690,7 @@
       <button type="button" class="line-chip" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
       <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
       <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
-      <div class="line-chip soon" title="Elizabeth line — coming soon"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">soon</span></span></div>
+      <button type="button" class="line-chip soon" id="lineElizabethBtn" data-line-id="elizabeth" title="Elizabeth line — coming soon"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">soon</span></span></button>
     </div>
   </header>
 
@@ -2727,6 +2740,14 @@
   $('lineCentralBtn').addEventListener('click', function(){ setLine('central'); });
   $('linePiccadillyBtn').addEventListener('click', function(){ setLine('piccadilly'); });
   $('lineNorthernBtn').addEventListener('click', function(){ setLine('northern'); });
+  // Elizabeth isn't a real playable line yet, but the chip is still fully
+  // interactive (hover/focus preview like every other chip, via the shared
+  // wiring loop below) rather than an inert div — clicking it just surfaces
+  // the same "coming soon" toast the hidden easter eggs already use, since
+  // there's no LINES.elizabeth to actually switch to.
+  $('lineElizabethBtn').addEventListener('click', function(){
+    showEggToast('🚧 Elizabeth line — coming soon');
+  });
   document.querySelectorAll('.line-select .line-chip[data-line-id]').forEach(wireLineChipHover);
 
   // ---- secret: "The Drain" ----

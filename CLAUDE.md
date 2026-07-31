@@ -266,31 +266,43 @@ catch.
 - **The Setup screen's line picker (`.line-select`) is a horizontal ribbon of solid line
   colors, not a wrapping row of pills.** Every line is always on screen at once, on any
   viewport, with no horizontal scrolling — `.line-chip`'s width is a pure flex-grow ratio
-  (`flex: 1 1 0%`, `7 1 0%` for the expanded one, `0.6 1 0%` for the disabled "soon" sliver)
-  that always sums to exactly the container's width, rather than a fixed pixel size that
-  could overflow a narrow phone. A 2px `gap` plus the container's own `--line` background
-  showing through it is what actually keeps neighboring colors visually distinct (this
-  matters for Northern's near-black next to anything) — not a per-chip border, which would
-  fight the "always show the true color" rule above. Only one chip is ever expanded
-  (showing its name/count) at a time: the selected line stays expanded always (so a phone
-  with no hover still always has the current selection's name visible), and hovering/
-  focusing any other chip previews it expanded instead, collapsing back to the actual
-  selection on mouseleave/blur (`collapseChipsToActive()`) — this is a desktop-only bonus,
-  never the only way to identify a line, since color plus the "✓" prefix on the active
-  chip's name (`.line-chip.active .chip-name::before`) already fully identify it without
-  hover. The active chip is marked with a neutral inset ring (`box-shadow` in `--ink`), not
-  a colored bar or border, since the ring has to read the same way regardless of which of
-  the 10 different hues it's drawn against — an earlier version used a thin bottom accent
-  line and it wasn't reliably legible on every color. Selecting a *different* line also
-  plays a one-shot scale/brightness "pop" (`.pop` → `chipPop`, restarted via the same
-  remove-class/reflow/add-class trick as `popCard()`/`flashScore()`) on the newly-active
-  chip only, not the one being deselected. `paintLineChips()` sets each chip's
-  `--chip-color`/`--chip-ink` once (colors don't change with the light/dark theme toggle,
-  so unlike the old pills' `applyPillColors()` this never needs to re-run on theme
-  switch — only once at startup and once more after the Waterloo & City egg chip is
-  appended). The class was renamed from `.pill` to `.line-chip` throughout — including
-  `test/gameplay.test.js`, `test/geometry.test.js`, and `e2e/layout.spec.js`'s selectors —
-  since it's no longer pill-shaped; don't reintroduce `.pill` as a name for anything here.
+  (`flex: 1 1 0%`, `7 1 0%` for the expanded one, `0.6 1 0%` for the "soon" sliver) that
+  always sums to exactly the container's width, rather than a fixed pixel size that could
+  overflow a narrow phone. Chips sit flush against each other by explicit instruction — no
+  `gap`, no separator background — so the whole thing reads as one continuous strip of
+  colour, not a row of separate tiles; per-chip corners are square for the same reason
+  (only `:first-child`/`:last-child` round off, so the *ribbon's* two outer ends still read
+  as one rounded-rect container while every internal seam between colors stays flush —
+  `:first-child`/`:last-child` have higher specificity than the plain `.line-chip` rule, so
+  this wins outright regardless of which other state classes are also on that chip). Only
+  one chip is ever expanded (showing its name/count) at a time: the selected line stays
+  expanded always (so a phone with no hover still always has the current selection's name
+  visible), and hovering/focusing any other chip previews it expanded instead, collapsing
+  back to the actual selection on mouseleave/blur (`collapseChipsToActive()`) — this is a
+  desktop-only bonus, never the only way to identify a line, since the color itself plus
+  the neutral inset selection ring (`box-shadow` in `--ink`) already fully identify the
+  active line without hover; an earlier version also added a "✓" before the active chip's
+  name, removed by explicit instruction (the ring alone was judged sufficient). The ring
+  reads the same way regardless of which of the 10 hues it's drawn against — an earlier
+  version used a thin bottom accent line and it wasn't reliably legible on every color.
+  Selecting a *different* line also plays a one-shot scale/brightness "pop" (`.pop` →
+  `chipPop`, restarted via the same remove-class/reflow/add-class trick as
+  `popCard()`/`flashScore()`) on the newly-active chip only, not the one being deselected.
+  `paintLineChips()` sets each chip's `--chip-color`/`--chip-ink` once (colors don't change
+  with the light/dark theme toggle, so unlike the old pills' `applyPillColors()` this never
+  needs to re-run on theme switch — only once at startup and once more after the Waterloo &
+  City egg chip is appended). The class was renamed from `.pill` to `.line-chip` throughout
+  — including `test/gameplay.test.js`, `test/geometry.test.js`, and `e2e/layout.spec.js`'s
+  selectors — since it's no longer pill-shaped; don't reintroduce `.pill` as a name for
+  anything here. **Elizabeth is a real, fully-interactive chip** (`#lineElizabethBtn`, per
+  explicit instruction) even though it has no `LINES.elizabeth` to switch to — it's a
+  `<button>` wired through the same `wireLineChipHover()` as every real line (so it
+  hover/focus-expands identically), but its click handler shows the same `showEggToast()`
+  "coming soon" toast the hidden easter eggs use instead of calling `setLine()`. Its `.soon`
+  fill is a flat dimmed tint of its own true color (`LINE_BADGE_COLORS.elizabeth`), not the
+  diagonal-hatch pattern an earlier version used — the hatch made the expanded label
+  half-illegible (white text vanishing over its lighter stripe bands), which only mattered
+  once the chip actually became hoverable/readable.
 - **A layout's internal viewBox scale (`r` for `spur-loop`, `vbW`/`vbH` for `linear`, segment
   `spacing` for `branch-tree`) has to be picked relative to how wide `.wrap` can actually get, not
   just relative to that one line's own station count.** `.diagram-card svg` stretches to a fixed
