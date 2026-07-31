@@ -185,7 +185,7 @@
   .line-chip:first-child{ border-radius: var(--radius) 0 0 var(--radius); }
   .line-chip:last-child{ border-radius: 0 var(--radius) var(--radius) 0; }
   .chip-label{
-    display:flex; flex-direction:column; padding:8px 10px 7px; white-space:nowrap;
+    display:flex; flex-direction:column; padding:8px 10px 7px; white-space:nowrap; text-align:left;
     opacity:0; transform: translateY(4px);
     transition: opacity .18s ease, transform .18s ease;
   }
@@ -244,7 +244,7 @@
      other exactly like a real dual-line indicator's would. A line that
      already fits stays static, left-aligned, with no animation at all. */
   .dest-board{
-    display:block; width:100%;
+    display:block; width:100%; text-align:left;
     background: var(--board-bg, #101114); border:none; border-radius: var(--radius); padding:14px 16px;
     cursor:pointer; font-family:'LT Railway', 'Courier New', monospace;
   }
@@ -2332,7 +2332,7 @@
   // staying in lockstep. A line that already fits its viewport is left
   // completely alone: no animation, just static left-aligned text.
   const TICKER_HOLD_START_MS = 900;
-  const TICKER_HOLD_END_MS = 1500;
+  const TICKER_HOLD_END_MS = 2333;
   let tickerStyleEl = null;
   function tickerStyleTag(){
     if(!tickerStyleEl){
