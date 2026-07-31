@@ -479,6 +479,23 @@
     font-size:12px; padding:4px 11px; border-radius:999px;
     background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); border:1px solid var(--green);
   }
+
+  /* Confetti burst, fired once per run on a genuine celebration moment
+     (perfect run or a new-best WPM — see launchConfetti() in finishRun()).
+     Fixed full-viewport overlay so it isn't clipped by .wrap's own max-width,
+     pointer-events:none so it never blocks the summary card underneath. */
+  .confetti-layer{ position:fixed; inset:0; z-index:300; pointer-events:none; overflow:hidden; }
+  .confetti-piece{
+    position:absolute; top:-16px; opacity:0;
+    animation-name: confettiFall; animation-timing-function: linear; animation-fill-mode: forwards;
+  }
+  .confetti-piece.circle{ border-radius:50%; }
+  @keyframes confettiFall{
+    0%{ transform: translate(0, 0) rotate(0deg); opacity:1; }
+    8%{ opacity:1; }
+    55%{ transform: translate(var(--drift, 0px), 58vh) rotate(calc(var(--spin, 540deg) * 0.55)); opacity:1; }
+    100%{ transform: translate(calc(var(--drift, 0px) * 1.7), 112vh) rotate(var(--spin, 540deg)); opacity:0; }
+  }
   .summary-time{
     display:flex; align-items:baseline; gap:8px; background: var(--panel-2); border:1px solid var(--line);
     border-radius: 10px; padding: 12px 16px; margin: 0 0 18px;
@@ -846,6 +863,7 @@
   </main>
 
   <div class="egg-toast" id="eggToast">🕳️ Found <b>The Drain</b> — Waterloo &amp; City unlocked</div>
+  <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
 
   <div class="terms-overlay hidden" id="termsOverlay">
     <div class="terms-modal">
@@ -2569,6 +2587,35 @@
     if(shouldFocus && mode !== 'mc') answerInput.focus();
   }
 
+  // Confetti burst for a genuine celebration moment (see finishRun()'s call
+  // site: fires exactly when the new-best or perfect-run badge would show).
+  // Pieces reuse the real line colors in rainbow order — the same palette
+  // as the Setup screen's line ribbon — rather than arbitrary confetti
+  // colors, so it still feels like it belongs to this app specifically.
+  let confettiCleanupTimer = null;
+  function launchConfetti(){
+    const layer = $('confettiLayer');
+    clearTimeout(confettiCleanupTimer);
+    layer.innerHTML = '';
+    const colors = LINE_RAINBOW_ORDER.map(id => LINES[id].color);
+    const PIECE_COUNT = 70;
+    for(let i = 0; i < PIECE_COUNT; i++){
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece' + (Math.random() < 0.35 ? ' circle' : '');
+      const size = 6 + Math.random() * 6;
+      piece.style.left = (Math.random() * 100) + '%';
+      piece.style.width = size + 'px';
+      piece.style.height = (piece.classList.contains('circle') ? size : size * 1.6) + 'px';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.setProperty('--spin', ((Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540)) + 'deg');
+      piece.style.setProperty('--drift', (Math.random() * 140 - 70) + 'px');
+      piece.style.animationDuration = (2.2 + Math.random() * 1.4) + 's';
+      piece.style.animationDelay = (Math.random() * 0.3) + 's';
+      layer.appendChild(piece);
+    }
+    confettiCleanupTimer = setTimeout(function(){ layer.innerHTML = ''; }, 4200);
+  }
+
   function finishRun(){
     gameAreaEl.classList.add('hidden');
     const area = summaryAreaEl;
@@ -2607,6 +2654,9 @@
       summaryTitleEl.textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
       perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
+    }
+    if(!newBestBadgeEl.classList.contains('hidden') || !perfectBadgeEl.classList.contains('hidden')){
+      launchConfetti();
     }
     const list = $('missList');
     list.innerHTML = '';

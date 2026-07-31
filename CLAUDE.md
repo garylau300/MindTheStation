@@ -110,6 +110,20 @@ they reset on page refresh, not just on a new run. Within a session:
   the bottom, after `bestWpm`/`bestStreak` are finalized — the stats panel is a sibling of
   `#gameArea`, not a child, so it's still visible next to the summary card, and it used to
   show the stale pre-finish "Best WPM" for a run that just set a new one.
+- **Confetti burst** (`launchConfetti()`, `#confettiLayer`): fires exactly once per run, at
+  the same moment either summary badge above would show (new-best WPM or a perfect run) —
+  checked via `!newBestBadgeEl.classList.contains('hidden') || !perfectBadgeEl...`, right
+  after both are finalized, rather than a separate condition that could drift out of sync
+  with what the badges themselves actually show. Pieces reuse the real line colors in
+  `LINE_RAINBOW_ORDER` (the same palette as the Setup screen's line ribbon) rather than
+  arbitrary confetti colors, so it still reads as belonging to this app. The layer is a
+  `position:fixed` full-viewport overlay (not scoped to `.wrap`) so the burst isn't clipped
+  by the column's own max-width, with `pointer-events:none` so it never blocks the summary
+  card underneath, and `overflow:hidden` so a piece's horizontal drift can't cause page
+  overflow. `layer.innerHTML` is cleared at both the start of a new burst and via a
+  `confettiCleanupTimer` ~4.2s after (past the longest possible piece duration+delay), so
+  a quick "Play again" into another perfect run doesn't pile up leftover pieces from the
+  last one.
 - **Copy result** (`#copyResultBtn`): builds a plain-text one-liner (e.g. "Victoria line ·
   Warm-up · 489 WPM · 100% accuracy — Mind the Station") and writes it via
   `navigator.clipboard.writeText()` — not gated by the CSP (that governs resource origins,
