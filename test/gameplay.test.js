@@ -17,7 +17,7 @@ function selectLine(page, lineId){
 }
 
 function selectBranch(page, branchLabel){
-  const btns = Array.from(page.document.querySelectorAll('#branchGroup .direction-btn'));
+  const btns = Array.from(page.document.querySelectorAll('#branchGroup .branch-chip'));
   const btn = btns.find(b => b.textContent === branchLabel);
   assert.ok(btn, 'expected a branch button labelled "' + branchLabel + '"');
   btn.click();
@@ -27,8 +27,11 @@ async function playThroughRun(page, { mode, reverse }){
   const { $, test: hooks, document: doc } = page;
 
   $('mode' + mode[0].toUpperCase() + mode.slice(1) + 'Btn').click();
-  if(mode !== 'mc'){
-    $(reverse ? 'directionReverseBtn' : 'directionForwardBtn').click();
+  // the two separate forward/reverse buttons are gone -- a single
+  // destination-board toggle now flips reverseDirection, so only click it
+  // when the current state doesn't already match what this combo wants
+  if(mode !== 'mc' && hooks.getReverseDirection() !== reverse){
+    $('directionBoard').click();
   }
   assert.equal(hooks.getMode(), mode);
 

@@ -206,14 +206,49 @@
   .direction-row{ margin-bottom: 16px; }
   .direction-label{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color: var(--ink-dim); }
   .mode-row{ margin-bottom: 16px; }
-  .direction-group{ display:flex; gap:6px; flex-wrap:wrap; }
-  .direction-btn{
-    background: var(--panel); color: var(--ink-dim); border:1px solid var(--line);
-    font-family:var(--font-main); font-weight:400; font-size:12.5px;
-    padding: 7px 14px; border-radius: 999px; cursor:pointer;
+  /* Destination board: echoes a real Underground platform departure board
+     — always a dark plate (--board-bg), like the real signage, but not
+     the SAME dark for both app themes: pure near-black reads fine against
+     the app's own dark background, but was a jarring black slab against
+     the light theme's cream page, so light mode gets a softer charcoal
+     instead (see applyLineTheme()). The two terminus names never swap
+     position (accuracy: they're LINE.journeyIndices' true fixed order,
+     same as the route map below it) — only the arrow's direction flips,
+     via .reversed, to show which way the practice run currently goes.
+     --board-ink is lightenForDarkMode() checked against whichever plate
+     colour is actually in play, not a single fixed reference. */
+  .dest-board{
+    display:flex; align-items:center; justify-content:center; gap:14px; width:100%;
+    background: var(--board-bg, #101114); border:none; border-radius: var(--radius); padding:16px 14px;
+    cursor:pointer; font-family:var(--font-main);
   }
-  .direction-btn.active{ border-color: var(--line-accent); color: var(--accent-ink); background: color-mix(in srgb, var(--line-accent) 14%, transparent); }
-  .direction-btn:active{ transform: translateY(1px); }
+  .board-dest{
+    font-family:'Courier New', 'SF Mono', Menlo, monospace; font-size:14px; font-weight:700;
+    letter-spacing:.02em; color: var(--board-ink);
+  }
+  .board-arrow{
+    flex:none; font-size:17px; line-height:1; color: var(--board-ink);
+    display:inline-block; transition: transform .3s ease;
+  }
+  .board-arrow.reversed{ transform: scaleX(-1); }
+
+  /* Branch: a compact 2-column grid of squared chips (not the old stadium
+     pills) — rounded only at the whole grid's 4 true outer corners
+     (applyBranchGridCorners() sets each corner individually per button,
+     since with a variable branch count and 2 columns the "last row" can
+     have 1 or 2 items depending on whether the count is odd or even, which
+     plain CSS :nth-child selectors can't express generically). A lone
+     leftover chip on an odd count spans both columns instead of sitting
+     alone in the left one with dead space beside it (see the grid-column
+     line in applyBranchGridCorners()). No shared grey fill behind the
+     grid — each chip carries its own border instead, the same convention
+     already used by .mode-btn/.mc-option for a row of option buttons. */
+  .branch-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  .branch-chip{
+    padding:11px 12px; font-size:13px; font-weight:600; text-align:left; cursor:pointer;
+    background: var(--panel-2); color: var(--ink); border:1px solid var(--line); font-family:var(--font-main);
+  }
+  .branch-chip.active{ background: var(--line-accent); color: var(--accent-fill-ink, #181818); border-color: var(--line-accent); z-index:1; }
 
   .mc-options{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
   .mc-option{
@@ -388,7 +423,7 @@
      specific button variants further down) used to snap instantly with no
      transition — a small, deliberately subtle click animation, not present
      before, rather than a static state change */
-  button, .mode-btn, .direction-btn, .theme-toggle, .back-btn, .link-btn{ transition: transform .1s ease; }
+  button, .mode-btn, .theme-toggle, .back-btn, .link-btn{ transition: transform .1s ease; }
   button:active{ transform: translateY(1px); }
 
   .row-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:16px; gap: 10px; flex-wrap:wrap; }
@@ -577,7 +612,8 @@
   @media (hover: hover) and (pointer: fine){
     .line-chip:hover{ filter: brightness(1.12); }
     .mode-btn:not(.active):hover{ border-color: var(--ink-dim); color: var(--ink); }
-    .direction-btn:not(.active):hover{ border-color: var(--ink-dim); color: var(--ink); }
+    .branch-chip:not(.active):hover{ filter: brightness(1.08); }
+    .dest-board:hover{ filter: brightness(1.15); }
     .link-btn:hover{ border-color: var(--ink-dim); color: var(--ink); }
     .mc-option:not(.disabled):hover{ border-color: var(--accent-ink); }
     button:hover{ filter: brightness(1.06); }
@@ -589,7 +625,7 @@
 
   @media (prefers-reduced-motion: reduce){ *{ animation: none !important; transition: none !important; } }
 
-  button:focus-visible, input:focus-visible, .mode-btn:focus-visible, .direction-btn:focus-visible, .line-chip:focus-visible{
+  button:focus-visible, input:focus-visible, .mode-btn:focus-visible, .branch-chip:focus-visible, .dest-board:focus-visible, .line-chip:focus-visible{
     outline: 2px solid var(--accent-ink); outline-offset: 2px;
   }
 
@@ -615,7 +651,8 @@
     .eyebrow{ font-size:12px; }
     .line-chip{ font-size:13.5px; }
     .line-select{ height:62px; }
-    .direction-btn{ font-size:14px; padding:8px 16px; }
+    .branch-chip{ font-size:14px; }
+    .board-dest{ font-size:15px; }
     .direction-label{ font-size:11.5px; }
     .mode-btn{ font-size:15px; padding:13px 12px; }
     .mode-btn small{ font-size:12px; }
@@ -645,7 +682,8 @@
     .eyebrow{ font-size:12.5px; }
     .line-chip{ font-size:15px; }
     .line-select{ height:68px; }
-    .direction-btn{ font-size:15.5px; padding:9px 18px; }
+    .branch-chip{ font-size:15.5px; }
+    .board-dest{ font-size:16.5px; }
     .direction-label{ font-size:12px; }
     .mode-btn{ font-size:16.5px; padding:15px 14px; }
     .mode-btn small{ font-size:13px; }
@@ -716,18 +754,19 @@
     </div>
   </div>
 
-  <div class="direction-row hidden" id="branchRow">
-    <span class="direction-label section-label">Branch</span>
-    <div class="direction-group" id="branchGroup"></div>
-    <button type="button" id="olympiaEgg" class="olympia-egg" aria-label="Hidden feature"></button>
-  </div>
-
   <div class="direction-row" id="directionRow">
     <span class="direction-label section-label">Direction</span>
-    <div class="direction-group">
-      <button type="button" id="directionForwardBtn" class="direction-btn active">Hammersmith → Edgware Road</button>
-      <button type="button" id="directionReverseBtn" class="direction-btn">Edgware Road → Hammersmith</button>
-    </div>
+    <button type="button" class="dest-board" id="directionBoard">
+      <span class="board-dest" id="boardStart">Hammersmith</span>
+      <span class="board-arrow" id="boardArrow">➜</span>
+      <span class="board-dest" id="boardEnd">Edgware Road</span>
+    </button>
+  </div>
+
+  <div class="direction-row hidden" id="branchRow">
+    <span class="direction-label section-label">Branch</span>
+    <div class="branch-grid" id="branchGroup"></div>
+    <button type="button" id="olympiaEgg" class="olympia-egg" aria-label="Hidden feature"></button>
   </div>
 
   <div class="diagram-card">
@@ -1820,12 +1859,22 @@
   // possible rather than jumping straight to a fixed ink like
   // bestContrastInk() does.
   const DARK_MODE_BG = '#121317';
-  function lightenForDarkMode(hex){
-    if(contrastRatio(hex, DARK_MODE_BG) >= 4.5) return hex;
+  // destination board plate colors — see applyLineTheme()'s comment on why
+  // light mode doesn't reuse the same near-black dark mode does
+  const BOARD_BG_DARK = '#101114';
+  const BOARD_BG_LIGHT = '#2c2a27';
+  // bg defaults to DARK_MODE_BG (the app's own dark --bg, for --accent-ink)
+  // but the destination board's plate is a different dark color per theme
+  // (see BOARD_BG_LIGHT/BOARD_BG_DARK below), so its ink needs the contrast
+  // check run against whichever plate colour is actually behind it, not
+  // this fixed reference.
+  function lightenForDarkMode(hex, bg){
+    bg = bg || DARK_MODE_BG;
+    if(contrastRatio(hex, bg) >= 4.5) return hex;
     const {r,g,b} = hexToRgb(hex);
     for(let amount = 0.05; amount <= 1; amount += 0.05){
       const candidate = rgbToHex(r + (255-r)*amount, g + (255-g)*amount, b + (255-b)*amount);
-      if(contrastRatio(candidate, DARK_MODE_BG) >= 4.5) return candidate;
+      if(contrastRatio(candidate, bg) >= 4.5) return candidate;
     }
     return '#f5f4ef';
   }
@@ -1868,8 +1917,10 @@
   const modeWarmupBtnEl = $('modeWarmupBtn');
   const modeQuizBtnEl = $('modeQuizBtn');
   const modeMcBtnEl = $('modeMcBtn');
-  const directionForwardBtnEl = $('directionForwardBtn');
-  const directionReverseBtnEl = $('directionReverseBtn');
+  const directionBoardEl = $('directionBoard');
+  const boardStartEl = $('boardStart');
+  const boardEndEl = $('boardEnd');
+  const boardArrowEl = $('boardArrow');
 
   let isLight = true;
   let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc'
@@ -2093,6 +2144,17 @@
     // bestContrastInk() (real WCAG contrast ratio), not readableTextOn()'s
     // simpler heuristic, which picks the wrong one for at least Victoria.
     document.body.style.setProperty('--accent-fill-ink', bestContrastInk(LINE.def.color));
+    // the destination board's plate is always a dark colour, echoing a
+    // real platform departure board, regardless of the app's own theme —
+    // but pure near-black (fine against the app's own already-dark
+    // background) read as a jarring black hole against the light theme's
+    // cream page, so light mode gets a softer charcoal plate instead of
+    // the same BOARD_BG_DARK dark mode uses. Ink contrast is checked
+    // against whichever of the two is actually in play, not a single
+    // fixed reference.
+    const boardBg = isLight ? BOARD_BG_LIGHT : BOARD_BG_DARK;
+    document.body.style.setProperty('--board-bg', boardBg);
+    document.body.style.setProperty('--board-ink', lightenForDarkMode(LINE.def.color, boardBg));
   }
 
   // Line-ribbon chips show each line's true, undarkened colour as their own
@@ -2179,10 +2241,49 @@
     return { start, end };
   }
 
-  function updateDirectionLabels(){
+  // The two terminus names are fixed to LINE.journeyIndices' true order —
+  // start on the left, end on the right — and never swap position, matching
+  // the route map's own fixed left-to-right layout. Only the arrow flips
+  // (via .reversed) to show which way the current practice run goes; the
+  // visible names staying put is deliberate, not a missed "reverse" case —
+  // an aria-label carries the actual from/to direction for assistive tech,
+  // since that's a description of current state, not a repositioning of
+  // the station name text itself.
+  function updateDirectionBoard(){
     const { start, end } = terminusNames();
-    directionForwardBtnEl.textContent = start + ' → ' + end;
-    directionReverseBtnEl.textContent = end + ' → ' + start;
+    boardStartEl.textContent = start;
+    boardEndEl.textContent = end;
+    boardArrowEl.classList.toggle('reversed', reverseDirection);
+    const fromName = reverseDirection ? end : start;
+    const toName = reverseDirection ? start : end;
+    directionBoardEl.setAttribute('aria-label', 'Direction: ' + fromName + ' to ' + toName + '. Press to reverse.');
+  }
+
+  // Rounds only the branch grid's 4 true outer corners. The grid always
+  // keeps its 2 columns, even on an odd branch count — the last row's
+  // second cell just sits empty rather than the lone leftover chip
+  // spanning both columns. With a branch count that varies per line (3 to
+  // 8), the last row can hold 1 or 2 chips depending on whether the count
+  // is odd or even, which a fixed CSS :nth-child selector can't identify
+  // generically, so this computes each chip's actual row/column and sets
+  // its 4 corner radii individually instead.
+  function applyBranchGridCorners(buttons){
+    const cols = 2;
+    const n = buttons.length;
+    const totalRows = Math.ceil(n / cols);
+    buttons.forEach((btn, i) => {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const isFirstRow = row === 0;
+      const isLastRow = row === totalRows - 1;
+      const itemsInThisRow = isLastRow ? (n - row * cols) : cols;
+      const isFirstCol = col === 0;
+      const isLastColInRow = col === itemsInThisRow - 1;
+      btn.style.borderTopLeftRadius = (isFirstRow && isFirstCol) ? 'var(--radius)' : '0';
+      btn.style.borderTopRightRadius = (isFirstRow && isLastColInRow) ? 'var(--radius)' : '0';
+      btn.style.borderBottomLeftRadius = (isLastRow && isFirstCol) ? 'var(--radius)' : '0';
+      btn.style.borderBottomRightRadius = (isLastRow && isLastColInRow) ? 'var(--radius)' : '0';
+    });
   }
 
   function renderBranchRow(){
@@ -2196,25 +2297,26 @@
     if(!hasBranches) return;
     const group = $('branchGroup');
     group.innerHTML = '';
+    const buttons = [];
     Object.keys(LINE.def.branches).forEach(branchId => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'direction-btn';
+      btn.className = 'branch-chip';
       if(branchId === LINE.branchId) btn.classList.add('active');
       btn.textContent = LINE.def.branches[branchId].label;
       btn.addEventListener('click', function(){ setBranch(branchId); });
       group.appendChild(btn);
+      buttons.push(btn);
     });
+    applyBranchGridCorners(buttons);
   }
 
   function setBranch(branchId){
     if(branchId === LINE.branchId) return;
     LINE = buildLineRuntime(LINE.def.id, branchId);
     reverseDirection = false;
-    directionForwardBtnEl.classList.add('active');
-    directionReverseBtnEl.classList.remove('active');
     renderBranchRow();
-    updateDirectionLabels();
+    updateDirectionBoard();
     setupGeometry();
     updatePlayContextLabel();
     drawRoutePreview();
@@ -2230,8 +2332,6 @@
     }
     LINE = buildLineRuntime(id);
     reverseDirection = false;
-    directionForwardBtnEl.classList.add('active');
-    directionReverseBtnEl.classList.remove('active');
     document.querySelectorAll('.line-select .line-chip[id^="line"]').forEach(btn => {
       const nowActive = btn.dataset.lineId === id;
       btn.classList.toggle('active', nowActive);
@@ -2240,8 +2340,8 @@
     $('lineNameSpan').textContent = LINE.def.label;
     document.title = LINE.def.label + ' Line — Mind the Station';
     renderBranchRow();
-    updateDirectionLabels();
     applyLineTheme();
+    updateDirectionBoard();
     setupGeometry();
     drawRoutePreview();
     stationPopupEl.classList.add('hidden');
@@ -2251,8 +2351,7 @@
   function setDirection(rev){
     if(mode === 'mc') return;
     reverseDirection = rev;
-    directionForwardBtnEl.classList.toggle('active', !reverseDirection);
-    directionReverseBtnEl.classList.toggle('active', reverseDirection);
+    updateDirectionBoard();
     updatePlayContextLabel();
     drawRoutePreview();
     resetState();
@@ -2818,8 +2917,7 @@
   modeQuizBtnEl.addEventListener('click', function(){ setMode('quiz'); });
   modeMcBtnEl.addEventListener('click', function(){ setMode('mc'); });
 
-  directionForwardBtnEl.addEventListener('click', function(){ setDirection(false); });
-  directionReverseBtnEl.addEventListener('click', function(){ setDirection(true); });
+  directionBoardEl.addEventListener('click', function(){ setDirection(!reverseDirection); });
 
   $('lineCircleBtn').addEventListener('click', function(){ setLine('circle'); });
   $('lineVictoriaBtn').addEventListener('click', function(){ setLine('victoria'); });
@@ -3423,8 +3521,8 @@
     }
   }
 
-  updateDirectionLabels();
   applyLineTheme();
+  updateDirectionBoard();
   paintLineChips();
   setupGeometry();
   drawRoutePreview();

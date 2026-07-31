@@ -339,6 +339,39 @@ catch.
   diagonal-hatch pattern an earlier version used — the hatch made the expanded label
   half-illegible (white text vanishing over its lighter stripe bands), which only mattered
   once the chip actually became hoverable/readable.
+- **Direction is a destination board (`#directionBoard`/`.dest-board`), not two forward/
+  reverse pill buttons — and Branch is a squared 2-column grid (`.branch-grid`/
+  `.branch-chip`), not a wrapping pill row.** Setup order is Direction, then Branch (per
+  explicit instruction — Direction used to come second). The board's two terminus names
+  (`#boardStart`/`#boardEnd`) are always `terminusNames()`'s fixed start/end — **they never
+  swap position** when the direction toggles, only the arrow does (`.board-arrow.reversed`,
+  a `scaleX(-1)` flip) — this was an explicit correction from an earlier version that
+  swapped the names themselves, which misrepresented the line's fixed geographic order (the
+  same order the route map below it draws in). `setDirection()`/`updateDirectionBoard()`
+  still track the real forward/reverse state for gameplay and expose it to assistive tech
+  via the board's `aria-label` (e.g. "Direction: Upminster to Ealing Broadway") — only the
+  *visible* station-name text stays fixed, not the accessible description of current state.
+  The board's plate is a dark colour by design (echoing a real platform departure board),
+  but **not the same dark for both themes** — `--board-bg` is `BOARD_BG_DARK` (`#101114`)
+  in dark mode but a softer charcoal `BOARD_BG_LIGHT` (`#2c2a27`) in light mode, since the
+  same near-black read fine against the app's own dark background but was reported as a
+  jarring slab against the light theme's cream page; `lightenForDarkMode()` takes an
+  optional second `bg` argument (defaulting to `DARK_MODE_BG`, the app's own `--accent-ink`
+  use) precisely so `--board-ink` can be contrast-checked against whichever of the two
+  plate colors is actually in play, not a fixed reference that would silently under- or
+  over-lighten depending on theme. The board's text has no glow/text-shadow, by explicit
+  instruction (an earlier version added one for a literal LED-display feel). The branch
+  grid rounds only its 4 true outer corners (`applyBranchGridCorners()`, computed per-chip
+  since the last row can hold 1 or 2 chips depending on whether the line's branch count is
+  odd or even — 3 to 8 depending on the line — which plain CSS `:nth-child` can't express
+  generically) and always keeps its 2 columns even on an odd count: the lone leftover chip
+  stays in the left cell with the right cell simply empty, rather than spanning both columns
+  (an earlier version made it span; reverted by explicit instruction). Chips carry their own
+  `border: 1px solid var(--line)` instead of a shared grey fill behind the grid gap — the
+  same convention `.mode-btn`/`.mc-option` already use for a row of option buttons — since a
+  solid background peeking through the gaps read as an unwanted grey wash. Old `.direction-btn`/
+  `.direction-group` (shared by both features before this redesign) are gone entirely; don't
+  reintroduce them.
 - **A layout's internal viewBox scale (`r` for `spur-loop`, `vbW`/`vbH` for `linear`, segment
   `spacing` for `branch-tree`) has to be picked relative to how wide `.wrap` can actually get, not
   just relative to that one line's own station count.** `.diagram-card svg` stretches to a fixed
