@@ -112,7 +112,7 @@ test('text scales up at both width breakpoints, not just the container', async (
     await page.setViewportSize({ width, height: 900 });
     return page.evaluate(() => ({
       chip: parseFloat(getComputedStyle(document.querySelector('.line-chip')).fontSize),
-      h1: parseFloat(getComputedStyle(document.querySelector('h1')).fontSize)
+      logo: document.querySelector('.logo-img').getBoundingClientRect().height
     }));
   };
   const base = await sizeAt(800);   // below the 900px breakpoint
@@ -123,8 +123,8 @@ test('text scales up at both width breakpoints, not just the container', async (
   expect(mid.chip).toBeGreaterThan(base.chip);
   expect(wide.chip).toBeGreaterThan(mid.chip);
 
-  expect(mid.h1).toBeGreaterThan(base.h1);
-  expect(wide.h1).toBeGreaterThan(mid.h1);
+  expect(mid.logo).toBeGreaterThan(base.logo);
+  expect(wide.logo).toBeGreaterThan(mid.logo);
 });
 
 // The route-map "bubble" popup was sized too large relative to the tiny

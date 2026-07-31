@@ -7,9 +7,8 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <title>Circle Line — Mind the Station</title>
-<!-- Roundel favicon: same ring/bar design and colors (#E32017/#113A8F) as
-     the header .roundel, inlined as a data URI so the single-file app
-     never needs an external asset -->
+<!-- Roundel favicon: TfL-style ring/bar design, inlined as a data URI so
+     the single-file app never needs an external asset -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='26' fill='none' stroke='%23E32017' stroke-width='7'/%3E%3Crect x='1' y='27' width='62' height='10' fill='%23113A8F'/%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
@@ -35,7 +34,6 @@
     --panel-2: #21232b;
     --line-accent: #FFD300;
     --red: #E32017;
-    --blue: #113A8F;
     --green: #7CCB6B;
     --ink: #F4F2EA;
     --ink-dim: #9a9ba3;
@@ -111,13 +109,15 @@
   @media (min-width: 1300px){ .wrap{ max-width: 1180px; } }
 
   header{ margin-bottom: 22px; }
-  .roundel-row{ display:flex; align-items:center; gap:12px; margin-bottom: 18px; }
-  .roundel{ width: 34px; height: 34px; position:relative; flex:none; }
-  .roundel .ring{ position:absolute; inset:0; border-radius:50%; border: 5px solid var(--red); }
-  .roundel .bar{ position:absolute; left:-3px; right:-3px; top:50%; height: 8px; background: var(--blue); transform: translateY(-50%); }
-  .eyebrow{ font-family:var(--font-main); font-weight:400; font-size:11.5px; letter-spacing:.2em; color: var(--ink-dim); text-transform:uppercase; }
-  h1{ font-family:var(--font-main); font-weight:400; font-size: clamp(28px,6vw,40px); margin: 2px 0 0; letter-spacing:-0.01em; line-height:1.02; }
-  h1 span{ color: var(--accent-ink); }
+  .header-row{ display:flex; align-items:center; gap:12px; margin-bottom: 18px; }
+  /* The app's wordmark — was a tiny grey caption sitting above a separate
+     large "<Line> Line" heading; now that the line heading and the old
+     roundel icon are both gone, this is the entire header, so it's the
+     actual "Version 1" logo image (black plate, brand yellow "Mind the /
+     Station" two-line lockup, double underline) rather than styled text.
+     Same intrinsic aspect ratio (520:220) at every size — height is the
+     only thing that changes across breakpoints, width follows automatically. */
+  .logo-img{ display:block; height:38px; width:auto; }
 
   .theme-toggle{
     flex:none; background: var(--panel); color: var(--ink-dim); border: 1px solid var(--line);
@@ -323,7 +323,6 @@
     margin-bottom: 18px;
   }
   .stat-row-time b{ font-family:var(--font-main); font-weight:400; font-size:22px; color: var(--red); display:flex; align-items:center; gap:8px; }
-  .stat-row-time span{ font-weight:400; font-size:11px; color: var(--ink-dim); text-transform:uppercase; letter-spacing:.1em; }
   .live-dot{
     display:inline-block; width:7px; height:7px; border-radius:50%; background: var(--red);
     opacity:.3; flex:none;
@@ -666,16 +665,18 @@
      come after every base rule it touches, not just be wrapped in a
      matching @media query, or the later base rule wins regardless of
      whether the media condition matches. (Small caption-style labels like
-     .eyebrow/.direction-label/.diagram-card h3 are left close to their
-     original size on purpose — they're meant to read as quiet uppercase
-     microcopy, not body text.) The clamp()-based h1/.prompt/.target-word sizes are overridden outright
+     .direction-label/.diagram-card h3 are left close to their original
+     size on purpose — they're meant to read as quiet uppercase microcopy,
+     not body text. .logo-img used to be a small text caption too, back
+     when it sat above a separate large line-name heading; now that it's
+     the entire header it scales up properly here like the old heading
+     did instead.) The clamp()-based .prompt/.target-word sizes are overridden outright
      rather than tuned via their vw component: clamp()'s vw math is
      relative to the true viewport, not to .wrap's now-capped width, so
      past the point .wrap stops growing, continuing to scale text by vw
      would grow it faster than the column actually widens. */
   @media (min-width: 900px){
-    h1{ font-size:44px; }
-    .eyebrow{ font-size:12px; }
+    .logo-img{ height:44px; }
     .line-chip{ font-size:13.5px; }
     .line-select{ height:62px; }
     .branch-chip{ font-size:14px; }
@@ -705,8 +706,7 @@
     .station-popup-close{ width:22px; height:22px; font-size:10.5px; }
   }
   @media (min-width: 1300px){
-    h1{ font-size:48px; }
-    .eyebrow{ font-size:12.5px; }
+    .logo-img{ height:50px; }
     .line-chip{ font-size:15px; }
     .line-select{ height:68px; }
     .branch-chip{ font-size:15.5px; }
@@ -746,11 +746,9 @@
 
   <div id="setupPage">
   <header>
-    <div class="roundel-row">
-      <div class="roundel"><div class="ring"></div><div class="bar"></div></div>
+    <div class="header-row">
       <div style="flex:1;">
-        <div class="eyebrow">Mind the Station</div>
-        <h1><span id="lineNameSpan">Circle</span> <span>Line</span></h1>
+        <img class="logo-img" id="logoImg" alt="Mind the Station" width="520" height="220" src="data:image/png;base64,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">
       </div>
       <button type="button" id="themeToggle" class="theme-toggle">☀ Light</button>
     </div>
@@ -847,7 +845,6 @@
     <div class="stat-row-time">
       <span class="live-dot" id="liveDot"></span>
       <b id="statTime">0:00</b>
-      <span>Elapsed</span>
     </div>
 
     <div class="progress-rail-wrap">
@@ -1933,6 +1930,7 @@
   const interchangeRow = $('interchangeRow');
   const streakFlameEl = $('streakFlame');
   const streakFlameCountEl = $('streakFlameCount');
+  const flameIconEl = streakFlameEl.querySelector('.flame-icon');
   const trainGroupEl = $('trainGroup');
   const railFillEl = $('railFill');
   const routePreviewSvgEl = $('routePreviewSvg');
@@ -2103,12 +2101,27 @@
     $('gameCard').classList.toggle('streak-active', active || flameActive);
     if(active){
       clearTimeout(flameExtinguishTimer);
+      const reigniting = !flameActive;
       streakFlameEl.classList.remove('extinguishing');
       streakFlameEl.classList.remove('hidden');
       streakFlameCountEl.textContent = streak;
       streakFlameEl.classList.remove('bump');
       void streakFlameEl.offsetWidth; // restart the pop on every increment, not just on first appearance
       streakFlameEl.classList.add('bump');
+      if(reigniting){
+        // Relying on the .extinguishing class removal alone to bring the
+        // flicker back isn't reliably treated as a genuine restart by
+        // every browser once the badge has cycled through display:none —
+        // the same off/reflow/on trick as the .bump pop above, applied
+        // directly to the icon's own animation, so the second (or later)
+        // ignition in a run always starts flameFlicker fresh instead of
+        // risking a frozen icon. Only done when actually reappearing, not
+        // on every streak increment, so the flicker stays continuous
+        // while the badge is already showing.
+        flameIconEl.style.animation = 'none';
+        void flameIconEl.offsetWidth;
+        flameIconEl.style.animation = '';
+      }
       flameActive = true;
     } else if(flameActive){
       flameActive = false;
@@ -2492,7 +2505,6 @@
       btn.classList.toggle('active', nowActive);
       btn.classList.toggle('expand', nowActive);
     });
-    $('lineNameSpan').textContent = LINE.def.label;
     document.title = LINE.def.label + ' Line — Mind the Station';
     renderBranchRow();
     applyLineTheme();

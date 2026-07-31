@@ -507,6 +507,43 @@ catch.
 - **Station name labels on the route map preview were tried repeatedly and abandoned.**
   Don't re-attempt without discussing scope — see PROJECT_HISTORY.md §10 for what was tried
   and why it kept failing on tight branch-tree junctions.
+- **The header is the "Version 1" logo image (`#logoImg`/`.logo-img`), not styled text, and
+  there is no separate line-name heading or roundel icon.** An earlier version had a small
+  "Mind the Station" caption above a large "`<Line>` Line" `<h1>`, plus a hand-drawn
+  ring/bar roundel icon to its left — all three were removed by explicit instruction (the
+  line name is already shown expanded in the line-ribbon chip below; the roundel was a
+  placeholder). `.logo-img` is the real logo artwork — a black plate with the brand-yellow
+  "Mind the / Station" two-line lockup and a double underline — embedded the same way the
+  fonts are (a base64 `data:image/png` URI, inserted via direct string replacement rather
+  than loading the ~6KB base64 payload into context) at 520×220 intrinsic size, palette-
+  quantized to ~8 colors since the source art is only a handful of flat colors (black/yellow/
+  white) — a huge size win (4.5KB vs 24KB) over a plain truecolor PNG with no visible quality
+  loss. `.logo-img{height:...}` is the only thing that changes across the two responsive
+  breakpoints (38px base → 44px at 900px → 50px at 1300px, replacing the old h1's 40/44/48
+  scale) — width follows automatically from the fixed aspect ratio, so don't set a `width`
+  override at a breakpoint without also reconsidering height. `document.title` (the actual
+  browser-tab title) is untouched by any of this — it's a separate, plain-text browser API
+  that can't render a custom font or image, so it still gets `LINE.def.label + ' Line —
+  Mind the Station'` on every `setLine()` call same as before. `--blue` (the old roundel
+  bar's colour) was removed from `:root` once nothing referenced it anymore — don't
+  reintroduce a CSS variable that only one now-deleted element used.
+- **The "Elapsed" label next to the live run timer (`#statTime`) was removed by explicit
+  instruction** — the stopwatch icon/ticking dot already make it obvious what the number is;
+  don't re-add a text label there.
+- **The streak flame badge's flicker (`.flame-icon`, `flameFlicker`) force-restarts itself on
+  every re-ignition, not just relying on the `.extinguishing` class removal.** `flameFlicker`
+  is a permanently-declared `infinite alternate` animation on `.flame-icon` — normally the
+  `.streak-flame.extinguishing .flame-icon{ animation:flameDie }` override reverting to the
+  base rule when `.extinguishing` is removed is enough to bring it back, the same way
+  `.bump`'s explicit remove→reflow→add cycle already restarts the pop on every increment.
+  But an infinite animation resuming correctly after its element cycles through
+  `display:none` is a known cross-browser inconsistency, not something to trust implicitly —
+  so `updateStreakFlame()` also does the same `style.animation='none'` → reflow →
+  `style.animation=''` reset on `flameIconEl` itself, but *only* when actually reappearing
+  from a fully-extinguished state (`reigniting = !flameActive`, captured before any class
+  mutation), not on every streak increment while already showing — restarting the flicker's
+  keyframe on every correct answer while the badge is already lit would make it visibly
+  stutter instead of flickering continuously.
 
 ## Roadmap context
 
