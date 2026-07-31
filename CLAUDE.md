@@ -75,11 +75,21 @@ they reset on page refresh, not just on a new run. Within a session:
   (`classList.toggle('hidden', streak < 3)` — an instant hide, not a fade, so a broken
   streak reads as "off" rather than lingering) — called from the same central
   `updateStats()` every other stat already goes through, so every streak-changing action
-  (correct/wrong answer, hint, skip) keeps it in sync for free. The flame icon itself
-  flickers continuously via a CSS animation (`flameFlicker`) whenever visible; the count
-  additionally pops (`.bump` → `streakBump`) on every increment while active, not just on
-  first appearing. Session-only, like every other gamification stat here — no persistence
-  across a page refresh.
+  (correct/wrong answer, hint, skip) keeps it in sync for free. Stacked two-line layout: a
+  large flickering flame icon (`.flame-icon`, `flameFlicker` animating scale/rotate/glow on
+  top of the emoji) above the streak count (`.flame-count`), which pops (`.bump` →
+  `streakBump`) on every increment while active, not just on first appearing. Session-only,
+  like every other gamification stat here — no persistence across a page refresh. Since the
+  badge is large enough to otherwise sit on top of question text, `#gameCard` gets a
+  `.streak-active` class in lockstep with the badge's own visibility, which reserves a
+  right-side gutter (`padding-right`) on every top-of-card question element (`.qc` —
+  context/prompt/target-word/interchange row/MC context) so the badge never paints over
+  live content, on any line length or viewport width. The live streak *count* itself was
+  removed from the stats bar (the flame is the one live-streak cue now, across all modes);
+  the quiz/mc `#statMid` cell that used to show it now shows the same live accuracy% that
+  warmup shows there, since `#statAcc` in those two modes already went to the combo score
+  above — `#statBest` still shows best streak, the one cross-run streak stat this repo
+  keeps.
 - **Journey milestones** (`milestoneNote()`): a quiet "🚩 Halfway there!" / "Final stretch
   — 3 to go!" appended to the same feedback text, based on `idx`/`totalSteps()`. Skipped
   on journeys under 6 stops, where neither would mean much.

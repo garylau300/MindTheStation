@@ -220,28 +220,35 @@
   }
 
   .streak-flame{
-    position:absolute; top:14px; right:16px; z-index:3;
-    display:flex; align-items:center; gap:5px; padding:5px 12px 5px 9px; border-radius:999px;
-    background: linear-gradient(135deg, #FF8A2B, #E32017); color:#fff;
-    font-family:var(--font-main); font-weight:400; font-size:15px; line-height:1;
-    box-shadow: 0 2px 10px rgba(227,32,23,0.4);
+    position:absolute; top:12px; right:14px; z-index:3; min-width:48px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
+    padding:7px 10px 6px; border-radius:14px;
+    background: linear-gradient(160deg, #FF8A2B, #E32017); color:#fff;
+    font-family:var(--font-main); font-weight:400; line-height:1;
+    box-shadow: 0 3px 12px rgba(227,32,23,0.45);
   }
   .streak-flame.bump{ animation: streakBump .4s ease; }
   @keyframes streakBump{
     0%{ transform: scale(1); }
-    40%{ transform: scale(1.3); }
+    40%{ transform: scale(1.28); }
     100%{ transform: scale(1); }
   }
   .flame-icon{
-    display:inline-block; font-size:16px; line-height:1; transform-origin: 50% 90%;
-    animation: flameFlicker .55s ease-in-out infinite alternate;
+    display:block; font-size:30px; line-height:1; transform-origin: 50% 92%;
+    animation: flameFlicker .45s ease-in-out infinite alternate;
   }
   @keyframes flameFlicker{
-    0%{ transform: scale(1) rotate(-4deg) translateY(0); }
-    30%{ transform: scale(1.1) rotate(3deg) translateY(-1px); }
-    65%{ transform: scale(0.92) rotate(-3deg) translateY(0.5px); }
-    100%{ transform: scale(1.06) rotate(4deg) translateY(-1px); }
+    0%{ transform: scale(1) rotate(-8deg) translateY(0) scaleY(1); filter: drop-shadow(0 0 2px rgba(255,150,40,.6)); }
+    25%{ transform: scale(1.16) rotate(6deg) translateY(-2px) scaleY(1.12); filter: drop-shadow(0 0 6px rgba(255,120,20,.9)); }
+    50%{ transform: scale(0.88) rotate(-5deg) translateY(1px) scaleY(0.92); filter: drop-shadow(0 0 3px rgba(255,150,40,.5)); }
+    75%{ transform: scale(1.12) rotate(7deg) translateY(-1px) scaleY(1.08); filter: drop-shadow(0 0 7px rgba(255,100,10,1)); }
+    100%{ transform: scale(1.04) rotate(-4deg) translateY(0) scaleY(1.02); filter: drop-shadow(0 0 4px rgba(255,150,40,.7)); }
   }
+  .flame-count{ display:block; font-size:15px; margin-top:1px; }
+
+  /* reserved when the flame badge is showing, so its top-right corner never
+     paints over question text — see the .streak-active toggle in updateStreakFlame() */
+  #gameCard.streak-active .qc{ padding-right: 76px; }
 
   .card{ position:relative; background: var(--panel); border:1px solid var(--line); border-top: 3px solid var(--line-accent); border-radius: var(--radius); padding: 26px 22px; margin-bottom: 18px; }
 
@@ -698,16 +705,17 @@
     <div id="gameArea">
       <div class="card" id="gameCard">
         <div class="streak-flame hidden" id="streakFlame">
-          <span class="flame-icon">🔥</span><span id="streakFlameCount">0</span>
+          <span class="flame-icon">🔥</span>
+          <span class="flame-count" id="streakFlameCount">0</span>
         </div>
         <div class="countdown-overlay hidden" id="countdownOverlay">
           <div class="countdown-number" id="countdownNumber">3</div>
         </div>
-        <div class="context" id="contextLine"></div>
-        <div class="prompt hidden" id="promptLine"></div>
-        <div class="target-word hidden" id="targetWord"></div>
-        <div class="interchange-row hidden" id="interchangeRow"></div>
-        <div class="mc-context-block hidden" id="mcContextCard">
+        <div class="context qc" id="contextLine"></div>
+        <div class="prompt qc hidden" id="promptLine"></div>
+        <div class="target-word qc hidden" id="targetWord"></div>
+        <div class="interchange-row qc hidden" id="interchangeRow"></div>
+        <div class="mc-context-block qc hidden" id="mcContextCard">
           <div class="mc-context-row" id="mcContextRow"></div>
         </div>
         <div class="input-row" id="inputRow">
@@ -1862,6 +1870,10 @@
   function updateStreakFlame(){
     const active = streak >= 3;
     streakFlameEl.classList.toggle('hidden', !active);
+    // reserves a right-side gutter on the question-content elements (.qc)
+    // so the badge's own corner never paints over prompt/context text —
+    // see the #gameCard.streak-active rule
+    $('gameCard').classList.toggle('streak-active', active);
     if(active){
       streakFlameCountEl.textContent = streak;
       streakFlameEl.classList.remove('bump');
@@ -2091,7 +2103,7 @@
     modeWarmupBtnEl.classList.toggle('active', mode === 'warmup');
     modeQuizBtnEl.classList.toggle('active', mode === 'quiz');
     modeMcBtnEl.classList.toggle('active', mode === 'mc');
-    $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Streak';
+    $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Accuracy';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
     $('statAccLabel').textContent = mode === 'warmup' ? 'Accuracy' : 'Score';
     promptLine.classList.toggle('hidden', mode !== 'quiz');
@@ -2129,8 +2141,12 @@
       statMidEl.textContent = currentWpm();
       statBestEl.textContent = bestWpm;
     } else {
+      // live streak count itself no longer lives in the stats bar — the
+      // flame badge (all modes) is now the live-streak cue; this cell goes
+      // back to accuracy (score already owns the #statAcc cell), and best
+      // streak stays put as the one surviving cross-run streak stat here
       $('statAcc').textContent = score;
-      statMidEl.textContent = streak;
+      statMidEl.textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
       statBestEl.textContent = bestStreak;
     }
     updateStreakFlame();
