@@ -218,6 +218,15 @@ for (const theme of ['light', 'dark']) {
 // graphic ended up noticeably larger than it was designed to look.
 test('train progress rail stays capped on wide screens, unaffected on narrow ones', async ({ page }) => {
   await page.click('#startPlayingBtn');
+  // #countdownOverlay starts with the 'hidden' class already present (it's
+  // only unhidden once the Setup->Play transition actually lands and
+  // beginRun() runs — see showPage()'s onShown callback), so waiting on it
+  // alone is true from the very start and would resolve before the page
+  // transition even begins. Wait for the play page itself to be showing
+  // first — same synchronous tick as the overlay unhiding, since both
+  // happen inside showPage()'s onShown callback — then wait for the
+  // overlay's real countdown-to-hidden transition.
+  await page.waitForFunction(() => !document.getElementById('playPage').classList.contains('hidden'), { timeout: 8000 });
   // not waitForSelector('#countdownOverlay.hidden') — its default "visible"
   // state can never be satisfied by an element that's hidden by definition
   await page.waitForFunction(() => document.getElementById('countdownOverlay').classList.contains('hidden'), { timeout: 8000 });

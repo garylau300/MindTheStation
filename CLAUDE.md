@@ -223,6 +223,22 @@ catch.
 ## Hard rules (violating these previously shipped real bugs — see PROJECT_HISTORY.md for each)
 
 - **Never use `element.style.display` for show/hide.** Always `classList.toggle('hidden', bool)`.
+- **`showPage()`'s Setup<->Play transition is a timed two-stage sequence, not an instant
+  swap — anything that depends on the target page actually being visible must wait for
+  that, not for the click alone.** The outgoing page gets `.page-leaving` (fade + slide out,
+  `pageLeave`, 180ms) while the incoming page stays `hidden`; only once that timer fires does
+  the outgoing page actually get `hidden` and the incoming page lose it and get
+  `.page-entering` (`pageEnter`, 220ms). `showPage(page, onShown)`'s optional `onShown`
+  fires at that exact moment — the "start playing" flow passes `beginRun` as `onShown` so
+  the countdown still starts right when the play page appears, not stacked after its own
+  entering animation too. This turned a real, reproducible bug: both `e2e/layout.spec.js`'s
+  progress-rail test and `test/gameplay.test.js`'s `playThroughRun()` used to wait on
+  `#countdownOverlay` losing `.hidden` right after clicking "Start playing" — but the overlay
+  *starts* with `.hidden` already present, so that wait was true from the very first instant
+  and had only ever worked because the old synchronous swap made the race moot. Both now
+  wait for `#playPage` to actually lose `.hidden` first, then wait on the overlay for real.
+  If you add another flow that acts on the play page right after triggering the switch to
+  it, it needs the same two-step wait (or an `onShown` callback), not a bare click-and-go.
 - **A media-query override only wins if it comes *after* the base rule it overrides, in source
   order.** Wrapping a rule in a matching `@media` query does not by itself make it take
   priority — CSS resolves ties between equal-specificity rules by source order regardless of

@@ -62,6 +62,25 @@
      "what's the right display value when visible" question is answered
      once, in CSS, by whoever owns the layout — JS just says yes or no. */
   .hidden{ display:none !important; }
+
+  /* Gentle Setup <-> Play page transition (see showPage() in JS): the
+     outgoing page fades/slides out first, then — only once it's actually
+     'hidden' — the incoming page fades/slides in from the same direction,
+     so it always reads as one continuous motion rather than two pages
+     briefly overlapping (they're both full-width block-level siblings, not
+     positioned to overlap, so simultaneous crossfade would otherwise jump
+     between two different page heights mid-transition). */
+  @keyframes pageLeave{
+    0%{ opacity:1; transform: translateY(0); }
+    100%{ opacity:0; transform: translateY(-10px); }
+  }
+  @keyframes pageEnter{
+    0%{ opacity:0; transform: translateY(10px); }
+    100%{ opacity:1; transform: translateY(0); }
+  }
+  .page-leaving{ animation: pageLeave .18s ease-in forwards; }
+  .page-entering{ animation: pageEnter .22s ease-out forwards; }
+
   html,body{ margin:0; padding:0; max-width:100%; overflow-x:hidden; }
   body{
     --accent-ink: var(--line-accent);
@@ -2087,9 +2106,40 @@
     render();
   }
 
-  function showPage(page){
-    $('setupPage').classList.toggle('hidden', page !== 'setup');
-    $('playPage').classList.toggle('hidden', page !== 'play');
+  // Switches between the Setup and Play pages with a brief fade/slide
+  // (see the pageLeave/pageEnter keyframes) instead of an instant swap, in
+  // both directions. onShown (optional) fires the moment the target page
+  // actually becomes visible — used by the "start playing" flow so
+  // beginRun()'s countdown still starts right when the play page appears,
+  // not after its own entering animation finishes too.
+  let pageTransitionTimer = null;
+  function showPage(page, onShown){
+    const fromEl = page === 'setup' ? $('playPage') : $('setupPage');
+    const toEl = page === 'setup' ? $('setupPage') : $('playPage');
+    clearTimeout(pageTransitionTimer);
+    fromEl.classList.remove('page-leaving');
+    toEl.classList.remove('page-entering');
+
+    if(fromEl.classList.contains('hidden')){
+      // already on the target page (or nothing to animate away from) --
+      // just ensure state, no transition to play
+      toEl.classList.remove('hidden');
+      fromEl.classList.add('hidden');
+      if(onShown) onShown();
+      return;
+    }
+
+    fromEl.classList.add('page-leaving');
+    pageTransitionTimer = setTimeout(function(){
+      fromEl.classList.add('hidden');
+      fromEl.classList.remove('page-leaving');
+      toEl.classList.remove('hidden');
+      toEl.classList.add('page-entering');
+      if(onShown) onShown();
+      pageTransitionTimer = setTimeout(function(){
+        toEl.classList.remove('page-entering');
+      }, 220);
+    }, 180);
   }
 
   function runCountdown(onComplete){
@@ -2129,7 +2179,7 @@
       if(mode !== 'mc') answerInput.focus();
     });
   }
-  $('startPlayingBtn').addEventListener('click', function(){ showPage('play'); beginRun(); });
+  $('startPlayingBtn').addEventListener('click', function(){ showPage('play', beginRun); });
   $('backToSetupBtn').addEventListener('click', function(){ showPage('setup'); });
   $('backToSetupBtn2').addEventListener('click', function(){ showPage('setup'); });
 

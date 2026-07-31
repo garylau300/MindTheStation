@@ -35,6 +35,13 @@ async function playThroughRun(page, { mode, reverse }){
   const expectedTotal = hooks.getTotalSteps();
   $('startPlayingBtn').click();
 
+  // #countdownOverlay starts with 'hidden' already present (it's only
+  // unhidden once the Setup->Play transition lands and beginRun() runs —
+  // see showPage()'s onShown callback in index.html), so waiting on it
+  // alone can resolve before the page transition even begins. Wait for the
+  // play page itself first — same synchronous tick as the overlay
+  // unhiding — then wait for the real countdown-to-hidden transition.
+  await waitFor(() => $('playPage').classList.contains('hidden') === false, { message: 'play page to show' });
   await waitFor(() => $('countdownOverlay').classList.contains('hidden'), { message: 'countdown to finish' });
 
   let steps = 0;
