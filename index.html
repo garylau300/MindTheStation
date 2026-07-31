@@ -251,7 +251,7 @@
   .led-row{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
   .led-left{ display:flex; align-items:baseline; gap:16px; min-width:0; overflow:hidden; }
   .led-scroll-viewport{ flex:1 1 auto; min-width:0; overflow:hidden; }
-  .led-scroll{ display:flex; align-items:baseline; gap:16px; white-space:nowrap; flex:none; }
+  .led-scroll{ display:flex; align-items:baseline; gap:6px; white-space:nowrap; flex:none; }
   .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ color:#FF9500; font-size:16px; letter-spacing:.02em; }
   .led-dest, .led-via{ white-space:nowrap; }
   .led-num, .led-right{ flex:none; }
@@ -2332,7 +2332,7 @@
   // staying in lockstep. A line that already fits its viewport is left
   // completely alone: no animation, just static left-aligned text.
   const TICKER_HOLD_START_MS = 900;
-  const TICKER_HOLD_END_MS = 700;
+  const TICKER_HOLD_END_MS = 1500;
   let tickerStyleEl = null;
   function tickerStyleTag(){
     if(!tickerStyleEl){
