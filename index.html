@@ -839,6 +839,10 @@
     </button>
   </div>
 
+  <div class="setup-divider"></div>
+
+  <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
+
   <div class="diagram-card">
     <h3>Route map</h3>
     <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
@@ -848,10 +852,6 @@
     <div class="station-popup-name" id="stationPopupName"></div>
     <div class="interchange-row" id="stationPopupBadges"></div>
   </div>
-
-  <div class="setup-divider"></div>
-
-  <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
 
   <footer>Mind the Station <button type="button" id="drainEgg" class="drain-egg" aria-label="Hidden feature"></button> © 2026 Studio Espero · <button type="button" id="termsLink" class="terms-link">Terms of Use</button></footer>
   </div>
@@ -3635,8 +3635,12 @@
   // gap between the ring and the dot itself, rather than a stroke sitting
   // flush against its edge. Only ever one dot active at a time — marking
   // a new one clears whatever was active before, same as only one popup
-  // can be open at once.
-  const STATION_ACTIVE_COLOR = '#000099';
+  // can be open at once. The dark navy blue that reads fine in light mode
+  // is nearly invisible against the app's own near-black dark-mode
+  // background, so dark mode swaps it for Circle's yellow (#FFD300)
+  // instead — picked fresh on every mark so a mid-session theme toggle is
+  // always reflected, not whatever was true when the ring first appeared.
+  const STATION_ACTIVE_COLOR_LIGHT = '#000099', STATION_ACTIVE_COLOR_DARK = '#FFD300';
   const STATION_RING_GAP = 3, STATION_RING_WIDTH = 2;
   function markStationDotActive(dot){
     // a real click fires both mouseenter (the pointer arriving) and click
@@ -3653,7 +3657,7 @@
     ring.setAttribute('cy', dot.getAttribute('cy'));
     ring.setAttribute('r', parseFloat(dot.getAttribute('r')) + STATION_RING_GAP + STATION_RING_WIDTH/2);
     ring.setAttribute('fill', 'none');
-    ring.setAttribute('stroke', STATION_ACTIVE_COLOR);
+    ring.setAttribute('stroke', isLight ? STATION_ACTIVE_COLOR_LIGHT : STATION_ACTIVE_COLOR_DARK);
     ring.setAttribute('stroke-width', STATION_RING_WIDTH);
     ring.style.pointerEvents = 'none';
     dot.parentNode.appendChild(ring);
