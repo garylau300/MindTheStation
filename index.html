@@ -135,6 +135,7 @@
 
   .section-label{ display:block; margin-bottom:8px; }
   .line-select-label{ margin-top:18px; }
+  .route-map-label{ margin-top:18px; }
 
   .start-playing-btn{
     display:block; width:100%; margin-top: 6px; padding: 15px 20px; font-size:16px;
@@ -281,7 +282,7 @@
   .branch-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
   .branch-chip{
     padding:11px 12px; font-size:13px; font-weight:400; text-align:left; cursor:pointer;
-    background: var(--panel); color: var(--ink); border:1px solid var(--line); font-family:var(--font-main);
+    background: var(--panel); color: var(--ink-dim); border:1px solid var(--line); font-family:var(--font-main);
   }
   .branch-chip.active{ background: var(--line-accent); color: var(--accent-fill-ink, #181818); border-color: var(--line-accent); z-index:1; }
   .branch-chip-empty{ cursor:default; pointer-events:none; }
@@ -843,8 +844,8 @@
 
   <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
 
+  <span class="direction-label section-label route-map-label">Route map</span>
   <div class="diagram-card">
-    <h3>Route map</h3>
     <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
   </div>
   <div class="station-popup hidden" id="stationPopup">
