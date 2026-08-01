@@ -590,19 +590,30 @@ catch.
   was showing it last, then re-appends it into the grid only if the current line/state
   actually calls for it. Never let it be a descendant of `#branchGroup` at the moment
   `innerHTML` gets cleared, or the real node (and its listener) is gone for good.
-- **The streak flame badge is positioned in JS (`positionStreakFlame()`), not a fixed CSS
-  offset.** It sits just above whichever button it should read as "belonging to" — Enter
-  (`#inputRow`) in warmup/quiz, or Skip (`#rowActions`) in MC where there's no Enter at all
-  — right-aligned with that button's own real edge (`cardRect.right - anchorRect.right`) and
-  a small fixed gap above its top. A fixed pixel guess doesn't work here: the anchor
-  button's position shifts with card width, responsive font-size breakpoints, and which
-  button is even the right one for the current mode, so it's measured off the actual
-  rendered rects every time `updateStreakFlame()` shows it, the same "measure real geometry,
-  don't hardcode it" approach as the station-popup positioning and the LED ticker's overflow
-  detection. `#gameCard.streak-active .qc{ padding-right: 76px; }` still reserves a gutter on
-  the question text (not `.input-row`/`.row-actions` — the badge no longer sits beside those,
-  only above them), since on a card with little content above (a short warmup target word)
-  the badge can land right over the last bit of question text rather than clear above it.
+- **The streak flame badge is positioned in JS (`positionStreakFlame()`), differently per
+  mode — there's no single anchor that works everywhere.** In warmup/quiz it sits just
+  above Enter (`#inputRow`), right-aligned with that button's own real edge
+  (`cardRect.right - anchorRect.right`) and a small fixed gap above its top — measured off
+  the actual rendered rect every time `updateStreakFlame()` shows it (a fixed pixel guess
+  doesn't work: the button's position shifts with card width and responsive font-size
+  breakpoints), the same "measure real geometry, don't hardcode it" approach as the
+  station-popup positioning and the LED ticker's overflow detection.
+  MC has no equivalent safe anchor: the mc-context row ("Mile End – ? – Leyton") is the
+  first thing in the card, Skip sits below the entire mc-options answer grid, and neither
+  worked — anchoring above Skip the way warmup/quiz does floats the badge over whichever
+  answer row happens to be there, and an earlier attempt pinning it in-flow to the card's
+  own top-right corner put it on the exact same line as the context row's own text, which
+  read as overlapping/awkward even without literal pixel collision. MC's badge instead
+  peeks in from *outside* the card entirely (`MC_FLAME_PEEK_TOP: -34`,
+  `MC_FLAME_PEEK_RIGHT: -12`, fixed offsets, no per-render measurement needed since it
+  isn't anchored to any in-card element) — mostly above the card's own top border, dipping
+  down only into the card's empty top padding, landing above where the context row's text
+  actually starts rather than beside or over it. `#gameCard.streak-active .qc{
+  padding-right: 76px; }` still reserves a gutter on question text, but now only in
+  warmup/quiz (`updateStreakFlame()`'s `mode !== 'mc'` check on the `streak-active` toggle)
+  — on a card with little content above (a short warmup target word) the badge above Enter
+  can land right over the last bit of question text rather than clear above it, but MC's
+  badge no longer sits over in-card text at all, so it no longer needs (or gets) that gutter.
 - **Confetti fires for any run over 79% accuracy, not just a perfect one** — see the
   extra `acc > 79` check alongside the existing new-best-WPM/perfect-run conditions in
   `finishRun()`. A strong run still feels worth celebrating even with a miss or two.

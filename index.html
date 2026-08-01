@@ -354,15 +354,17 @@
     100%{ color: inherit; transform: scale(1); }
   }
 
-  /* right/bottom are placeholder defaults only — positionStreakFlame() sets
-     both directly, in JS, to sit right above the Enter button (or, in MC
-     mode where there's no Enter, above Skip) with the same right-edge
-     offset as that button, so the badge reads as "belonging to" it rather
-     than floating at some independently-chosen spot. Measured off the
-     button's own real rendered position rather than a fixed pixel guess,
-     since that position isn't constant — it shifts with card width,
-     responsive font-size breakpoints, and whichever button is even the
-     right anchor for the current mode. */
+  /* right/top/bottom are placeholder defaults only — positionStreakFlame()
+     sets them directly, in JS, right-aligned with the same edge as the
+     Enter button in warmup/quiz (sitting just above it, the only thing
+     below being the empty rest of the card) or the Skip button in MC
+     (pinned to the card's own top-right corner instead, since Skip sits
+     below the whole mc-options grid and anchoring above it there would
+     float the badge over an answer row). Measured off the button's own
+     real rendered position rather than a fixed pixel guess, since that
+     position isn't constant — it shifts with card width, responsive
+     font-size breakpoints, and whichever button is even the right anchor
+     for the current mode. */
   .streak-flame{
     position:absolute; z-index:3; min-width:48px;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
@@ -413,13 +415,15 @@
     100%{ transform: scale(0.82); opacity:0; }
   }
 
-  /* reserved when the flame badge is showing, so its right-side corner never
-     paints over question text — see the .streak-active toggle in
-     updateStreakFlame(). The badge sits just above the Enter/Skip button
-     it's aligned with (see positionStreakFlame()), which on a card with
-     little content above (e.g. a short warmup target word) can land it
-     right over the last bit of question text rather than clear above it —
-     this keeps that text out from underneath it regardless. */
+  /* reserved when the flame badge is showing in warmup/quiz, so its corner
+     never paints over question text — see the .streak-active toggle in
+     updateStreakFlame(). The badge sits just above Enter there, which on a
+     card with little content above (e.g. a short warmup target word) can
+     land it right over the last bit of question text rather than clear
+     above it. MC is excluded from this (see updateStreakFlame()'s
+     mode !== 'mc' check) since its badge peeks in from outside the card's
+     own top-right corner instead (positionStreakFlame()) and never overlaps
+     in-card text to begin with. */
   #gameCard.streak-active .qc{ padding-right: 76px; }
 
   .card{ position:relative; background: var(--panel); border:1px solid var(--line); border-top: 3px solid var(--line-accent); border-radius: var(--radius); padding: 26px 22px; margin-bottom: 18px; }
@@ -1977,7 +1981,6 @@
   const streakFlameEl = $('streakFlame');
   const streakFlameCountEl = $('streakFlameCount');
   const flameIconEl = streakFlameEl.querySelector('.flame-icon');
-  const rowActionsEl = $('rowActions');
   const trainGroupEl = $('trainGroup');
   const railFillEl = $('railFill');
   const routePreviewSvgEl = $('routePreviewSvg');
@@ -2179,24 +2182,44 @@
     } catch(e){ /* audio is a nice-to-have, never block on it */ }
   }
 
-  // Positions the flame badge just above whichever button it should read
-  // as "belonging to" — Enter (input-row) in warmup/quiz, or Skip
-  // (row-actions) in MC where there's no Enter at all — right-aligned
-  // with that button's own real edge rather than a fixed guess, since the
-  // button's position shifts with card width and responsive breakpoints.
-  // Measured off #gameCard's own box so the result is a valid
-  // position:absolute offset within it (gameCard is the badge's
-  // positioned ancestor).
+  // Positions the flame badge so it never overlaps real content, but the two
+  // modes need genuinely different treatment, not just a different anchor:
+  //
+  // Warmup/quiz sit the badge right-aligned with Enter (input-row) and just
+  // above it — there's nothing else below the input row, so it can't cover
+  // anything. Measured off that button's own real rendered edge rather than
+  // a fixed guess, since the edge shifts with card width and responsive
+  // breakpoints.
+  //
+  // MC has no single safe in-card anchor: the context row ("Mile End – ? –
+  // Leyton") is the first thing in the card, and anything below it is the
+  // options grid or Skip underneath that — pinning the badge above Skip (as
+  // warmup/quiz's rule would) floats it in the middle of the card over
+  // whichever answer row happens to be there, and pinning it to the card's
+  // in-flow top-right corner instead put it on the very same line as the
+  // context row's own text. So MC's badge doesn't anchor to any in-card
+  // element at all — it peeks over the card's own top-right corner from
+  // outside, mostly above the card's top border with just enough overlap to
+  // read as "attached" to it, landing in the card's own padding above where
+  // the context row's text actually starts rather than beside it.
   const STREAK_FLAME_GAP = 8;
+  const MC_FLAME_PEEK_TOP = -34;
+  const MC_FLAME_PEEK_RIGHT = -12;
   function positionStreakFlame(){
-    const anchorEl = mode === 'mc' ? rowActionsEl : inputRow;
-    const cardRect = $('gameCard').getBoundingClientRect();
-    const anchorRect = anchorEl.getBoundingClientRect();
-    streakFlameEl.style.right = (cardRect.right - anchorRect.right) + 'px';
-    streakFlameEl.style.bottom = (cardRect.bottom - anchorRect.top + STREAK_FLAME_GAP) + 'px';
+    if(mode === 'mc'){
+      streakFlameEl.style.right = MC_FLAME_PEEK_RIGHT + 'px';
+      streakFlameEl.style.top = MC_FLAME_PEEK_TOP + 'px';
+      streakFlameEl.style.bottom = 'auto';
+    } else {
+      const cardRect = $('gameCard').getBoundingClientRect();
+      const anchorRect = inputRow.getBoundingClientRect();
+      streakFlameEl.style.right = (cardRect.right - anchorRect.right) + 'px';
+      streakFlameEl.style.bottom = (cardRect.bottom - anchorRect.top + STREAK_FLAME_GAP) + 'px';
+      streakFlameEl.style.top = 'auto';
+    }
   }
 
-  // Streak flame badge (aligned above Enter/Skip — see positionStreakFlame()),
+  // Streak flame badge (positioned per-mode — see positionStreakFlame()),
   // all modes — unlike the streakSuffix()/score text (quiz/mc only), this is
   // a purely visual cue so it's allowed in warmup too. Only appears from 3
   // in a row (same threshold as streakSuffix's own "New best" celebration —
@@ -2207,12 +2230,15 @@
   const FLAME_EXTINGUISH_MS = 650;
   function updateStreakFlame(){
     const active = streak >= 3;
-    // reserves a right-side gutter on question text so the badge's own
+    // Reserves a right-side gutter on question text so the badge's own
     // corner never paints over it if the card is short enough for the two
     // to land in the same vertical band — see the #gameCard.streak-active
-    // rule. Kept reserved through the extinguish animation too, so text
-    // doesn't jump until the badge is actually gone.
-    $('gameCard').classList.toggle('streak-active', active || flameActive);
+    // rule. Only needed in warmup/quiz: MC's badge peeks in from outside the
+    // card's own corner (see positionStreakFlame()) rather than sitting
+    // above in-card content, so it never needs this gutter there. Kept
+    // reserved through the extinguish animation too, so text doesn't jump
+    // until the badge is actually gone.
+    $('gameCard').classList.toggle('streak-active', (active || flameActive) && mode !== 'mc');
     if(active){
       clearTimeout(flameExtinguishTimer);
       const reigniting = !flameActive;
@@ -2843,30 +2869,49 @@
     });
   }
 
-  function generateMcOptions(correctIdx){
+  // targetIdx's position in the real journey is just targetIdx itself,
+  // since journeyIndices[0..N-1] is the identity map (any repeat pair
+  // only appears again past position N-1) — walking from there lets
+  // "next" correctly wrap around a real loop closure instead of just
+  // running off the end of the list. Shared by renderMcContext (what's
+  // displayed) and generateMcOptions (what must NOT also appear as a
+  // distractor) so the two can never drift apart.
+  function journeyStationAt(journeyPos){
+    return (journeyPos >= 0 && journeyPos < LINE.JOURNEY_LEN) ? LINE.journeyIndices[journeyPos] : -1;
+  }
+
+  function generateMcOptions(correctIdx, excludeIdxs){
+    // Exclude the adjacent stations already shown in the context row —
+    // otherwise a distractor could be a station the player can already see
+    // is the neighbour of a *different* stop, which either gives away the
+    // answer or just reads as a confusing near-duplicate of the context.
+    const exclude = new Set(excludeIdxs);
+    exclude.add(correctIdx);
     const pool = [];
-    for(let i=0;i<LINE.N;i++){ if(i !== correctIdx) pool.push(i); }
+    for(let i=0;i<LINE.N;i++){ if(!exclude.has(i)) pool.push(i); }
     shuffle(pool);
-    const distractors = pool.slice(0, 3);
+    let distractors = pool.slice(0, 3);
+    if(distractors.length < 3){
+      // extremely short branch: fall back to allowing an adjacent station
+      // rather than ship fewer than 4 options
+      const fallbackPool = [];
+      for(let i=0;i<LINE.N;i++){ if(i !== correctIdx && !distractors.includes(i)) fallbackPool.push(i); }
+      shuffle(fallbackPool);
+      distractors = distractors.concat(fallbackPool.slice(0, 3 - distractors.length));
+    }
     return shuffle([correctIdx, ...distractors]);
   }
 
   function renderMcContext(targetIdx){
     mcContextRow.innerHTML = '';
     const offsets = [-1, 0, 1];
-    // targetIdx's position in the real journey is just targetIdx itself,
-    // since journeyIndices[0..N-1] is the identity map (any repeat pair
-    // only appears again past position N-1) — walking from there lets
-    // "next" correctly wrap around a real loop closure instead of just
-    // running off the end of the list
     offsets.forEach((off, pos) => {
       if(pos > 0){
         const connector = document.createElement('div');
         connector.className = 'mc-context-connector';
         mcContextRow.appendChild(connector);
       }
-      const journeyPos = targetIdx + off;
-      const i = (journeyPos >= 0 && journeyPos < LINE.JOURNEY_LEN) ? LINE.journeyIndices[journeyPos] : -1;
+      const i = journeyStationAt(targetIdx + off);
       const node = document.createElement('div');
       if(i < 0){
         node.className = 'mc-context-node empty';
@@ -2884,7 +2929,8 @@
 
   function renderMcOptions(){
     const correctIdx = mcOrder[idx];
-    const optionIdxs = generateMcOptions(correctIdx);
+    const adjacentIdxs = [journeyStationAt(correctIdx - 1), journeyStationAt(correctIdx + 1)].filter(i => i >= 0);
+    const optionIdxs = generateMcOptions(correctIdx, adjacentIdxs);
     mcOptionsEl.innerHTML = '';
     optionIdxs.forEach(optIdx => {
       const btn = document.createElement('button');
