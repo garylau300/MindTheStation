@@ -2107,8 +2107,13 @@
   // per-station outcome, keyed by true geographic index: 'ok' | 'bad'
   let results = {};
 
+  // "&" is normalized to "and" (not just stripped like other punctuation)
+  // so a typed "and" matches a station name that actually uses the symbol
+  // (Elephant & Castle, Harrow & Wealdstone, Highbury & Islington,
+  // Chalfont & Latimer, Totteridge & Whetstone) \u2014 and vice versa, since
+  // both sides go through the same normalization before comparison.
   function normalize(s){
-    return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+    return s.toLowerCase().replace(/&/g,'and').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
   }
 
   function popCard(){

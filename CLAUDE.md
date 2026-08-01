@@ -17,6 +17,14 @@ Pick a line (and branch/direction if applicable), then practice recalling statio
 **Warm-up** (target shown, type it), **Recall quiz** (previous station shown, type the
 next), **Multiple choice** (4 options). A 3-2-1 countdown precedes each run.
 
+Typed-answer matching (`normalize()`, warm-up/quiz only — MC is button-click, no typing)
+lowercases, strips diacritics, and drops all non-alphanumeric characters before comparing —
+except `&`, which is converted to `and` first rather than just stripped, so a station like
+"Elephant & Castle" accepts either "Elephant & Castle" or "Elephant and Castle" typed in
+(both sides of the comparison go through the same normalization either way). Applies to
+every station with a real `&` in its name: Chalfont & Latimer, Elephant & Castle, Harrow &
+Wealdstone, Highbury & Islington, Totteridge & Whetstone.
+
 ### Gamification mechanics
 
 All session-only — `streak`/`bestStreak`/`bestWpm`/`lastRunWpm` are plain in-memory
