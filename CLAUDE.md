@@ -601,8 +601,12 @@ catch.
   transition wasn't reliable. Tried Circle line yellow (`#FFD300`) for the dark-mode title
   color and reverted it — too sharp against the dark background — so it stays `var(--ink)` in
   both themes. `document.title` (the actual browser-tab title) is untouched by any of this —
-  a separate, plain-text browser API that can't render a custom font, so it still gets
-  `LINE.def.label + ' Line — Mind the Station'` on every `setLine()` call.
+  a separate, plain-text browser API that can't render a custom font.
+- **`document.title` is always the plain, fixed `"Mind the Station"` — no line name, by
+  explicit instruction.** `setLine()` used to overwrite it with `LINE.def.label + ' Line —
+  Mind the Station'` on every line switch; that call (and the matching static `<title>` in
+  `<head>`, which used to hardcode the default line's own name) are both gone. Don't
+  reintroduce a per-line browser-tab title without checking first.
 - **The "Elapsed" label next to the live run timer (`#statTime`) was removed by explicit
   instruction** — the stopwatch icon/ticking dot already make it obvious what the number is;
   don't re-add a text label there.
@@ -641,6 +645,14 @@ catch.
   folded in stays correctly anchored to its station dot at any zoom level, since both share
   the same reference frame. Don't revert this to `fixed` without re-solving that problem
   another way.
+- **`.station-popup` has no close button** — removed by explicit instruction as genuinely
+  redundant: the existing `document.addEventListener('click', ...)` handler already hides the
+  popup on any click outside it (or off a station dot), so a dedicated "✕" button added a
+  second way to do the same thing without enabling anything a plain outside-click couldn't
+  already do. Don't re-add one without checking whether the outside-click dismissal still
+  covers the case that prompted it. Removing it also freed up the popup's own right padding
+  (previously wider than the other three sides to leave room for the button in that corner),
+  now even on all sides.
 - **A layout's viewBox padding (`pad` in the spur-loop/branch-tree geometry, `vbH`/`cy` in
   linear) has to leave room for `drawDiagram()`'s ✓/✕ tick marks** (offset 10.5 units outward
   from each dot via `outwardDir()`, plus their own text height) **but no more than that** —
