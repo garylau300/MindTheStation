@@ -519,6 +519,12 @@
   }
   .station-popup .interchange-row{ margin:0; }
   .station-popup .interchange-chip{ font-size:10.5px; padding:5px 10px; }
+  /* A gentle opacity breathe, not a scale/glow pulse — kept deliberately
+     subtle since this ring's job is just to confirm which dot the open
+     popup belongs to, not to demand attention the way the streak flame or
+     the live-run dot do. */
+  .station-ring{ animation: stationRingPulse 1.8s ease-in-out infinite; }
+  @keyframes stationRingPulse{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
   svg{ width:100%; height:auto; display:block; }
 
   .progress-rail-wrap{ margin: 0 0 18px; }
@@ -2005,6 +2011,11 @@
   // mid-extinguish) — see updateStreakFlame()
   let flameActive = false, flameExtinguishTimer = null;
   let mcOrder = [];         // shuffled true-station-indices, one per MC question
+  // whichever route-map station dot currently has the blue hover/selected
+  // ring (see markStationDotActive()/clearStationDotActive()) — a plain
+  // module-level reference is fine even across a full drawRoutePreview()
+  // redraw, since the redraw wipes it back to null itself
+  let activeStationDot = null;
   // per-station outcome, keyed by true geographic index: 'ok' | 'bad'
   let results = {};
 
@@ -3501,7 +3512,8 @@
 
   function drawRoutePreview(){
     const svg = routePreviewSvgEl;
-    svg.innerHTML = '';
+    svg.innerHTML = ''; // wipes out whatever dot activeStationDot was pointing at
+    activeStationDot = null;
     svg.setAttribute('viewBox', geo.viewBox);
     const ns = 'http://www.w3.org/2000/svg';
     // the true line color, in both themes -- the route map is meant to
@@ -3608,12 +3620,48 @@
       // is added too so touch devices (where "hover" is a synthetic,
       // sometimes-flaky simulation of a tap) always reliably open the
       // popup on the first tap, not just some of the time.
-      hit.addEventListener('mouseenter', function(){ showStationPopup(name, dot); });
-      hit.addEventListener('mouseleave', function(){ stationPopupEl.classList.add('hidden'); });
-      hit.addEventListener('click', function(e){ e.stopPropagation(); showStationPopup(name, dot); });
+      hit.addEventListener('mouseenter', function(){ markStationDotActive(dot); showStationPopup(name, dot); });
+      hit.addEventListener('mouseleave', function(){ clearStationDotActive(dot); stationPopupEl.classList.add('hidden'); });
+      hit.addEventListener('click', function(e){ e.stopPropagation(); markStationDotActive(dot); showStationPopup(name, dot); });
       svg.appendChild(hit);
     });
 
+  }
+
+  // Blue hover/selected ring around a route-map station dot: a separate
+  // circle (stroke only, no fill) drawn around the true visible dot — not
+  // the padded hit-area circle, so it traces the actual station marker —
+  // sized a few units bigger than the dot's own radius so there's a real
+  // gap between the ring and the dot itself, rather than a stroke sitting
+  // flush against its edge. Only ever one dot active at a time — marking
+  // a new one clears whatever was active before, same as only one popup
+  // can be open at once.
+  const STATION_ACTIVE_COLOR = '#000099';
+  const STATION_RING_GAP = 3, STATION_RING_WIDTH = 2;
+  function markStationDotActive(dot){
+    // a real click fires both mouseenter (the pointer arriving) and click
+    // in the same interaction — clear any ring this exact dot already has
+    // too, not just when switching to a different one, or the first call's
+    // ring is orphaned (no reference left to remove it) when the second
+    // call overwrites dot.__activeRing with a brand new one
+    if(activeStationDot && activeStationDot !== dot) clearStationDotActive(activeStationDot);
+    if(dot.__activeRing) dot.__activeRing.remove();
+    activeStationDot = dot;
+    const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ring.setAttribute('class', 'station-ring');
+    ring.setAttribute('cx', dot.getAttribute('cx'));
+    ring.setAttribute('cy', dot.getAttribute('cy'));
+    ring.setAttribute('r', parseFloat(dot.getAttribute('r')) + STATION_RING_GAP + STATION_RING_WIDTH/2);
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', STATION_ACTIVE_COLOR);
+    ring.setAttribute('stroke-width', STATION_RING_WIDTH);
+    ring.style.pointerEvents = 'none';
+    dot.parentNode.appendChild(ring);
+    dot.__activeRing = ring;
+  }
+  function clearStationDotActive(dot){
+    if(dot && dot.__activeRing){ dot.__activeRing.remove(); dot.__activeRing = null; }
+    if(activeStationDot === dot) activeStationDot = null;
   }
 
   function showStationPopup(name, anchorEl){
@@ -3785,11 +3833,12 @@
   paintLineChips();
   setupGeometry();
   drawRoutePreview();
-  $('stationPopupClose').addEventListener('click', function(){ stationPopupEl.classList.add('hidden'); });
+  $('stationPopupClose').addEventListener('click', function(){ clearStationDotActive(activeStationDot); stationPopupEl.classList.add('hidden'); });
   document.addEventListener('click', function(e){
     if(stationPopupEl.classList.contains('hidden')) return;
     const isDot = e.target.tagName === 'circle' && e.target.closest('#routePreviewSvg');
     if(!stationPopupEl.contains(e.target) && !isDot){
+      clearStationDotActive(activeStationDot);
       stationPopupEl.classList.add('hidden');
     }
   });
