@@ -624,10 +624,18 @@ catch.
   previously anchored at Earl's Court, also `dy:-1`) needed its own fix once edgwareArm moved
   there too: two segments from the same point in the same direction land their first station
   at the identical (x,y) — Kensington (Olympia) was rendering exactly on top of High Street
-  Kensington until the egg's segment was changed to a diagonal (`dx:-1, dy:-1`), by explicit
+  Kensington until the egg's segment was changed to a diagonal off Earl's Court, by explicit
   instruction, reading as a short spur to the left of the Edgware Road branch rather than the
   cardinal-only stubs the rest of this line uses (acceptable here since it's one dot on a
-  hidden egg branch, not a main arm). `test/geometry.test.js`'s main collision suite doesn't
+  hidden egg branch, not a main arm). The diagonal's `dx`/`dy`/`spacing` are deliberately
+  tuned (`dx:-1, dy:-1, spacing: 26 * Math.SQRT2`, not a plain `spacing:26`) so its *vertical*
+  component still comes out to exactly 26 — matching edgwareArm's own rise to High Street
+  Kensington unit-for-unit, putting Kensington (Olympia) at that same height per a follow-up
+  instruction, while keeping the connecting line itself a true diagonal from Earl's Court
+  (an earlier attempt anchored the arm on High Street Kensington's own position instead, going
+  purely sideways — matched the height correctly but drew a horizontal line off High Street
+  Kensington rather than a diagonal off Earl's Court, which wasn't what was wanted).
+  `test/geometry.test.js`'s main collision suite doesn't
   unlock hidden egg branches (only the top-level lines/branches each line boots with), so a
   dedicated `district: hidden Kensington (Olympia) egg branch has no station collisions` test
   (alongside the existing `waterloocity` one) now exercises this specific path — the gap that

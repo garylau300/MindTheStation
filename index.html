@@ -3382,19 +3382,20 @@
     if(!olympiaUnlocked){
       olympiaUnlocked = true;
       const def = LINES.district;
-      // Diagonal (dx:-1, dy:-1), not the same straight-up dy:-1 the
-      // edgwareArm segment now also uses from this exact point (see the
-      // segment comment in the district IIFE above) — sitting on the same
-      // column would land Kensington (Olympia) exactly on top of High
-      // Street Kensington, the edgware arm's own first station. The
-      // diagonal reads as a short spur off to the left of the Edgware
-      // Road branch instead, by explicit instruction, rather than the
-      // usual cardinal-only stubs elsewhere on this line — acceptable
-      // here since it's one dot on a hidden egg branch, not a main arm.
+      // Parented on the spine at Earl's Court (a real diagonal connecting
+      // line to that station, by explicit instruction) rather than on the
+      // edgwareArm's own first station — but dx/dy/spacing are tuned
+      // (26*sqrt(2) at a true 45°, not the plain dx:-1,dy:-1 tried
+      // earlier) so the *vertical* component of that diagonal still comes
+      // out to exactly 26, matching edgwareArm's own rise to High Street
+      // Kensington unit-for-unit. Net effect: Kensington (Olympia) lands
+      // at the exact same height as High Street Kensington, connected by
+      // a diagonal straight from Earl's Court rather than a horizontal
+      // line off High Street Kensington itself.
       def.segments.push({
         id: 'olympiaArm', stations: ["Kensington (Olympia)"],
         parent: 'spine', parentIndex: def.segments.find(s => s.id === 'spine').stations.indexOf("Earl's Court"),
-        dx: -1, dy: -1, spacing: 26
+        dx: -1, dy: -1, spacing: 26 * Math.SQRT2
       });
       const edgwareArm = def.segments.find(s => s.id === 'edgwareArm').stations;
       // forks at Earl's Court directly, not via Gloucester Road — same
