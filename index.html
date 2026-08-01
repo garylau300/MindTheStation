@@ -279,8 +279,8 @@
      already used by .mode-btn/.mc-option for a row of option buttons. */
   .branch-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
   .branch-chip{
-    padding:11px 12px; font-size:13px; font-weight:600; text-align:left; cursor:pointer;
-    background: var(--panel-2); color: var(--ink); border:1px solid var(--line); font-family:var(--font-main);
+    padding:11px 12px; font-size:13px; font-weight:400; text-align:left; cursor:pointer;
+    background: var(--panel); color: var(--ink); border:1px solid var(--line); font-family:var(--font-main);
   }
   .branch-chip.active{ background: var(--line-accent); color: var(--accent-fill-ink, #181818); border-color: var(--line-accent); z-index:1; }
   .branch-chip-empty{ cursor:default; pointer-events:none; }
@@ -825,7 +825,7 @@
 
   <div class="setup-divider"></div>
 
-  <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing →</button>
+  <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
 
   <footer>Mind the Station <button type="button" id="drainEgg" class="drain-egg" aria-label="Hidden feature"></button> © 2026 Studio Espero · <button type="button" id="termsLink" class="terms-link">Terms of Use</button></footer>
   </div>
