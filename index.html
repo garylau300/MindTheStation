@@ -1462,8 +1462,13 @@
     // District's real service pattern is four specific through-routes,
     // not "any western branch to any eastern end": Ealing Broadway and
     // Richmond both run to Upminster; Wimbledon splits into a Barking
-    // service and a separate Edgware Road service (via the same fork
-    // at Gloucester Road that Circle/H&C use). Modeled here as a tree
+    // service and a separate Edgware Road service that forks directly at
+    // Earl's Court itself, not at Gloucester Road — confirmed against both
+    // Earl's Court's and Gloucester Road's own Wikipedia infoboxes: Earl's
+    // Court's Edgware Road-bound platform lists High Street Kensington as
+    // the very next stop, and Gloucester Road's own District line entry
+    // only ever pairs it with Earl's Court/South Kensington on the main
+    // trunk, never with the Edgware Road branch. Modeled here as a tree
     // of segments (trunk + arms) so the diagram can show the actual
     // branch shape, not just whichever route happens to be selected.
     // Kensington (Olympia) is deliberately left out — documented as a
@@ -1482,18 +1487,19 @@
       // the Ealing–Upminster route is treated as one dead-straight horizontal
       // spine; Richmond, Wimbledon, and the Edgware Road arm are each a
       // simple vertical stub connecting perpendicular to it at the real
-      // junction — Turnham Green, Earl's Court, and Gloucester Road — rather
-      // than diagonal "spider legs" going off at odd angles
+      // junction — Turnham Green, Earl's Court (both the Wimbledon arm and
+      // the Edgware Road arm fork here, in opposite directions), and
+      // Gloucester Road (only the trunk continues past here, not Edgware
+      // Road) — rather than diagonal "spider legs" going off at odd angles
       const spine = [...ealingArm.slice().reverse(), ...westCore.slice().reverse(), ...trunk, ...eastCore, ...upminsterExt];
       const turnhamGreenIdx = spine.indexOf('Turnham Green');
       const earlsCourtIdx = spine.indexOf("Earl's Court");
-      const gloucesterRoadIdx = spine.indexOf('Gloucester Road');
 
       const segments = [
         { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
         { id:'richmondArm', stations: richmondArm, parent:'spine', parentIndex: turnhamGreenIdx, dx:0, dy:-1, spacing:26 },
         { id:'wimbledonArm', stations: wimbledonArm, parent:'spine', parentIndex: earlsCourtIdx, dx:0, dy:1, spacing:26 },
-        { id:'edgwareArm', stations: edgwareArm, parent:'spine', parentIndex: gloucesterRoadIdx, dx:0, dy:-1, spacing:26 }
+        { id:'edgwareArm', stations: edgwareArm, parent:'spine', parentIndex: earlsCourtIdx, dx:0, dy:-1, spacing:26 }
       ];
 
       return {
@@ -1524,7 +1530,9 @@
           },
           wimbledonEdgware: {
             label: 'Wimbledon – Edgware Road',
-            stations: [...wimbledonArm.slice().reverse(), ...trunk, ...edgwareArm]
+            // forks at Earl's Court directly, not via Gloucester Road —
+            // see the segment comment above
+            stations: [...wimbledonArm.slice().reverse(), "Earl's Court", ...edgwareArm]
           }
         }
       };
@@ -3374,16 +3382,26 @@
     if(!olympiaUnlocked){
       olympiaUnlocked = true;
       const def = LINES.district;
+      // Diagonal (dx:-1, dy:-1), not the same straight-up dy:-1 the
+      // edgwareArm segment now also uses from this exact point (see the
+      // segment comment in the district IIFE above) — sitting on the same
+      // column would land Kensington (Olympia) exactly on top of High
+      // Street Kensington, the edgware arm's own first station. The
+      // diagonal reads as a short spur off to the left of the Edgware
+      // Road branch instead, by explicit instruction, rather than the
+      // usual cardinal-only stubs elsewhere on this line — acceptable
+      // here since it's one dot on a hidden egg branch, not a main arm.
       def.segments.push({
         id: 'olympiaArm', stations: ["Kensington (Olympia)"],
         parent: 'spine', parentIndex: def.segments.find(s => s.id === 'spine').stations.indexOf("Earl's Court"),
-        dx: 0, dy: -1, spacing: 26
+        dx: -1, dy: -1, spacing: 26
       });
       const edgwareArm = def.segments.find(s => s.id === 'edgwareArm').stations;
-      const trunk = ["Earl's Court", "Gloucester Road"];
+      // forks at Earl's Court directly, not via Gloucester Road — same
+      // real topology as the Wimbledon–Edgware Road branch above
       def.branches.kensingtonOlympia = {
         label: 'Kensington (Olympia) – Edgware Road',
-        stations: ["Kensington (Olympia)", ...trunk, ...edgwareArm]
+        stations: ["Kensington (Olympia)", "Earl's Court", ...edgwareArm]
       };
       $('olympiaEgg').classList.add('hidden');
     }

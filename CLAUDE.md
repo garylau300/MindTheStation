@@ -608,6 +608,30 @@ catch.
   was showing it last, then re-appends it into the grid only if the current line/state
   actually calls for it. Never let it be a descendant of `#branchGroup` at the moment
   `innerHTML` gets cleared, or the real node (and its listener) is gone for good.
+- **District's Edgware Road branch forks directly at Earl's Court — Gloucester Road is not
+  on it.** `edgwareArm`'s station order is `["High Street Kensington","Notting Hill
+  Gate","Bayswater","Paddington","Edgware Road"]`, and both the `wimbledonEdgware` branch and
+  the hidden `kensingtonOlympia` egg branch insert only `"Earl's Court"` before it, not the
+  full `trunk` (`["Earl's Court","Gloucester Road"]`) every *other* District branch correctly
+  uses. This was a real, shipped bug — confirmed against both Earl's Court's and Gloucester
+  Road's own Wikipedia infoboxes: Earl's Court's Edgware Road-bound platform lists High
+  Street Kensington as the next stop, and Gloucester Road's District line entry only ever
+  pairs it with Earl's Court/South Kensington on the main trunk. The `edgwareArm` *segment*
+  (diagram geometry) forks from the spine at Earl's Court's own index too, in the same
+  direction (`dy:-1`, up) as the pre-existing `wimbledonArm` does downward (`dy:1`) from that
+  exact point — two arms sharing one junction in opposite cardinal directions, same pattern
+  as other lines' multi-way junctions. This is exactly why the Olympia egg's own arm (also
+  previously anchored at Earl's Court, also `dy:-1`) needed its own fix once edgwareArm moved
+  there too: two segments from the same point in the same direction land their first station
+  at the identical (x,y) — Kensington (Olympia) was rendering exactly on top of High Street
+  Kensington until the egg's segment was changed to a diagonal (`dx:-1, dy:-1`), by explicit
+  instruction, reading as a short spur to the left of the Edgware Road branch rather than the
+  cardinal-only stubs the rest of this line uses (acceptable here since it's one dot on a
+  hidden egg branch, not a main arm). `test/geometry.test.js`'s main collision suite doesn't
+  unlock hidden egg branches (only the top-level lines/branches each line boots with), so a
+  dedicated `district: hidden Kensington (Olympia) egg branch has no station collisions` test
+  (alongside the existing `waterloocity` one) now exercises this specific path — the gap that
+  let this collision ship unnoticed in the first place.
 - **The streak flame badge is positioned in JS (`positionStreakFlame()`), differently per
   mode — there's no single anchor that works everywhere.** In warmup/quiz it sits just
   above Enter (`#inputRow`), right-aligned with that button's own real edge

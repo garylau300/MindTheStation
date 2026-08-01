@@ -119,3 +119,35 @@ test('waterloocity (hidden egg line) geometry has no collisions', async (t) => {
   assert.equal(points.length, 2);
   assert.ok(dist(points[0], points[1]) > 1, 'Waterloo and Bank should not overlap');
 });
+
+test('district: hidden Kensington (Olympia) egg branch has no station collisions', async (t) => {
+  const page = loadPage();
+  const { document: doc, test: hooks } = page;
+  t.after(() => closePage(page));
+
+  const districtBtn = doc.querySelector('.line-chip[data-line-id="district"]');
+  assert.ok(districtBtn, 'expected the District line chip');
+  districtBtn.click();
+  doc.getElementById('olympiaEgg').click();
+
+  const line = hooks.getLine();
+  const geo = hooks.getGeo();
+  assert.equal(line.def.id, 'district');
+  assert.equal(line.branchId, 'kensingtonOlympia', 'expected the egg click to switch to the Kensington (Olympia) branch');
+
+  const points = geo.networkStations;
+  const spacings = line.def.segments.map(s => s.spacing).filter(n => typeof n === 'number');
+  const minSpacing = Math.min(...spacings);
+  const threshold = minSpacing * COLLISION_FRACTION;
+  const collisions = [];
+  for(let i = 0; i < points.length; i++){
+    for(let j = i + 1; j < points.length; j++){
+      if(points[i].name === points[j].name) continue;
+      const d = dist(points[i], points[j]);
+      if(d < threshold){
+        collisions.push(points[i].name + ' <-> ' + points[j].name + ' (' + d.toFixed(2) + ' units, threshold ' + threshold.toFixed(2) + ')');
+      }
+    }
+  }
+  assert.equal(collisions.length, 0, 'station collisions detected:\n' + collisions.join('\n'));
+});
