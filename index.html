@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; connect-src https://vitals.vercel-insights.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <title>Central Line — Mind the Station</title>
@@ -232,7 +232,7 @@
      dark background but was a jarring slab against the light theme's
      cream page, so light mode gets a softer charcoal) with bright amber
      text in the embedded LT Railway font. Line one is "1  <destination>
-     [via X]" left-justified, "Arriving" right-justified, same layout
+     [via X]" left-justified, "On time" right-justified, same layout
      convention as a real indicator; line two is "Calling at: A, B, C…",
      the full station list in current-direction order. The colour is a
      fixed amber regardless of which line is selected — real LED
@@ -847,7 +847,7 @@
             </span>
           </span>
         </span>
-        <span class="led-right">Arriving</span>
+        <span class="led-right">On time</span>
       </span>
       <span class="led-calling-viewport" id="ledCallingViewport">
         <span class="led-calling-scroll" id="ledCallingScroll">Calling at: </span>

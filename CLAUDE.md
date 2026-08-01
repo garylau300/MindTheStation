@@ -347,7 +347,7 @@ catch.
   the practice direction; a short instruction is appended to the section label itself
   (`.direction-hint`, e.g. "Direction (tap the board to change direction)") since the
   board's own clickability isn't otherwise obvious the way two separate buttons were. The
-  board is two lines. Line one is `"1  <destination> [via X]"` left-justified and `"Arriving"`
+  board is two lines. Line one is `"1  <destination> [via X]"` left-justified and `"On time"`
   right-justified (`.led-row`/`.led-left`/`.led-num`/`.led-scroll-viewport`/`.led-scroll`/
   `.led-dest`/`.led-via`/`.led-right`) — a real "next train to X"
   board only ever shows the *one* current destination, so `updateDirectionBoard()`
@@ -369,7 +369,7 @@ catch.
   LINE.journeyNames` list everything else in the app already uses), comma-separated
   (`.led-calling-viewport`/`.led-calling-scroll`). The platform number `"1"` is **not** part
   of either line's scrolling content — it's a separate, always-visible flex sibling of
-  `.led-scroll-viewport` inside `.led-left`, exactly like `"Arriving"` is a fixed sibling of
+  `.led-scroll-viewport` inside `.led-left`, exactly like `"On time"` is a fixed sibling of
   the whole row — only `.led-scroll` (destination + via) actually scrolls under it. Both
   lines render at the *same* font size (`.led-num`/`.led-dest`/`.led-via`/`.led-right`/
   `.led-calling-scroll` share one selector, at both responsive breakpoints too) — an earlier
@@ -710,3 +710,16 @@ CSP is deny-by-default (`default-src 'none'`) with narrow allowances for Google 
 Vercel Analytics script, and self. No `localStorage`/cookies/`eval`. A full audit found no
 vulnerabilities as of the last pass (PROJECT_HISTORY.md §12) — re-run one after any
 significant change, don't assume it stays clean.
+
+- **`connect-src` is `'self'`, not `https://vitals.vercel-insights.com`.** The CSP originally
+  allowed that origin on the (reasonable-looking but wrong) assumption that the Vercel
+  Analytics script beacons pageviews there directly. Fetching the actual script
+  (`https://cdn.vercel-insights.com/v1/script.js`) and reading its source shows it never
+  references that domain at all — it posts to a same-origin relative path
+  (`/_vercel/insights/view`, Vercel's edge intercepts that path for projects with Analytics
+  enabled) instead. Since the old `connect-src` didn't include `'self'`, those same-origin
+  beacon requests were being silently blocked by the page's own CSP the entire time —
+  Analytics was never actually collecting data despite the script loading successfully with
+  no visible error. If Vercel ever changes the script back to a cross-origin beacon target,
+  re-verify by fetching the script directly rather than assuming the old domain is still
+  right.
