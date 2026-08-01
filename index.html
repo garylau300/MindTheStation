@@ -116,15 +116,56 @@
   @media (min-width: 1300px){ .wrap{ max-width: 1180px; } }
 
   header{ margin-bottom: 22px; }
-  .header-row{ display:flex; align-items:center; gap:12px; margin-bottom: 18px; }
+  /* min-height leaves room for the title's two stacked lines (see
+     .page-title above) since it's position:absolute and out of flow —
+     the row itself won't grow to fit it otherwise. Bumped alongside
+     .page-title's own font-size at the two breakpoints below. */
+  .header-row{ position:relative; display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-bottom: 18px; min-height:70px; }
   /* The app's title, set in the embedded British Rail font (a third
      Underground/rail-styled @font-face alongside P22 Underground and LT
      Railway) rather than the body font, for a distinct wordmark feel —
      replaced the plain-text "Game Setup" stand-in once this font was
-     provided. */
+     provided. Absolutely centered within its row (`.header-row` on Setup,
+     `.play-topbar` on Play — both `position:relative`) rather than just
+     `text-align:center` inside a flex:1 wrapper, since the row's other
+     side only has a button on ONE side (Setup) or two differently-sized
+     buttons (Play) — centering within a partial-width flex child would
+     read as off-center relative to the row as a whole. Dead-centering via
+     `left:50%; transform:translate(-50%,-50%)` keeps it visually
+     centered regardless of what the side button(s) are doing, and takes
+     it out of flex flow entirely, which is why `.header-row` also needs
+     `justify-content:flex-end` — with the title no longer a flex
+     participant, its own theme-toggle button is the only flex child left.
+
+     Two lines, by explicit instruction — "Mind the" then "Station" —
+     with "Station" (`.pt-line2`) not centered under the whole first line
+     but shifted right to start directly under the "t" of "the"
+     (`.pt-the`), echoing the original two-line logo lockup this title
+     replaced. That offset depends on the rendered width of "Mind " in
+     whichever font is actually active, which isn't something CSS alone
+     can express — alignPageTitleLines() measures the real gap via
+     getBoundingClientRect() (same "measure real geometry" approach as
+     the streak-badge and LED-ticker positioning elsewhere) and sets
+     `.pt-line2`'s margin-left to match, re-run via ResizeObserver on
+     `.pt-the` itself so both the responsive font-size breakpoints and the
+     fallback-to-British-Rail font swap (which changes "the"'s rendered
+     position once the real font finishes loading) keep it aligned.
+     `display:inline-flex` (not the default block) so the container's own
+     width — what the outer left:50%/translateX(-50%) centers against —
+     shrink-wraps to whichever line actually renders wider, rather than
+     stretching to fill its positioned ancestor. */
   .page-title{
-    font-family:'British Rail', var(--font-main); font-weight:400; font-size:32px;
-    letter-spacing:.01em; color: var(--ink);
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    display:inline-flex; flex-direction:column; align-items:flex-start;
+    font-family:'British Rail', var(--font-main); font-weight:400;
+    /* true centering means the title's own width eats equally into both
+       sides regardless of the button(s) next to it — on a narrow phone a
+       fixed 32px rendered wide enough to overlap the theme-toggle button
+       on the right. clamp() shrinks it in proportion to viewport width
+       below the point the 900px breakpoint override (36px) takes over, so
+       it only ever gets as wide as the row can actually spare. */
+    font-size: clamp(22px, 7vw, 32px);
+    line-height:0.9; letter-spacing:.01em; color: var(--ink); white-space:nowrap;
   }
 
   .theme-toggle{
@@ -143,7 +184,7 @@
   }
   .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; }
 
-  .play-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; }
+  .play-topbar{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; min-height:70px; }
   .back-btn{
     background: var(--panel); color: var(--ink-dim); border:1px solid var(--line);
     font-family:var(--font-main); font-weight:400; font-size:12.5px;
@@ -745,6 +786,7 @@
      would grow it faster than the column actually widens. */
   @media (min-width: 900px){
     .page-title{ font-size:36px; }
+    .header-row, .play-topbar{ min-height:78px; }
     .line-chip{ font-size:13.5px; }
     .line-select{ height:62px; }
     .branch-chip{ font-size:14px; }
@@ -775,6 +817,7 @@
   }
   @media (min-width: 1300px){
     .page-title{ font-size:40px; }
+    .header-row, .play-topbar{ min-height:86px; }
     .line-chip{ font-size:15px; }
     .line-select{ height:68px; }
     .branch-chip{ font-size:15.5px; }
@@ -815,9 +858,7 @@
   <div id="setupPage">
   <header>
     <div class="header-row">
-      <div style="flex:1;">
-        <div class="page-title">Mind the Station</div>
-      </div>
+      <div class="page-title"><span class="pt-line1">Mind <span class="pt-the">the</span></span><span class="pt-line2">Station</span></div>
       <button type="button" id="themeToggle" class="theme-toggle">☀ Light</button>
     </div>
     <span class="direction-label section-label line-select-label">Line</span>
@@ -894,6 +935,7 @@
   <main id="playPage" class="hidden">
     <div class="play-topbar">
       <button type="button" id="backToSetupBtn" class="back-btn">← Setup</button>
+      <div class="page-title"><span class="pt-line1">Mind <span class="pt-the">the</span></span><span class="pt-line2">Station</span></div>
       <button type="button" id="themeTogglePlay" class="theme-toggle">☀ Light</button>
     </div>
     <div class="play-info">
@@ -2586,6 +2628,42 @@
     new ResizeObserver(refreshTickers).observe(directionBoardEl);
   }
 
+  // Shifts each .page-title's second line ("Station") so it starts
+  // directly under the "t" of "the" on the first line ("Mind the"),
+  // rather than centering it under the whole first line — a fixed CSS
+  // offset can't do this since it depends on the rendered width of
+  // "Mind " in whichever font is actually active. Runs for every
+  // .page-title on the page (Setup and Play both have one) since both
+  // need the same treatment. Re-run via ResizeObserver on each .pt-line1
+  // (not .pt-the itself — a font swap can shift "the"'s position by
+  // changing how wide "Mind " renders without changing "the"'s own
+  // width at all, which .pt-the's own box wouldn't reflect, but
+  // .pt-line1's total rendered width always does) — covers both the
+  // responsive font-size breakpoints and the embedded British Rail font
+  // finishing loading after an initial fallback-font paint, so a
+  // one-time measurement at boot isn't enough on its own.
+  // Nudged slightly left of a literal under-the-"t" alignment, by explicit
+  // instruction — an em value (not a fixed px) so the nudge scales with
+  // whichever font-size breakpoint is active, same reasoning as the
+  // clamp() on .page-title's own font-size above.
+  const PAGE_TITLE_LINE2_NUDGE_EM = 0.12;
+  function alignPageTitleLines(){
+    document.querySelectorAll('.page-title').forEach(function(titleEl){
+      const line1 = titleEl.querySelector('.pt-line1');
+      const theEl = titleEl.querySelector('.pt-the');
+      const line2 = titleEl.querySelector('.pt-line2');
+      if(!line1 || !theEl || !line2) return;
+      const offset = theEl.getBoundingClientRect().left - line1.getBoundingClientRect().left;
+      const nudge = parseFloat(getComputedStyle(titleEl).fontSize) * PAGE_TITLE_LINE2_NUDGE_EM;
+      line2.style.marginLeft = (offset - nudge) + 'px';
+    });
+  }
+  alignPageTitleLines();
+  if(typeof ResizeObserver !== 'undefined'){
+    const titleObserver = new ResizeObserver(alignPageTitleLines);
+    document.querySelectorAll('.pt-line1').forEach(function(el){ titleObserver.observe(el); });
+  }
+
   // Rounds only the branch grid's 4 true outer corners. The grid always
   // keeps its 2 columns, even on an odd branch count — the last row's
   // second cell just sits empty rather than the lone leftover chip
@@ -2794,6 +2872,12 @@
   // starting a run always means a genuinely fresh run — resetState() first
   // so a stale mid-run state from before can never be silently resumed
   function beginRun(){
+    // The play page's title sits inside a display:none container until
+    // this exact moment (showPage() has just unhidden it before calling
+    // beginRun() as its onShown callback) — re-measuring here rather than
+    // relying solely on the ResizeObserver in alignPageTitleLines() below
+    // to catch the hidden-to-visible transition on its own.
+    alignPageTitleLines();
     resetState();
     render();
     runCountdown(function(){

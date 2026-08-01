@@ -548,26 +548,44 @@ catch.
 - **Station name labels on the route map preview were tried repeatedly and abandoned.**
   Don't re-attempt without discussing scope — see PROJECT_HISTORY.md §10 for what was tried
   and why it kept failing on tight branch-tree junctions.
-- **The header is the "Version 1" logo image (`#logoImg`/`.logo-img`), not styled text, and
-  there is no separate line-name heading or roundel icon.** An earlier version had a small
-  "Mind the Station" caption above a large "`<Line>` Line" `<h1>`, plus a hand-drawn
-  ring/bar roundel icon to its left — all three were removed by explicit instruction (the
-  line name is already shown expanded in the line-ribbon chip below; the roundel was a
-  placeholder). `.logo-img` is the real logo artwork — a black plate with the brand-yellow
-  "Mind the / Station" two-line lockup and a double underline — embedded the same way the
-  fonts are (a base64 `data:image/png` URI, inserted via direct string replacement rather
-  than loading the ~6KB base64 payload into context) at 520×220 intrinsic size, palette-
-  quantized to ~8 colors since the source art is only a handful of flat colors (black/yellow/
-  white) — a huge size win (4.5KB vs 24KB) over a plain truecolor PNG with no visible quality
-  loss. `.logo-img{height:...}` is the only thing that changes across the two responsive
-  breakpoints (38px base → 44px at 900px → 50px at 1300px, replacing the old h1's 40/44/48
-  scale) — width follows automatically from the fixed aspect ratio, so don't set a `width`
-  override at a breakpoint without also reconsidering height. `document.title` (the actual
-  browser-tab title) is untouched by any of this — it's a separate, plain-text browser API
-  that can't render a custom font or image, so it still gets `LINE.def.label + ' Line —
-  Mind the Station'` on every `setLine()` call same as before. `--blue` (the old roundel
-  bar's colour) was removed from `:root` once nothing referenced it anymore — don't
-  reintroduce a CSS variable that only one now-deleted element used.
+- **The header (`.page-title`) is plain text in the embedded British Rail font, stacked on
+  two lines — "Mind the" / "Station" — and identical on both Setup (`.header-row`) and Play
+  (`.play-topbar`), not just Setup.** There is no separate line-name heading or roundel icon;
+  the line name is already shown expanded in the line-ribbon chip below on Setup, and in
+  `#playInfoLine` on Play. An earlier version used a `.logo-img` PNG for this (a black plate
+  with a brand-yellow lockup) — replaced once the British Rail font was embedded, since real
+  text scales/recolors for free where a raster image can't; don't reintroduce an image here.
+  "Station" (`.pt-line2`) isn't centered under the whole first line — it's shifted right via
+  JS to start almost directly under the "t" of "the" (`.pt-the`), nudged a little further
+  left of *exactly* under it by explicit instruction (`PAGE_TITLE_LINE2_NUDGE_EM`). That
+  offset depends on the rendered width of "Mind " in whichever font is actually active, which
+  CSS alone can't express — `alignPageTitleLines()` measures it via `getBoundingClientRect()`
+  (the same "measure real geometry" approach as the streak-badge and LED-ticker positioning)
+  and sets `.pt-line2`'s `margin-left` to match, re-run via a `ResizeObserver` on each
+  `.pt-line1` (not `.pt-the` itself — a font swap can shift "the"'s position by changing how
+  wide "Mind " renders without changing "the"'s own box size at all, which `.pt-the`'s own
+  ResizeObserver wouldn't catch) so both the responsive font-size breakpoints and the
+  embedded font finishing loading after an initial fallback-font paint keep it aligned. The
+  whole two-line block is truly centered in its row via `position:absolute; left:50%;
+  transform:translate(-50%,-50%)` (not `text-align:center` inside a flex:1 wrapper) since the
+  row's other side only has a button on one side (Setup) or two differently-sized buttons
+  (Play) — centering within a partial-width flex child would read as off-center relative to
+  the row as a whole. This takes the title out of flex flow entirely, which is why
+  `.header-row` needs `justify-content:flex-end` (its theme-toggle button is the only flex
+  participant left) and why both rows need an explicit `min-height` (bumped alongside
+  `.page-title`'s own font-size at the two breakpoints) — a position:absolute element doesn't
+  make its container grow to fit it. Font-size is `clamp(22px, 7vw, 32px)` rather than a
+  fixed 32px specifically to avoid this: true centering means the title's own width eats
+  equally into both sides regardless of the button(s) next to it, and a fixed size overlapped
+  the theme-toggle button on a narrow phone. Play's title additionally needs
+  `alignPageTitleLines()` called explicitly from `beginRun()` — its `.page-title` sits inside
+  a `display:none` container until `showPage()` unhides it right before calling `beginRun()`
+  as its `onShown`, and relying on the ResizeObserver alone to catch that hidden→visible
+  transition wasn't reliable. Tried Circle line yellow (`#FFD300`) for the dark-mode title
+  color and reverted it — too sharp against the dark background — so it stays `var(--ink)` in
+  both themes. `document.title` (the actual browser-tab title) is untouched by any of this —
+  a separate, plain-text browser API that can't render a custom font, so it still gets
+  `LINE.def.label + ' Line — Mind the Station'` on every `setLine()` call.
 - **The "Elapsed" label next to the live run timer (`#statTime`) was removed by explicit
   instruction** — the stopwatch icon/ticking dot already make it obvious what the number is;
   don't re-add a text label there.
