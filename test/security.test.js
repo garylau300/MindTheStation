@@ -48,7 +48,8 @@ test('CSP origin allowances exactly match actual resource usage (no gaps, nothin
   // silent drift.
   const INDIRECT_KNOWN_ORIGINS = new Set([
     'fonts.gstatic.com',      // the Google Fonts CSS we @import resolves its font files here
-    'vitals.vercel-insights.com' // the Vercel Analytics script (cdn.vercel-insights.com) beacons here
+    'vitals.vercel-insights.com', // the Vercel Speed Insights script (cdn.vercel-insights.com) beacons here
+    'va.vercel-scripts.com'   // the Vercel Web Analytics debug script (only used in development)
   ]);
 
   const allExpectedOrigins = new Set([...directOrigins, ...INDIRECT_KNOWN_ORIGINS]);
