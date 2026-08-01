@@ -133,7 +133,10 @@ test('text scales up at both width breakpoints, not just the container', async (
 test('station popup stays compact, not a large bubble', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.click('.line-chip[data-line-id="district"]');
-  await page.click('#routePreviewSvg circle');
+  // station dots have a separate, larger invisible hit-area circle layered
+  // on top (see drawRoutePreview()) — that's the one that actually
+  // receives clicks now, not the tiny visible dot underneath it
+  await page.click('#routePreviewSvg circle[fill="transparent"]');
   const box = await page.locator('#stationPopup').boundingBox();
   expect(box.width).toBeLessThan(320); // capped at 300px + a margin, even at the widest breakpoint
   expect(box.height).toBeLessThan(160); // generous margin above a many-badge station like King's Cross (~105px)

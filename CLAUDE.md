@@ -544,6 +544,52 @@ catch.
   mutation), not on every streak increment while already showing — restarting the flicker's
   keyframe on every correct answer while the badge is already lit would make it visibly
   stutter instead of flickering continuously.
+- **Route map station dots have a separate, invisible tap-target circle layered on top,
+  sized from the SVG's actual rendered width, not a fixed viewBox-unit radius.** The visible
+  dot (`r: 4.8`/`3.6`) renders under 10px across on a phone — nowhere near tappable — but a
+  fixed unit radius would render a wildly different pixel size across lines, since every
+  layout's own internal viewBox scale is independently tuned (see the viewBox-scale hard
+  rule below). `drawRoutePreview()` computes `pxPerUnit` from `svg.getBoundingClientRect().width`
+  vs. the viewBox width and derives the hit circle's radius from a fixed `HIT_RADIUS_PX`
+  (12, ~24px diameter) so the real on-screen tap target stays consistent across every line.
+  Popup positioning (`showStationPopup()`) is still anchored to the true, small visible dot
+  — not the padded hit circle — so the card stays snug against what's actually drawn. Both a
+  `click` handler and the existing `mouseenter`/`mouseleave` pair are wired to the hit
+  circle, since touch "hover" is a sometimes-flaky simulation of a tap, not a real event.
+- **`.station-popup` is `position:absolute`, not `fixed`, and deliberately so.** A fixed
+  element is positioned relative to the layout viewport, but on a phone that's pinch-zoomed
+  in, that reference frame drifts out of sync with what's actually on screen — the classic
+  "fixed element ends up somewhere else after zooming" bug. `getBoundingClientRect()` (used
+  to measure the anchor dot and size the popup) is also layout-viewport-relative, so an
+  absolutely-positioned popup measured the same way and placed with `window.scrollX/scrollY`
+  folded in stays correctly anchored to its station dot at any zoom level, since both share
+  the same reference frame. Don't revert this to `fixed` without re-solving that problem
+  another way.
+- **A layout's viewBox padding (`pad` in the spur-loop/branch-tree geometry, `vbH`/`cy` in
+  linear) has to leave room for `drawDiagram()`'s ✓/✕ tick marks** (offset 10.5 units outward
+  from each dot via `outwardDir()`, plus their own text height) **but no more than that** —
+  branch-tree's `pad` was trimmed from 45 to 22 and linear's `vbH` from 200 (station row at
+  `cy:115`) to 110 (`cy:55`) after both left far more top/bottom whitespace than the tick
+  marks actually need, especially for a wide/flat diagram (branch-tree) or a single flat row
+  (linear) where nearly the whole padded height was empty. Both `#routePreviewSvg` (Setup's
+  route map) and `#lineSvg` (Play's in-game diagram) share the same `geo.viewBox`, so a
+  padding change affects both — check `drawDiagram()`'s tick marks aren't clipped, not just
+  the route map's own look, before trimming further.
+- **The Olympia egg (`#olympiaEgg`) lives *inside* the branch grid itself, not as a floating
+  dot below it.** District already has an odd (5) real branch count, which already left a
+  genuine trailing empty placeholder cell (see the branch-grid placeholder-cell rule above)
+  — `renderBranchRow()` now fills that exact slot with the egg (styled via `.olympia-egg`'s
+  small `::after` flicker dot layered on `.branch-chip`'s own box model) instead of leaving
+  the grid at a clean 5 and rendering the egg as a separate element after it. Finding the
+  egg adds a genuine 6th branch (`kensingtonOlympia`, an even count — no more placeholder
+  needed), which lands in the exact same grid position the egg occupied, so nothing visibly
+  reflows across the unlock. Since `renderBranchRow()` wipes `#branchGroup` via `innerHTML =
+  ''` on every call, and the egg carries a real click listener attached once at boot (not
+  something that can be recreated), the function always parks the actual `#olympiaEgg` node
+  back as a plain sibling of the grid *first* — before that wipe — regardless of which line
+  was showing it last, then re-appends it into the grid only if the current line/state
+  actually calls for it. Never let it be a descendant of `#branchGroup` at the moment
+  `innerHTML` gets cleared, or the real node (and its listener) is gone for good.
 
 ## Roadmap context
 

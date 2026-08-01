@@ -265,7 +265,7 @@
   .led-via{ word-spacing:-0.2em; }
   .led-num, .led-right{ flex:none; }
   .led-calling-viewport{ display:block; overflow:hidden; margin-top:0; }
-  .led-calling-scroll{ display:inline-block; white-space:nowrap; opacity:.9; }
+  .led-calling-scroll{ display:inline-block; white-space:nowrap; }
 
   /* Branch: a compact 2-column grid of squared chips (not the old stadium
      pills) — rounded only at the whole grid's 4 true outer corners
@@ -484,8 +484,16 @@
   .diagram-card svg{ display:block; width: 92%; max-width: 92%; height: auto; margin: 0 auto; }
   .diagram-card h3{ font-family:var(--font-main); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color: var(--ink-dim); margin: 0 0 4px; font-weight:400; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
 
+  /* position:absolute, not fixed, and deliberately so: a fixed element is
+     positioned relative to the layout viewport, but on a phone that's
+     pinch-zoomed in, that reference frame drifts out of sync with what's
+     actually on screen (the classic "fixed element ends up somewhere else
+     after zooming" bug) — getBoundingClientRect() (used to position this
+     below) is also layout-viewport-relative, so an absolutely-positioned
+     popup measured the same way stays correctly anchored to its station
+     dot at any zoom level, since both share the same reference frame. */
   .station-popup{
-    position:fixed; left:0; top:0; z-index:150;
+    position:absolute; left:0; top:0; z-index:150;
     width: max-content; min-width: 140px; max-width: min(230px, calc(100vw - 24px));
     background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
     padding: 11px 30px 10px 13px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
@@ -587,15 +595,26 @@
   }
   .drain-egg:hover, .drain-egg:focus-visible{ opacity:1; transform: scale(1.7); }
 
-  .olympia-egg{
-    display:inline-block; width:11px; height:11px; margin-left:10px; padding:0; border:none; border-radius:50%;
-    background: radial-gradient(circle, var(--ink-dim) 0%, transparent 72%);
-    vertical-align:middle; position:relative; top:1px; cursor:pointer;
+  /* The Olympia egg now sits inside the branch grid itself, in the "empty"
+     cell an odd branch count would otherwise leave (District has exactly
+     4 real branches — an even count with no such cell — so this occupies
+     what would be the 5th slot; once found, the real 5th branch
+     (Kensington Olympia) takes over that exact spot, and the grid's own
+     trailing-placeholder logic picks up the resulting odd count from
+     there). It shares .branch-chip's own box model (padding/border/
+     background) for a uniform-looking grid, and only adds this small
+     flickering dot on top — a blank-looking cell with something faintly
+     alive in it, not a separate floating dot below the grid. */
+  .olympia-egg{ position:relative; }
+  .olympia-egg::after{
+    content:''; position:absolute; top:50%; left:12px; width:11px; height:11px;
+    border-radius:50%; background: radial-gradient(circle, var(--ink-dim) 0%, transparent 72%);
+    transform: translateY(-50%); pointer-events:none;
     opacity:.35; animation: olympiaFlicker 2.6s ease-in-out infinite;
   }
   @keyframes olympiaFlicker{ 0%,100%{ opacity:.2; } 50%{ opacity:.55; } }
-  .olympia-egg:hover, .olympia-egg:focus-visible{
-    opacity:1; transform: scale(1.6); animation-play-state: paused;
+  .olympia-egg:hover::after, .olympia-egg:focus-visible::after{
+    opacity:1; transform: translateY(-50%) scale(1.6); animation-play-state: paused;
   }
 
   .egg-toast{
@@ -790,7 +809,7 @@
   <div class="direction-row hidden" id="branchRow">
     <span class="direction-label section-label">Branch</span>
     <div class="branch-grid" id="branchGroup"></div>
-    <button type="button" id="olympiaEgg" class="olympia-egg" aria-label="Hidden feature"></button>
+    <button type="button" id="olympiaEgg" class="branch-chip olympia-egg hidden" aria-label="Hidden feature"></button>
   </div>
 
   <div class="direction-row" id="directionRow">
@@ -2455,12 +2474,18 @@
     const row = $('branchRow');
     const hasBranches = !!LINE.def.branches;
     row.classList.toggle('hidden', !hasBranches);
-    // the Olympia egg is a District-specific secret — it lives in this
-    // shared branch row, so it must be explicitly hidden for every other
-    // branching line (it was incorrectly showing up for Metropolitan too)
-    $('olympiaEgg').classList.toggle('hidden', LINE.def.id !== 'district' || olympiaUnlocked);
-    if(!hasBranches) return;
     const group = $('branchGroup');
+    // the Olympia egg is a District-specific secret that lives inside the
+    // branch grid itself now (see its CSS comment) — always park it back
+    // as a plain sibling of the grid first, so the group.innerHTML wipe
+    // just below can never destroy the actual node (it carries its own
+    // click listener, attached once at boot, so it has to be moved, not
+    // recreated) regardless of which line was showing it last.
+    const eggEl = $('olympiaEgg');
+    row.appendChild(eggEl);
+    const showEgg = LINE.def.id === 'district' && !olympiaUnlocked;
+    eggEl.classList.toggle('hidden', !showEgg);
+    if(!hasBranches) return;
     group.innerHTML = '';
     const buttons = [];
     Object.keys(LINE.def.branches).forEach(branchId => {
@@ -2473,6 +2498,16 @@
       group.appendChild(btn);
       buttons.push(btn);
     });
+    if(showEgg){
+      // District's 4 real branches are an even count with no trailing
+      // empty cell — this deliberately makes it odd, so the egg occupies
+      // exactly the slot its real 5th branch (Kensington Olympia) will
+      // take over once found, and the placeholder logic right below
+      // picks up the resulting odd count the same way it would for any
+      // other line's real branches.
+      group.appendChild(eggEl);
+      buttons.push(eggEl);
+    }
     // an odd branch count leaves the last row with just one real chip —
     // fill its empty neighbour with a genuine (non-interactive) placeholder
     // cell, styled like the rest of the grid, so the grid's own right edge
@@ -3417,7 +3452,12 @@
 
       const xs = Object.values(globalPositions).map(p => p.x);
       const ys = Object.values(globalPositions).map(p => p.y);
-      const pad = 45;
+      // trimmed from an original 45 — a wide, short branch-tree spine (e.g.
+      // Central) made this uniform padding read as a lot of empty space
+      // specifically top and bottom, proportionally far more than left and
+      // right; still comfortably enough clearance for drawDiagram()'s ✓/✕
+      // tick marks (10.5-unit outward offset plus their own text height).
+      const pad = 22;
       const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
       const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
 
@@ -3432,10 +3472,15 @@
         emphasisIndex: -1
       };
     } else { // 'linear' — a straight run, horizontal by default
-      const vbW = 640, vbH = 200;
+      // vbH trimmed from an original 200 (with stations sitting at 115) —
+      // a single flat row of stations only actually needs enough vertical
+      // room for drawDiagram()'s ✓/✕ tick marks, offset 10.5 units outward
+      // from each dot plus their own text height (see outwardDir() below,
+      // used there) — the rest was pure unused whitespace top and bottom.
+      const vbW = 640, vbH = 110;
       const leftPad = 45, rightPad = 45;
       const usable = vbW - leftPad - rightPad;
-      const cy = 115;
+      const cy = 55;
       const N = LINE.N;
 
       geo = {
@@ -3467,6 +3512,21 @@
     const routeSet = new Set(LINE.stations);
     const DIM = 0.32;
     const allSegments = []; // every drawn line, for label/arrow clearance testing
+
+    // Station dots' invisible tap-target (see the hit circles below) needs
+    // to be a consistent physical size on screen, not a fixed number of
+    // viewBox units — the same unit radius would render tiny on a line
+    // whose viewBox spans a large area (a wide branch-tree spine) and
+    // needlessly huge on a small, tightly-scaled one, since every layout's
+    // own internal unit scale is already tuned independently (see the
+    // "layout's internal viewBox scale" hard rule). Deriving it from the
+    // SVG's actual rendered width keeps the real tap target roughly the
+    // same number of pixels across every line.
+    const vbWidth = parseFloat(geo.viewBox.split(' ')[2]) || 1;
+    const renderedWidth = svg.getBoundingClientRect().width || vbWidth;
+    const pxPerUnit = renderedWidth / vbWidth;
+    const HIT_RADIUS_PX = 12;
+    const hitRadius = HIT_RADIUS_PX / pxPerUnit;
 
     function drawSeg(pa, pb, on){
       allSegments.push([pa, pb]);
@@ -3530,10 +3590,28 @@
       dot.setAttribute('r', on ? 4.8 : 3.6);
       dot.setAttribute('fill', color);
       dot.setAttribute('opacity', on ? 1 : DIM);
-      dot.style.cursor = 'pointer';
-      dot.addEventListener('mouseenter', function(){ showStationPopup(name, dot); });
-      dot.addEventListener('mouseleave', function(){ stationPopupEl.classList.add('hidden'); });
       svg.appendChild(dot);
+
+      // A visible dot this small (well under 10px across once rendered)
+      // is a real pain to hit on a phone — a separate invisible circle,
+      // layered on top and considerably larger, pads out the actual
+      // clickable/tappable area without changing how the dot itself
+      // looks. Popup positioning is still anchored to the true, small
+      // `dot` (not this hit-area) so the card stays snug against what's
+      // actually drawn rather than the padded tap target around it.
+      const hit = document.createElementNS(ns,'circle');
+      hit.setAttribute('cx', x); hit.setAttribute('cy', y);
+      hit.setAttribute('r', hitRadius);
+      hit.setAttribute('fill', 'transparent');
+      hit.style.cursor = 'pointer';
+      // mouseenter/mouseleave cover desktop hover; a real click/tap handler
+      // is added too so touch devices (where "hover" is a synthetic,
+      // sometimes-flaky simulation of a tap) always reliably open the
+      // popup on the first tap, not just some of the time.
+      hit.addEventListener('mouseenter', function(){ showStationPopup(name, dot); });
+      hit.addEventListener('mouseleave', function(){ stationPopupEl.classList.add('hidden'); });
+      hit.addEventListener('click', function(e){ e.stopPropagation(); showStationPopup(name, dot); });
+      svg.appendChild(hit);
     });
 
   }
@@ -3576,8 +3654,13 @@
       }
       top = Math.max(margin, Math.min(top, window.innerHeight - p.height - margin));
 
-      stationPopupEl.style.left = left + 'px';
-      stationPopupEl.style.top = top + 'px';
+      // left/top above are viewport-relative (from getBoundingClientRect);
+      // .station-popup is position:absolute (document-relative), so the
+      // page's scroll offset has to be folded in here when actually
+      // placing it — see the CSS comment on .station-popup for why fixed
+      // positioning doesn't work reliably for this on a zoomed phone.
+      stationPopupEl.style.left = (left + window.scrollX) + 'px';
+      stationPopupEl.style.top = (top + window.scrollY) + 'px';
       stationPopupEl.style.setProperty('--arrow-x', (a.left + a.width/2 - left) + 'px');
       stationPopupEl.classList.add(arrowClass);
     }
