@@ -415,7 +415,7 @@ catch.
   `applyTicker()`): it holds at its start position, scrolls left (`ease-in-out`) to reveal
   the rest, holds at the fully-scrolled end, then **snaps instantly back** to the start (a
   real jump via a `steps(1, jump-start)` keyframe stop, not a fast reverse-scroll — confirmed
-  by sampling `getComputedStyle(...).transform` over time in a real browser) and loops, by
+  by sampling `getComputedStyle(...).marginLeft` over time in a real browser) and loops, by
   explicit instruction on both the snap style and the loop shape. The destination line and
   the "Calling at" line tick **independently** (also by explicit instruction) — each is timed
   from its own measured overflow distance and its own speed (`ledTickerCalling` runs faster
@@ -425,15 +425,24 @@ catch.
   already fits its viewport is left alone entirely — no animation, no transform, just static
   left-aligned text — checked via `scrollWidth` vs the viewport's own `clientWidth`, not any
   fixed text-length threshold, so it stays correct at every branch/direction/viewport-width
-  combination rather than just the ones tested by hand. Each keyframes rule is generated
-  per-refresh into a dynamically created `<style id="tickerKeyframes">` (not the committed
-  stylesheet — animation distances/durations are runtime-measured pixel values, not
-  constants) and re-run on every `updateDirectionBoard()` call (line/branch/direction
-  change) and on a `ResizeObserver` watching `#directionBoard` itself (guarded with a
-  `typeof ResizeObserver !== 'undefined'` check — jsdom, the unit-test harness, has no such
-  global; the unit suites don't do real CSS layout anyway, so ticker overflow always
-  measures as zero there regardless, and only `e2e/layout.spec.js`'s real Chromium exercises
-  actual scrolling).
+  combination rather than just the ones tested by hand. **The scroll itself animates
+  `margin-left`, not `transform:translateX()`, by design** — a real side-by-side comparison
+  showed the "Calling at" line rendering visibly blurrier than the static destination line,
+  and the cause turned out to be `transform` itself: *any* non-`none` transform value (even a
+  motionless `translateX(0px)` set with no animation running at all) takes an element onto
+  its own composited layer, which several browsers rasterize/antialias text on less crisply
+  than ordinary in-flow text — confirmed by forcing the same no-op transform onto the
+  (otherwise static and crisp) destination line and watching it turn equally blurry.
+  `margin-left` produces the identical horizontal shift through ordinary layout instead, with
+  no separate compositing layer, so the ticker text now stays exactly as sharp as the static
+  line throughout the whole animation. Each keyframes rule is generated per-refresh into a
+  dynamically created `<style id="tickerKeyframes">` (not the committed stylesheet —
+  animation distances/durations are runtime-measured pixel values, not constants) and re-run
+  on every `updateDirectionBoard()` call (line/branch/direction change) and on a
+  `ResizeObserver` watching `#directionBoard` itself (guarded with a `typeof ResizeObserver
+  !== 'undefined'` check — jsdom, the unit-test harness, has no such global; the unit suites
+  don't do real CSS layout anyway, so ticker overflow always measures as zero there
+  regardless, and only `e2e/layout.spec.js`'s real Chromium exercises actual scrolling).
   The board's plate is still a dark colour by design (echoing a real platform departure
   board), but **not the same dark for both app themes** — `--board-bg` is `BOARD_BG_DARK`
   (`#101114`) in dark mode but a softer charcoal `BOARD_BG_LIGHT` (`#2c2a27`) in light mode,

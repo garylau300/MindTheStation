@@ -2592,11 +2592,23 @@
   // computed in ms up front, not as a fixed % of a length-dependent
   // total). The snap-back is a real instant jump, not a fast reverse
   // scroll: the keyframe just before 100% uses steps(1, jump-start), so
-  // the translateX value jumps straight back to 0 the instant that
+  // the margin-left value jumps straight back to 0 the instant that
   // keyframe is reached, with no interpolated motion in between.
+  //
+  // Animates margin-left, not transform:translateX() — confirmed by a
+  // real side-by-side comparison that translateX (any non-'none' value,
+  // not just while actively animating: a plain static inline
+  // transform:translateX(0px) showed the identical softness) visibly
+  // blurs the text against the destination line's un-transformed text,
+  // since any transform value takes the element out of normal layout
+  // rendering and onto its own composited layer, which several major
+  // browsers rasterize/antialias text on less crisply than normal
+  // in-flow text. margin-left achieves the identical horizontal shift
+  // through ordinary layout instead, so the ticker text stays exactly as
+  // sharp as the static line throughout the whole animation.
   function applyTicker(viewportEl, scrollEl, keyframeName, speedPxPerSec){
     scrollEl.style.animation = 'none';
-    scrollEl.style.transform = '';
+    scrollEl.style.marginLeft = '';
     const overflow = scrollEl.scrollWidth - viewportEl.clientWidth;
     if(overflow <= 1) return '';
     const distance = -overflow;
@@ -2607,11 +2619,11 @@
     const cPct = ((TICKER_HOLD_START_MS + scrollMs + TICKER_HOLD_END_MS) / total * 100).toFixed(3);
     scrollEl.style.animation = keyframeName + ' ' + (total / 1000).toFixed(3) + 's linear infinite';
     return '@keyframes ' + keyframeName + '{' +
-      '0%{ transform:translateX(0); animation-timing-function: ' + TICKER_SCROLL_EASING + '; }' +
-      aPct + '%{ transform:translateX(0); animation-timing-function: ' + TICKER_SCROLL_EASING + '; }' +
-      bPct + '%{ transform:translateX(' + distance + 'px); animation-timing-function: linear; }' +
-      cPct + '%{ transform:translateX(' + distance + 'px); animation-timing-function: steps(1, jump-start); }' +
-      '100%{ transform:translateX(0); }' +
+      '0%{ margin-left:0px; animation-timing-function: ' + TICKER_SCROLL_EASING + '; }' +
+      aPct + '%{ margin-left:0px; animation-timing-function: ' + TICKER_SCROLL_EASING + '; }' +
+      bPct + '%{ margin-left:' + distance + 'px; animation-timing-function: linear; }' +
+      cPct + '%{ margin-left:' + distance + 'px; animation-timing-function: steps(1, jump-start); }' +
+      '100%{ margin-left:0px; }' +
     '}';
   }
   function refreshTickers(){
