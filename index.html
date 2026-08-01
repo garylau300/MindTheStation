@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; connect-src https://vitals.vercel-insights.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<title>Circle Line — Mind the Station</title>
+<title>Central Line — Mind the Station</title>
 <!-- Roundel favicon: TfL-style ring/bar design, inlined as a data URI so
      the single-file app never needs an external asset -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='26' fill='none' stroke='%23E32017' stroke-width='7'/%3E%3Crect x='1' y='27' width='62' height='10' fill='%23113A8F'/%3E%3C/svg%3E">
@@ -262,6 +262,7 @@
   .led-scroll{ display:flex; align-items:baseline; gap:6px; white-space:nowrap; flex:none; }
   .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ color:#FF9500; font-size:16px; letter-spacing:.02em; }
   .led-dest, .led-via{ white-space:nowrap; }
+  .led-via{ word-spacing:-0.2em; }
   .led-num, .led-right{ flex:none; }
   .led-calling-viewport{ display:block; overflow:hidden; margin-top:0; }
   .led-calling-scroll{ display:inline-block; white-space:nowrap; opacity:.9; }
@@ -761,14 +762,14 @@
     </div>
     <span class="direction-label section-label line-select-label">Line</span>
     <div class="line-select" role="group" aria-label="Choose a line">
-      <button type="button" class="line-chip" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
+      <button type="button" class="line-chip active expand" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
       <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
-      <button type="button" class="line-chip active expand" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
       <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
       <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
       <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
       <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">H&amp;C</b><span class="chip-count">29 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">Hammersmith &amp; City</b><span class="chip-count">29 stations</span></span></button>
       <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
       <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
       <button type="button" class="line-chip soon" id="lineElizabethBtn" data-line-id="elizabeth" title="Elizabeth line — coming soon"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">soon</span></span></button>
@@ -800,7 +801,7 @@
           <span class="led-num">1</span>
           <span class="led-scroll-viewport" id="ledScrollViewport">
             <span class="led-scroll" id="ledScroll">
-              <span class="led-dest" id="ledDest">Edgware Road</span>
+              <span class="led-dest" id="ledDest">Epping</span>
               <span class="led-via hidden" id="ledVia"></span>
             </span>
           </span>
@@ -838,7 +839,7 @@
     <div class="play-info">
       <div class="play-info-main">
         <span class="play-info-dot" id="playInfoDot"></span>
-        <span id="playInfoLine">Circle</span> · <span id="playInfoMode">Warm-up</span>
+        <span id="playInfoLine">Central</span> · <span id="playInfoMode">Warm-up</span>
       </div>
       <div class="play-info-sub" id="playInfoSub"></div>
     </div>
@@ -1922,7 +1923,7 @@
     return '#f5f4ef';
   }
 
-  let LINE = buildLineRuntime('circle');
+  let LINE = buildLineRuntime('central');
 
   const $ = id => document.getElementById(id);
   const answerInput = $('answerInput');
@@ -3695,6 +3696,7 @@
     }
   }
 
+  renderBranchRow();
   applyLineTheme();
   updateDirectionBoard();
   paintLineChips();
