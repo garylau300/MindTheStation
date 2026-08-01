@@ -627,6 +627,26 @@ catch.
   `handleMcAnswer()` (MC), all three modes, every line. Wrapped in `try/catch` — a chime
   failing to play (or `AudioContext` not existing at all, e.g. under jsdom in the test
   suite) must never block the actual answer-submission logic around it.
+- **`.mc-options` is a 2-column grid at every width, including narrow phones, by explicit
+  instruction** — a long station name wrapping to two lines there is an accepted tradeoff,
+  not a bug. The old `@media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; }
+  }` single-column fallback is gone; don't reintroduce it. Every `.mc-option` button shares
+  the exact same height regardless of whether its own text actually wraps
+  (`min-height: calc(2.9em + 28px)`, sized for the worst case of two real wrapped lines)
+  rather than sizing to its own content — CSS Grid only stretches cells to match the
+  tallest cell *in that row*, so two independently-sized rows (a short-label row next to a
+  long-label row) would otherwise render at two different heights. The `2.9em` multiplier
+  is deliberately more than the naive `line-height:1.3 × 2 lines = 2.6em` math suggests —
+  measured empirically against real 2-line station names (e.g. "King's Cross St. Pancras",
+  "Caledonian Road") at 340px viewport width, since actual rendered line height ran ~4px
+  taller than the nominal `line-height` calculation alone predicted. Using `em` (not a fixed
+  px value) means this scales automatically with `.mc-option`'s own font-size at the
+  900px/1300px breakpoints, without a separate override at each one. Text is centered both
+  ways — `display:flex; align-items:center; justify-content:center` for vertical centering
+  of the whole (possibly 2-line) text block, plus `text-align:center` so each wrapped line
+  centers within that block too (flex centering alone only positions the block itself, not
+  the individual lines inside it) — replacing the plain left-aligned block text every other
+  `.mc-option` styling used before.
 
 ## Roadmap context
 

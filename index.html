@@ -288,8 +288,24 @@
   .branch-chip-empty{ cursor:default; pointer-events:none; }
 
   .mc-options{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  /* Two columns, always — including narrow phones, by explicit instruction
+     (a long station name may need two lines there instead of one). Every
+     option button gets the SAME min-height regardless of whether its own
+     text actually wraps, sized for the worst case (two lines) rather than
+     however tall its own content happens to be — otherwise a row pairing a
+     short one-line name with a long two-line one would render as two
+     different button heights side by side. line-height is set explicitly
+     (rather than left to the font's own default) so the 2-line math here is
+     exact; min-height uses em units so it scales automatically alongside
+     .mc-option's own font-size at the 900px/1300px breakpoints below,
+     without needing a separate override at each one. Centered both ways
+     (flex for vertical, text-align for horizontal — flex alone only centers
+     the wrapped text block as a whole, not each individual line within it)
+     rather than the plain left-aligned block text used everywhere else. */
   .mc-option{
-    text-align:left; background: var(--panel-2); border: 2px solid var(--line); color: var(--ink);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    line-height:1.3; min-height: calc(2.9em + 28px);
+    background: var(--panel-2); border: 2px solid var(--line); color: var(--ink);
     font-family:var(--font-main); font-weight:400; font-size:15px;
     padding: 14px 14px; border-radius: 10px; cursor:pointer; transition: border-color .15s, background-color .15s, transform .1s ease;
   }
@@ -297,7 +313,6 @@
   .mc-option.correct{ border-color: var(--green); background: rgba(124,203,107,0.14); }
   .mc-option.wrong{ border-color: var(--red); background: rgba(227,32,23,0.12); }
   .mc-option.disabled{ opacity:.4; pointer-events:none; }
-  @media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; } }
 
   .mc-context-block{ margin: 2px 0 26px; }
   .mc-context-row{ display:flex; align-items:center; justify-content:center; gap:4px; overflow-x:auto; padding-bottom:2px; }
