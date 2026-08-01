@@ -253,6 +253,24 @@ catch.
   wait for `#playPage` to actually lose `.hidden` first, then wait on the overlay for real.
   If you add another flow that acts on the play page right after triggering the switch to
   it, it needs the same two-step wait (or an `onShown` callback), not a bare click-and-go.
+- **`runCountdown()` must clear any previous countdown interval before starting a new
+  one (`countdownInterval`, a module-level variable) — `beginRun()` itself has no
+  debounce.** "Start playing" is implicitly protected against a rapid re-click by
+  `showPage()`'s own `pageTransitionTimer`/`clearTimeout` (a second click cancels the first
+  click's pending `onShown`/`beginRun()` before it ever fires, so only the latest click's
+  countdown ever starts), but "Play again" (`#restartBtn`) calls `beginRun()` directly on
+  every click with no equivalent guard. A fast repeat click there — very plausible in MC,
+  where getting back into another round is a single click with no typing in between, unlike
+  warmup/quiz — used to start a second `setInterval` on top of a still-running first one,
+  both ticking down independently and racing to update the same `#countdownOverlay`/
+  `#countdownNumber`. Whichever finished first hid the overlay and fired `onComplete()`
+  (corrupting `startTime` for the run that was actually still counting down), while the
+  other kept ticking invisibly underneath and fired `onComplete()` a second time later. The
+  visible symptom was a countdown that looked shortened or skipped a beat — confirmed by
+  reproducing it with two `restartBtn` clicks 300-900ms apart and watching the total
+  countdown finish in ~3.4-3.7s instead of the correct ~4.2s. Clearing the previous interval
+  before assigning a new one makes the newest call always fully supersede any prior one, the
+  same "latest click wins outright" behavior `showPage()` already gives "Start playing".
 - **A media-query override only wins if it comes *after* the base rule it overrides, in source
   order.** Wrapping a rule in a matching `@media` query does not by itself make it take
   priority — CSS resolves ties between equal-specificity rules by source order regardless of

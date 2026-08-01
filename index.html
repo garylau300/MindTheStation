@@ -2733,7 +2733,24 @@
     }, 180);
   }
 
+  // Guards against two countdowns ever running at once. beginRun() has no
+  // debounce of its own — "Play again" (unlike "Start playing", which goes
+  // through showPage()'s own pageTransitionTimer/clearTimeout guard) calls
+  // it directly on every click — so a fast repeat click (very plausible in
+  // MC, where finishing a round and wanting another is a single click, no
+  // typing in between) used to start a second setInterval on top of the
+  // first, both still ticking down independently and fighting over the same
+  // overlay/numberEl. Whichever finished first would hide the overlay and
+  // fire onComplete() — corrupting startTime for the run that was actually
+  // still counting down — while the other kept running invisibly and later
+  // fired onComplete() a second time. The net effect looked exactly like a
+  // skipped/cut-short countdown. Clearing any previous interval before
+  // starting a new one makes the latest call always win outright, the same
+  // "newest click is authoritative" behavior showPage() already gives
+  // "Start playing".
+  let countdownInterval = null;
   function runCountdown(onComplete){
+    clearInterval(countdownInterval);
     const overlay = $('countdownOverlay');
     const numberEl = $('countdownNumber');
     overlay.classList.remove('hidden');
@@ -2746,14 +2763,14 @@
     }
     let n = 3;
     show(n);
-    const interval = setInterval(function(){
+    countdownInterval = setInterval(function(){
       n--;
       if(n > 0){
         show(n);
       } else if(n === 0){
         show('Go!', true);
       } else {
-        clearInterval(interval);
+        clearInterval(countdownInterval);
         overlay.classList.add('hidden');
         onComplete();
       }
