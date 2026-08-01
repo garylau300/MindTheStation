@@ -1187,7 +1187,7 @@
     "Plaistow": [badge('district','District'), badge('hammersmithcity','H&C')],
     "Upton Park": [badge('district','District'), badge('hammersmithcity','H&C')],
     "East Ham": [badge('district','District'), badge('hammersmithcity','H&C')],
-    "Barking": [badge('district','District'), badge('nationalrail','National Rail'), badge('hammersmithcity','H&C')],
+    "Barking": [badge('district','District'), badge('suffragette','Suffragette'), badge('nationalrail','National Rail'), badge('hammersmithcity','H&C')],
 
     // ---- District line ----
     "Ealing Broadway": [badge('central','Central'), badge('district','District'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
@@ -1207,10 +1207,16 @@
     "Elm Park": [],
     "Hornchurch": [],
     "Upminster Bridge": [],
-    "Upminster": [badge('nationalrail','National Rail')],
+    "Upminster": [badge('liberty','Liberty'), badge('nationalrail','National Rail')],
     "Richmond": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
-    "Kew Gardens": [badge('nationalrail','National Rail')],
-    "Gunnersbury": [badge('nationalrail','National Rail')],
+    // Kew Gardens/Gunnersbury are Underground + Overground only — no
+    // separate National Rail franchise operator (confirmed via each
+    // station's own Wikipedia infobox) — so the badge here is Mildmay,
+    // not National Rail; that was a stale leftover, unlike West Brompton
+    // just below, which genuinely does have Southern trains alongside
+    // Mildmay and keeps both badges
+    "Kew Gardens": [badge('mildmay','Mildmay')],
+    "Gunnersbury": [badge('mildmay','Mildmay')],
     "Wimbledon": [badge('nationalrail','National Rail')],
     "Wimbledon Park": [],
     "Southfields": [],
@@ -1219,7 +1225,7 @@
     "Parsons Green": [],
     "Fulham Broadway": [],
     "West Brompton": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
-    "Kensington (Olympia)": [badge('nationalrail','National Rail')],
+    "Kensington (Olympia)": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
 
     // ---- Metropolitan line ----
     "West Harrow": [],
@@ -1261,7 +1267,7 @@
     "East Acton": [],
     "Holland Park": [],
     "Lancaster Gate": [],
-    "Tottenham Court Road": [badge('central','Central'), badge('northern','Northern')],
+    "Tottenham Court Road": [badge('central','Central'), badge('northern','Northern'), badge('elizabeth','Elizabeth')],
     "Holborn": [badge('central','Central'), badge('piccadilly','Piccadilly')],
     "Chancery Lane": [],
     "St. Paul's": [],

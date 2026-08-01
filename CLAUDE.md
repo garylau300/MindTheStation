@@ -519,6 +519,29 @@ catch.
   correct by design (with one documented exception: Bakerloo's "Edgware Road" is a genuinely
   different physical station from the Circle/District/H&C one of the same name, explicitly
   special-cased in `renderInterchanges()`).
+- **`test/interchanges.test.js` only catches tube-line-to-tube-line gaps — it can't check
+  the London Overground/DLR/Elizabeth/National Rail badges, since those aren't full playable
+  `LINES` entries with their own station array to cross-reference against; they're hand-entered
+  per station.** A full pass against every Overground line's own Wikipedia article (all six:
+  Liberty, Lioness, Mildmay, Suffragette, Weaver, Windrush) plus DLR and the Elizabeth line
+  found six real gaps this way: Kensington (Olympia), Kew Gardens, and Gunnersbury were all
+  missing Mildmay; Barking was missing Suffragette; Upminster was missing Liberty; Tottenham
+  Court Road was missing Elizabeth. Kew Gardens and Gunnersbury's existing `nationalrail`
+  badges were also wrong, not just incomplete — both stations are Underground + Overground
+  only with no separate National Rail franchise operator (confirmed via each station's own
+  infobox), so `nationalrail` there was a stale leftover and got replaced with `mildmay`
+  rather than just supplemented. **Same name ≠ same station is the recurring trap here** —
+  Bethnal Green (Central) and Camden Town (Northern) both have a same-named/nearby Overground
+  station that Wikipedia explicitly describes as a separate building or an OSI (out-of-station
+  interchange, a walk between faregates) rather than a real interchange, same as this file's
+  existing Bakerloo/Edgware Road and District/Shepherd's Bush exceptions — don't badge those
+  without re-checking the specific station's own infobox first, and don't treat an OSI as
+  equivalent to a real interchange (Moorgate's Elizabeth line access, itself only an OSI via
+  Liverpool Street, was checked and deliberately left unbadged for the same reason). National
+  Rail itself (as opposed to the smaller, fully-enumerable Overground lines) is too broad a
+  network to exhaustively verify station-by-station in one pass — treat any particular
+  `nationalrail` badge as worth double-checking against the station's own infobox if it's
+  ever in question, rather than assuming the existing ~40 are all correct.
 - **CSS-only diagram sizing, no scroll boxes.** `.diagram-card svg { width:92%; height:auto }`
   is a deliberate, explicit user preference over the earlier JS-computed-pixel-size approach.
   Don't reintroduce horizontal scroll containers for wide diagrams without checking first.
