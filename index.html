@@ -354,8 +354,17 @@
     100%{ color: inherit; transform: scale(1); }
   }
 
+  /* right/bottom are placeholder defaults only — positionStreakFlame() sets
+     both directly, in JS, to sit right above the Enter button (or, in MC
+     mode where there's no Enter, above Skip) with the same right-edge
+     offset as that button, so the badge reads as "belonging to" it rather
+     than floating at some independently-chosen spot. Measured off the
+     button's own real rendered position rather than a fixed pixel guess,
+     since that position isn't constant — it shifts with card width,
+     responsive font-size breakpoints, and whichever button is even the
+     right anchor for the current mode. */
   .streak-flame{
-    position:absolute; top:12px; right:14px; z-index:3; min-width:48px;
+    position:absolute; z-index:3; min-width:48px;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;
     padding:7px 10px 6px; border-radius:14px;
     background: linear-gradient(160deg, #FF8A2B, #E32017); color:#fff;
@@ -404,8 +413,13 @@
     100%{ transform: scale(0.82); opacity:0; }
   }
 
-  /* reserved when the flame badge is showing, so its top-right corner never
-     paints over question text — see the .streak-active toggle in updateStreakFlame() */
+  /* reserved when the flame badge is showing, so its right-side corner never
+     paints over question text — see the .streak-active toggle in
+     updateStreakFlame(). The badge sits just above the Enter/Skip button
+     it's aligned with (see positionStreakFlame()), which on a card with
+     little content above (e.g. a short warmup target word) can land it
+     right over the last bit of question text rather than clear above it —
+     this keeps that text out from underneath it regardless. */
   #gameCard.streak-active .qc{ padding-right: 76px; }
 
   .card{ position:relative; background: var(--panel); border:1px solid var(--line); border-top: 3px solid var(--line-accent); border-radius: var(--radius); padding: 26px 22px; margin-bottom: 18px; }
@@ -566,9 +580,10 @@
   }
 
   /* Confetti burst, fired once per run on a genuine celebration moment
-     (perfect run or a new-best WPM — see launchConfetti() in finishRun()).
-     Fixed full-viewport overlay so it isn't clipped by .wrap's own max-width,
-     pointer-events:none so it never blocks the summary card underneath. */
+     (perfect run, a new-best WPM, or just a strong one — over 79% accuracy
+     — see launchConfetti() in finishRun()). Fixed full-viewport overlay so
+     it isn't clipped by .wrap's own max-width, pointer-events:none so it
+     never blocks the summary card underneath. */
   .confetti-layer{ position:fixed; inset:0; z-index:300; pointer-events:none; overflow:hidden; }
   .confetti-piece{
     position:absolute; top:-16px; opacity:0;
@@ -1965,6 +1980,7 @@
   const streakFlameEl = $('streakFlame');
   const streakFlameCountEl = $('streakFlameCount');
   const flameIconEl = streakFlameEl.querySelector('.flame-icon');
+  const rowActionsEl = $('rowActions');
   const trainGroupEl = $('trainGroup');
   const railFillEl = $('railFill');
   const routePreviewSvgEl = $('routePreviewSvg');
@@ -2121,22 +2137,84 @@
     el.classList.add('score-pop');
   }
 
-  // Streak flame badge (top-right of the answer card), all modes — unlike
-  // the streakSuffix()/score text (quiz/mc only), this is a purely visual
-  // cue so it's allowed in warmup too. Only appears from 3 in a row (same
-  // threshold as streakSuffix's own "New best" celebration — 1-2 in a row
-  // isn't a streak worth flagging). When the streak breaks (wrong answer,
-  // skip, or a hint eating into it) the fire visibly dies out first
-  // (.extinguishing, see its CSS) and only once that's finished does the
-  // badge actually get 'hidden' — a dead flame, not an instant vanish.
+  // Simple correct/wrong answer chimes, all modes — synthesized via Web
+  // Audio rather than a fetched/embedded audio file, keeping the app's
+  // zero-dependency, single-file nature and needing no CSP allowance for
+  // an audio resource. The AudioContext is created lazily on first use:
+  // browsers block audio from starting without a user gesture, and the
+  // very first answer submission (a click or Enter keypress) already is
+  // one, so there's no separate "unlock" step needed. Wrapped defensively
+  // — a chime failing to play should never break answer submission itself.
+  let audioCtx = null;
+  function getAudioCtx(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function playTone(freq, startDelay, duration, type){
+    const ctx = getAudioCtx();
+    const startTime = ctx.currentTime + startDelay;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.001, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.16, startTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.02);
+  }
+  // A quick two-note rising blip (A5 then E6) for correct, one low square
+  // buzz for wrong — deliberately short and simple, not a full jingle.
+  function playCorrectChime(){
+    try{
+      playTone(880, 0, 0.11, 'sine');
+      playTone(1318.5, 0.09, 0.14, 'sine');
+    } catch(e){ /* audio is a nice-to-have, never block on it */ }
+  }
+  function playWrongChime(){
+    try{
+      playTone(220, 0, 0.16, 'square');
+    } catch(e){ /* audio is a nice-to-have, never block on it */ }
+  }
+
+  // Positions the flame badge just above whichever button it should read
+  // as "belonging to" — Enter (input-row) in warmup/quiz, or Skip
+  // (row-actions) in MC where there's no Enter at all — right-aligned
+  // with that button's own real edge rather than a fixed guess, since the
+  // button's position shifts with card width and responsive breakpoints.
+  // Measured off #gameCard's own box so the result is a valid
+  // position:absolute offset within it (gameCard is the badge's
+  // positioned ancestor).
+  const STREAK_FLAME_GAP = 8;
+  function positionStreakFlame(){
+    const anchorEl = mode === 'mc' ? rowActionsEl : inputRow;
+    const cardRect = $('gameCard').getBoundingClientRect();
+    const anchorRect = anchorEl.getBoundingClientRect();
+    streakFlameEl.style.right = (cardRect.right - anchorRect.right) + 'px';
+    streakFlameEl.style.bottom = (cardRect.bottom - anchorRect.top + STREAK_FLAME_GAP) + 'px';
+  }
+
+  // Streak flame badge (aligned above Enter/Skip — see positionStreakFlame()),
+  // all modes — unlike the streakSuffix()/score text (quiz/mc only), this is
+  // a purely visual cue so it's allowed in warmup too. Only appears from 3
+  // in a row (same threshold as streakSuffix's own "New best" celebration —
+  // 1-2 in a row isn't a streak worth flagging). When the streak breaks
+  // (wrong answer, skip, or a hint eating into it) the fire visibly dies
+  // out first (.extinguishing, see its CSS) and only once that's finished
+  // does the badge actually get 'hidden' — a dead flame, not an instant vanish.
   const FLAME_EXTINGUISH_MS = 650;
   function updateStreakFlame(){
     const active = streak >= 3;
-    // reserves a right-side gutter on the question-content elements (.qc)
-    // so the badge's own corner never paints over prompt/context text —
-    // see the #gameCard.streak-active rule. Kept reserved through the
-    // extinguish animation too, so text doesn't jump until the badge is
-    // actually gone.
+    // reserves a right-side gutter on question text so the badge's own
+    // corner never paints over it if the card is short enough for the two
+    // to land in the same vertical band — see the #gameCard.streak-active
+    // rule. Kept reserved through the extinguish animation too, so text
+    // doesn't jump until the badge is actually gone.
     $('gameCard').classList.toggle('streak-active', active || flameActive);
     if(active){
       clearTimeout(flameExtinguishTimer);
@@ -2144,6 +2222,7 @@
       streakFlameEl.classList.remove('extinguishing');
       streakFlameEl.classList.remove('hidden');
       streakFlameCountEl.textContent = streak;
+      positionStreakFlame();
       streakFlameEl.classList.remove('bump');
       void streakFlameEl.offsetWidth; // restart the pop on every increment, not just on first appearance
       streakFlameEl.classList.add('bump');
@@ -2840,6 +2919,7 @@
       msg += milestoneNote(idx + 1, totalSteps());
       showFeedback(msg, 'ok');
       flashScore();
+      playCorrectChime();
       updateStats();
       drawDiagram();
       setTimeout(advance, 550);
@@ -2850,6 +2930,7 @@
       btn.classList.add('wrong');
       allBtns.forEach(b => { if(b.textContent === LINE.stations[correctIdx]) b.classList.add('correct'); });
       showFeedback('✕ It was — ' + LINE.stations[correctIdx], 'bad');
+      playWrongChime();
       updateStats();
       drawDiagram();
       setTimeout(advance, 1100);
@@ -2881,7 +2962,7 @@
         // answer to the very first question, unlike every question after
         // it (which only ever shows the previous stop, never the target)
         contextLine.innerHTML = '';
-        promptLine.innerHTML = 'Type the <em>first</em> station' + (reverseDirection ? ' in reverse:' : ':');
+        promptLine.innerHTML = 'Type the <em>first</em> station:';
       } else {
         const isRepeatVisit = list.slice(0, idx).includes(list[idx]);
         const note = isRepeatVisit ? ' <span class="repeat-note">(loop closes back through here)</span>' : '';
@@ -2976,7 +3057,9 @@
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
       perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     }
-    if(!newBestBadgeEl.classList.contains('hidden') || !perfectBadgeEl.classList.contains('hidden')){
+    // also fires for a merely-good (not perfect) run — anything above 79%
+    // accuracy still feels worth celebrating, not just a flawless one
+    if(!newBestBadgeEl.classList.contains('hidden') || !perfectBadgeEl.classList.contains('hidden') || acc > 79){
       launchConfetti();
     }
     const list = $('missList');
@@ -3039,6 +3122,7 @@
       }
       msg += milestoneNote(idx + 1, totalSteps());
       showFeedback(msg, 'ok');
+      playCorrectChime();
       updateStats();
       drawDiagram();
       setTimeout(advance, mode === 'warmup' ? 200 : 450);
@@ -3048,6 +3132,7 @@
       misses.push({you: val, correct: list[idx]});
       answerInput.className = 'wrong';
       showFeedback('✕ It was — ' + list[idx], 'bad');
+      playWrongChime();
       updateStats();
       drawDiagram();
       setTimeout(advance, 900);

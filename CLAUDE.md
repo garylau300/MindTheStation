@@ -590,6 +590,32 @@ catch.
   was showing it last, then re-appends it into the grid only if the current line/state
   actually calls for it. Never let it be a descendant of `#branchGroup` at the moment
   `innerHTML` gets cleared, or the real node (and its listener) is gone for good.
+- **The streak flame badge is positioned in JS (`positionStreakFlame()`), not a fixed CSS
+  offset.** It sits just above whichever button it should read as "belonging to" — Enter
+  (`#inputRow`) in warmup/quiz, or Skip (`#rowActions`) in MC where there's no Enter at all
+  — right-aligned with that button's own real edge (`cardRect.right - anchorRect.right`) and
+  a small fixed gap above its top. A fixed pixel guess doesn't work here: the anchor
+  button's position shifts with card width, responsive font-size breakpoints, and which
+  button is even the right one for the current mode, so it's measured off the actual
+  rendered rects every time `updateStreakFlame()` shows it, the same "measure real geometry,
+  don't hardcode it" approach as the station-popup positioning and the LED ticker's overflow
+  detection. `#gameCard.streak-active .qc{ padding-right: 76px; }` still reserves a gutter on
+  the question text (not `.input-row`/`.row-actions` — the badge no longer sits beside those,
+  only above them), since on a card with little content above (a short warmup target word)
+  the badge can land right over the last bit of question text rather than clear above it.
+- **Confetti fires for any run over 79% accuracy, not just a perfect one** — see the
+  extra `acc > 79` check alongside the existing new-best-WPM/perfect-run conditions in
+  `finishRun()`. A strong run still feels worth celebrating even with a miss or two.
+- **Correct/wrong answer chimes are synthesized via Web Audio (`playCorrectChime()`/
+  `playWrongChime()`), not a fetched or embedded audio file.** Keeps the app's zero-
+  dependency, single-file nature and needs no CSP allowance for an audio resource, unlike
+  the embedded fonts/logo which do need `data:` URIs. `AudioContext` is created lazily on
+  first use rather than at boot, since browsers block audio starting without a user gesture
+  — the first answer submission (a click or Enter keypress) already is one, so there's no
+  separate "unlock" step. Wired into both `submitAnswer()` (warmup/quiz) and
+  `handleMcAnswer()` (MC), all three modes, every line. Wrapped in `try/catch` — a chime
+  failing to play (or `AudioContext` not existing at all, e.g. under jsdom in the test
+  suite) must never block the actual answer-submission logic around it.
 
 ## Roadmap context
 
