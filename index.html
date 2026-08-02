@@ -1140,28 +1140,17 @@
 
 <script>
 (function(){
-  // ---------------------------------------------------------------
-  // Line data. Each line defines its own unique stations, in real
-  // geographic order, plus how its diagram should be laid out and
-  // any "loop closure" — extra stops appended to represent a real
-  // service pattern that revisits a station (like Circle's spiral
-  // closing back through Paddington/Edgware Road).
-  // ---------------------------------------------------------------
-  // ---------------------------------------------------------------
-  // Station interchanges: which other lines/services connect at each
-  // station. Keyed by station NAME (not by line), since a station like
-  // King's Cross St. Pancras appears in several lines' data — this way
-  // the fact is recorded once and any line can look it up. Only Victoria
-  // line's 16 stations are populated for now; anything not listed here
-  // just renders no badges rather than erroring.
+  // Line data: stations in real geographic order, diagram layout, and any
+  // "loop closure" (extra stops for a real revisit, e.g. Circle's spiral
+  // back through Paddington/Edgware Road).
   //
-  // London Overground badges use the specific one of the six 2024-renamed
-  // lines (Liberty/Lioness/Mildmay/Suffragette/Weaver/Windrush) rather than
-  // a generic Overground badge. Colours are TfL's official Pantone-derived
-  // RGB values (content.tfl.gov.uk colour standard), not approximations.
-  // National Rail is still one generic badge (no single official colour,
-  // and its double-arrow logo is a registered mark we won't reproduce).
-  // ---------------------------------------------------------------
+  // STATION_INTERCHANGES is keyed by station NAME, not line, since a
+  // station like King's Cross St. Pancras spans several lines' data —
+  // recorded once, looked up by any of them; unlisted stations just render
+  // no badges. Overground badges use the specific 2024-renamed line
+  // (Liberty/Lioness/Mildmay/Suffragette/Weaver/Windrush), colours per
+  // TfL's official standard; National Rail stays one generic badge (no
+  // single official colour, and its logo is a registered mark).
   const LINE_BADGE_COLORS = {
     bakerloo: '#B36305', central: '#E32017', circle: '#FFD300', district: '#00782A',
     hammersmithcity: '#F3A9BB', jubilee: '#A0A5A9', metropolitan: '#9B0056',
@@ -1306,12 +1295,9 @@
     "Upminster Bridge": [],
     "Upminster": [badge('liberty','Liberty'), badge('nationalrail','National Rail')],
     "Richmond": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
-    // Kew Gardens/Gunnersbury are Underground + Overground only — no
-    // separate National Rail franchise operator (confirmed via each
-    // station's own Wikipedia infobox) — so the badge here is Mildmay,
-    // not National Rail; that was a stale leftover, unlike West Brompton
-    // just below, which genuinely does have Southern trains alongside
-    // Mildmay and keeps both badges
+    // Kew Gardens/Gunnersbury: Underground + Overground only, no separate
+    // National Rail operator (per each station's own infobox) — Mildmay,
+    // not National Rail (a stale leftover), unlike West Brompton below.
     "Kew Gardens": [badge('mildmay','Mildmay')],
     "Gunnersbury": [badge('mildmay','Mildmay')],
     "Wimbledon": [badge('nationalrail','National Rail')],
@@ -1327,9 +1313,7 @@
     // ---- Metropolitan line ----
     "West Harrow": [],
     "Rayners Lane": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
-    // Metropolitan and Piccadilly both stop at every station on this
-    // stretch (Eastcote–Hillingdon) — verified via each station's own
-    // Wikipedia service listing, not assumed from the branch sharing track
+    // Both lines stop at every station Eastcote–Hillingdon (verified per station, not assumed from the shared track)
     "Eastcote": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
     "Ruislip Manor": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
     "Ruislip": [badge('metropolitan','Metropolitan'), badge('piccadilly','Piccadilly')],
@@ -1390,14 +1374,11 @@
     "Gants Hill": [],
     "Redbridge": [],
     "Wanstead": [],
-    // out-of-station interchange with the separate National Rail/Overground
-    // Shepherd's Bush station on the West London Line — not the same
-    // building as Shepherd's Bush Market (Circle/H&C), a third station
+    // OSI with the separate National Rail/Overground Shepherd's Bush on the West London Line — not the same building as Shepherd's Bush Market (Circle/H&C)
     "Shepherd's Bush": [badge('mildmay','Mildmay'), badge('nationalrail','National Rail')],
 
     // ---- Piccadilly line ----
-    // Every station below verified against its own Wikipedia infobox
-    // (preceding/following station chain), not assumed from memory.
+    // Every station below verified against its own Wikipedia infobox, not assumed from memory.
     "Cockfosters": [],
     "Oakwood": [],
     "Southgate": [],
@@ -1428,20 +1409,13 @@
     "Hounslow Central": [],
     "Hounslow West": [],
     "Hatton Cross": [],
-    // Heathrow Express + Elizabeth line both call at Terminals 2&3 and
-    // Terminal 5; Terminal 4's *tube* station is Piccadilly-only — the
-    // Elizabeth line's "Heathrow Terminal 4" stop is a separate, adjacent
-    // railway station on the mainline tunnel, not the same building
+    // Terminal 4's tube station is Piccadilly-only — Elizabeth line's "Heathrow Terminal 4" is a separate, adjacent mainline-tunnel station, not the same building
     "Heathrow Terminals 2 & 3": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
     "Heathrow Terminal 4": [],
     "Heathrow Terminal 5": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
 
     // ---- Northern line ----
-    // Every station verified against its own Wikipedia infobox
-    // (preceding/following service chain), not assumed from memory —
-    // this line's real topology (two southern branches, two central
-    // London branches, two northern branches, one further spur) is the
-    // most complex in the network and easy to get subtly wrong.
+    // Verified per station — this line's topology (2 southern/2 central/2 northern branches plus a spur) is the network's most complex and easy to get subtly wrong.
     "Morden": [],
     "South Wimbledon": [],
     "Colliers Wood": [],
@@ -1562,21 +1536,14 @@
         "Plaistow","Upton Park","East Ham","Barking"
       ]
     },
-    // District's real service pattern is four specific through-routes,
-    // not "any western branch to any eastern end": Ealing Broadway and
-    // Richmond both run to Upminster; Wimbledon splits into a Barking
-    // service and a separate Edgware Road service that forks directly at
-    // Earl's Court itself, not at Gloucester Road — confirmed against both
-    // Earl's Court's and Gloucester Road's own Wikipedia infoboxes: Earl's
-    // Court's Edgware Road-bound platform lists High Street Kensington as
-    // the very next stop, and Gloucester Road's own District line entry
-    // only ever pairs it with Earl's Court/South Kensington on the main
-    // trunk, never with the Edgware Road branch. Modeled here as a tree
-    // of segments (trunk + arms) so the diagram can show the actual
-    // branch shape, not just whichever route happens to be selected.
-    // Kensington (Olympia) is deliberately left out — documented as a
-    // "limited service" branch with its own unusual pattern, so it's a
-    // separate judgment call rather than data to guess at.
+    // District's real service pattern is four specific through-routes, not
+    // "any western branch to any eastern end": Ealing Broadway and Richmond
+    // both run to Upminster; Wimbledon splits into a Barking service and an
+    // Edgware Road service that forks at Earl's Court itself, not Gloucester
+    // Road (confirmed against both stations' own Wikipedia infoboxes).
+    // Modeled as a tree of segments (trunk + arms) so the diagram shows the
+    // real branch shape. Kensington (Olympia) is deliberately left out as
+    // its own separate "limited service" judgment call — see the egg below.
     district: (function(){
       const ealingArm = ["Chiswick Park","Acton Town","Ealing Common","Ealing Broadway"];
       const westCore = ["West Kensington","Barons Court","Hammersmith","Ravenscourt Park","Stamford Brook","Turnham Green"];
@@ -1587,13 +1554,10 @@
       const wimbledonArm = ["West Brompton","Fulham Broadway","Parsons Green","Putney Bridge","East Putney","Southfields","Wimbledon Park","Wimbledon"];
       const edgwareArm = ["High Street Kensington","Notting Hill Gate","Bayswater","Paddington","Edgware Road"];
 
-      // the Ealing–Upminster route is treated as one dead-straight horizontal
-      // spine; Richmond, Wimbledon, and the Edgware Road arm are each a
-      // simple vertical stub connecting perpendicular to it at the real
-      // junction — Turnham Green, Earl's Court (both the Wimbledon arm and
-      // the Edgware Road arm fork here, in opposite directions), and
-      // Gloucester Road (only the trunk continues past here, not Edgware
-      // Road) — rather than diagonal "spider legs" going off at odd angles
+      // Ealing–Upminster is one straight horizontal spine; Richmond,
+      // Wimbledon, and Edgware Road are each a perpendicular stub off their
+      // real junction (Turnham Green, Earl's Court in opposite directions)
+      // rather than diagonal "spider legs".
       const spine = [...ealingArm.slice().reverse(), ...westCore.slice().reverse(), ...trunk, ...eastCore, ...upminsterExt];
       const turnhamGreenIdx = spine.indexOf('Turnham Green');
       const earlsCourtIdx = spine.indexOf("Earl's Court");
@@ -1633,19 +1597,16 @@
           },
           wimbledonEdgware: {
             label: 'Wimbledon – Edgware Road',
-            // forks at Earl's Court directly, not via Gloucester Road —
-            // see the segment comment above
+            // forks at Earl's Court directly, not via Gloucester Road
             stations: [...wimbledonArm.slice().reverse(), "Earl's Court", ...edgwareArm]
           }
         }
       };
     })(),
-    // Metropolitan: one western spine (Aldgate–Amersham, the historic main
-    // route) with three vertical stub branches at their real junctions —
-    // Uxbridge off Harrow-on-the-Hill, Watford off Moor Park, and Chesham
-    // off Chalfont & Latimer. Station order and branch assignment taken
-    // directly from Wikipedia's own per-station "Branch" column, which
-    // labels every stop, so this is unusually well-verified.
+    // Metropolitan: one western spine (Aldgate–Amersham) with three stub
+    // branches at their real junctions — Uxbridge off Harrow-on-the-Hill,
+    // Watford off Moor Park, Chesham off Chalfont & Latimer — per each
+    // station's own Wikipedia "Branch" column.
     metropolitan: (function(){
       const spine = [
         "Aldgate","Liverpool Street","Moorgate","Barbican","Farringdon",
@@ -1664,16 +1625,11 @@
       const chalfontIdx = spine.indexOf('Chalfont & Latimer');
 
       const segments = [
-        // dx:-1 so the spine runs right-to-left in the diagram — Aldgate
-        // (index 0) ends up on the right, Amersham on the left. Spacing is
-        // 1.5x District/Central/Piccadilly's own convention (16/26) since
-        // Metropolitan's much shorter spine (23 vs 27-37 stations) would
-        // otherwise produce a noticeably smaller viewBox — and since
-        // .diagram-card svg stretches to a fixed *percentage* of container
-        // width regardless of viewBox size, a smaller viewBox means bigger
-        // rendered dots (station dots measured ~23px here vs ~11-16px on
-        // every other line at a wide viewport, same class of bug as
-        // Circle's spur-loop radius).
+        // dx:-1 puts Aldgate (index 0) on the right, Amersham on the left.
+        // Spacing is 1.5x the District/Central/Piccadilly convention (16/26)
+        // since Metropolitan's shorter spine (23 vs 27-37 stations) would
+        // otherwise render a smaller viewBox and thus oversized dots — the
+        // same class of bug as Circle's spur-loop radius.
         { id:'spine', stations: spine, parent:null, dx:-1, dy:0, spacing:24, startX:60, startY:250 },
         // Uxbridge is drawn as an L: one step down from Harrow-on-the-Hill,
         // then left, rather than a straight vertical stub
@@ -1695,19 +1651,16 @@
         branches: {
           amersham: { label: 'Aldgate – Amersham', stations: spine },
           uxbridge: { label: 'Aldgate – Uxbridge', stations: [...spine.slice(0, harrowIdx+1), ...uxbridgeDrop, ...uxbridgeArm] },
-          // real advertised through-service is Baker Street–Watford, not
-          // Aldgate–Watford — the Watford branch doesn't through-run to Aldgate
+          // real through-service is Baker Street–Watford, not Aldgate–Watford
           watford: { label: 'Baker Street – Watford', stations: [...spine.slice(bakerStIdx, moorParkIdx+1), ...watfordArm] },
           chesham: { label: 'Aldgate – Chesham', stations: [...spine.slice(0, chalfontIdx+1), ...cheshamArm] }
         }
       };
     })(),
-    // Central: West Ruislip–Epping is the main horizontal spine, per the
-    // agreed scope. Ealing Broadway joins at North Acton, Hainault joins
-    // at Woodford (via the Woodford side of the loop only — the Newbury
-    // Park side of the loop, Fairlop/Barkingside/Newbury Park/Gants
-    // Hill/Redbridge/Wanstead, is intentionally out of scope for now).
-    // Station order verified against lasttrain.co.uk's full station lists.
+    // Central: West Ruislip–Epping is the main spine (per agreed scope).
+    // Ealing Broadway joins at North Acton; Hainault joins at Woodford via
+    // the Woodford side of the loop only (Newbury Park side is out of scope
+    // for now). Station order verified against lasttrain.co.uk.
     central: (function(){
       const spine = [
         "West Ruislip","Ruislip Gardens","South Ruislip","Northolt","Greenford","Perivale","Hanger Lane",
@@ -1718,11 +1671,8 @@
         "Buckhurst Hill","Loughton","Debden","Theydon Bois","Epping"
       ];
       const ealingArm = ["West Acton","Ealing Broadway"];
-      // the full Hainault loop, ordered Woodford-side to Leytonstone-side.
-      // "Via Woodford" services enter/leave via the first 4 stops
-      // (Roding Valley–Hainault); "via Redbridge" services use the other
-      // end (Wanstead–Hainault, entering from Leytonstone) — the real
-      // advertised route for Ealing Broadway–Hainault services.
+      // Full Hainault loop, Woodford-side to Leytonstone-side. "Via Woodford"
+      // uses the first 4 stops; "via Redbridge" (real Ealing–Hainault route) uses the other end.
       const hainaultLoop = ["Roding Valley","Chigwell","Grange Hill","Hainault","Fairlop","Barkingside","Newbury Park","Gants Hill","Redbridge","Wanstead"];
       const viaWoodford = hainaultLoop.slice(0, 4); // Roding Valley – Hainault
       const viaRedbridge = hainaultLoop.slice(3).slice().reverse(); // Wanstead – Hainault
@@ -1740,9 +1690,7 @@
         color: '#E32017',
         layout: 'branch-tree',
         segments: segments,
-        // a genuine rectangular loop (right angles only, no slants):
-        // down the right side from Woodford, across the bottom, up the
-        // left side to Leytonstone
+        // rectilinear loop: down from Woodford, across, up to Leytonstone
         loopRect: { stations: hainaultLoop, from: 'Woodford', to: 'Leytonstone', downCount: 4, acrossCount: 3, downSpacing: 20 },
         spurCount: 0,
         loopClosure: [],
@@ -1781,9 +1729,7 @@
         "Hyde Park Corner","Knightsbridge","South Kensington","Gloucester Road","Earl's Court","Barons Court",
         "Hammersmith","Acton Town"
       ];
-      // Heathrow Terminals 2 & 3 first (left end) through to Cockfosters
-      // (right end) — the reverse geographic direction of the two arrays
-      // above, which are each written in their own natural order
+      // Heathrow T2&3 (left) through to Cockfosters (right) — reversed from the two arrays' own natural order above
       const spine = [...heathrowTrunk.slice().reverse(), ...eastEnd.slice().reverse()];
       const uxbridgeArm = [
         "Ealing Common","North Ealing","Park Royal","Alperton","Sudbury Town","Sudbury Hill","South Harrow",
@@ -1797,8 +1743,7 @@
       const segments = [
         { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
         { id:'uxbridgeArm', stations: uxbridgeArm, parent:'spine', parentIndex: actonTownIdx, dx:0, dy:-1, spacing:16 },
-        // diagonal, not straight up/down, so the two terminals fork away
-        // from the spine's own leftward direction — a Y, not a T
+        // diagonal (a Y, not a T) so the terminals fork away from the spine's own leftward direction
         { id:'terminal4Arm', stations: terminal4Arm, parent:'spine', parentIndex: t23Idx, dx:-1, dy:-1, spacing:22 },
         { id:'terminal5Arm', stations: terminal5Arm, parent:'spine', parentIndex: t23Idx, dx:-1, dy:1, spacing:22 }
       ];
@@ -1819,42 +1764,22 @@
         }
       };
     })(),
-    // Northern: real topology is a genuine graph cycle — the Bank and
-    // Charing Cross branches diverge at Kennington and reconverge at
-    // Camden Town — which the branch-tree layout's parent→child segment
-    // tree structurally cannot represent (a station can't have two
-    // parents in a tree). Rather than force a misleading approximation
-    // (duplicating Camden Town/Euston as two disconnected tree nodes, or
-    // silently dropping one path from the diagram), this line uses the
-    // plain `linear` layout instead: it draws only the single currently-
-    // selected branch's own stations, with no "whole network, other
-    // branches dimmed" preview the way District/Metropolitan/Central/
-    // Piccadilly get. `buildLineRuntime`/`renderBranchRow` only look at
-    // `def.branches`, not `layout`, so branch selection works identically;
-    // the tradeoff is scoped entirely to the diagram's own richness, not
-    // gameplay. Exactly the 8 branches requested, matching the real
-    // service pattern: Battersea Power Station trains always run via the
-    // Charing Cross branch (never Bank — hence no "via" qualifier on
-    // those two), and every Bank/Charing Cross combination also comes in
-    // an Edgware/High Barnet/Mill Hill East northern-branch variant.
-    // Every station verified against its own Wikipedia infobox.
+    // Northern: real topology is a genuine graph cycle — Bank and Charing
+    // Cross branches diverge at Kennington and reconverge at Camden Town,
+    // which a branch-tree's parent→child segment tree can't represent (a
+    // station can't have two parents). Resolved via `loopRect`: the spine
+    // runs High Barnet–Morden via Bank (the historic route), and the
+    // Charing Cross section is a rectilinear detour between the same two
+    // named spine stations, same mechanism as Central's Hainault loop.
+    // Euston, served by both routes, appears once in the loop's own
+    // `stations` too — setupGeometry() treats it as a "pass-through" and
+    // reuses its existing spine dot rather than drawing a second one
+    // (gameplay is unaffected either way). Exactly the 8 branches matching
+    // the real service pattern: Battersea always runs via Charing Cross
+    // (never Bank, hence no "via" qualifier there), crossed with an
+    // Edgware/High Barnet/Mill Hill East variant. Every station verified
+    // against its own Wikipedia infobox.
     northern: (function(){
-      // Main horizontal spine, per explicit instruction: High Barnet (left)
-      // through to Morden (right), routed via Bank in the middle section
-      // (the historic original route). Real topology is a genuine graph
-      // cycle — Bank and Charing Cross diverge at Kennington and reconverge
-      // at Camden Town — which a plain parent→child segment tree can't
-      // represent directly. Resolved the same way Central's real Hainault
-      // loop is: the Charing Cross section is a `loopRect`, a rectilinear
-      // detour connecting the same two named spine stations (Kennington,
-      // Camden Town) that the Bank section already passes through directly.
-      // Euston is a real junction served by both the spine's Bank route and
-      // this loop's Charing Cross route, so it appears once in the loop's
-      // own `stations` list too — setupGeometry() treats a loop station
-      // that already has a computed position as a "pass-through" and reuses
-      // that exact single dot rather than drawing a second one. Not a
-      // station ever hidden from gameplay either way (every branch's own
-      // stop sequence below is unaffected by how the diagram draws it).
       const highBarnetArm = [
         "High Barnet","Totteridge & Whetstone","Woodside Park","West Finchley","Finchley Central",
         "East Finchley","Highgate","Archway","Tufnell Park","Kentish Town"
@@ -1878,25 +1803,16 @@
         "Colindale","Burnt Oak","Edgware"
       ];
       const batterseaArm = ["Nine Elms","Battersea Power Station"];
-      // Charing Cross branch stations for the loop detour, Kennington-
-      // adjacent first. Euston sits in the middle here even though it's
-      // already a spine station (see comment above) — setupGeometry()
-      // recognizes it as a "pass-through" and reuses its existing spine
-      // position instead of drawing a second dot for it.
+      // Charing Cross loop stations, Kennington-adjacent first; Euston is the pass-through described above.
       const charingCrossLoop = [
         "Waterloo","Embankment","Charing Cross","Leicester Square","Tottenham Court Road",
         "Goodge Street","Warren Street","Euston","Mornington Crescent"
       ];
 
-      // Edgware drawn as an L: one step up from Camden Town (Chalk Farm),
-      // then left through the rest to Edgware — mirrors Metropolitan's
-      // Uxbridge L-shape (uxbridgeDrop/uxbridgeArm), per explicit instruction
-      // that it shouldn't just be a straight vertical stub.
+      // Edgware drawn as an L (up from Camden Town, then left) — mirrors Metropolitan's Uxbridge L-shape, per explicit instruction
       const edgwareDrop = edgwareArm.slice(0, 1); // Chalk Farm
       const edgwareLeftArm = edgwareArm.slice(1); // Belsize Park .. Edgware
-      // Battersea drawn as an L too, per explicit instruction — mirrored to
-      // the right instead of the left since Kennington already sits at the
-      // spine's right-hand end of the drawn network.
+      // Battersea drawn as an L too, mirrored right since Kennington sits at the spine's right-hand end
       const batterseaDrop = batterseaArm.slice(0, 1); // Nine Elms
       const batterseaRightArm = batterseaArm.slice(1); // Battersea Power Station
 
@@ -1926,14 +1842,8 @@
         color: '#000000',
         layout: 'branch-tree',
         segments: segments,
-        // passThroughDy: 10 — nudges Euston down off the spine's own row so
-        // it visually sits between the spine and this loop's row, per
-        // explicit instruction. beforeApproachOffset: 24 — keeps Warren
-        // Street to the right of Euston instead of directly beneath it,
-        // also per explicit instruction. allowedDiagonals: 2 — the incoming
-        // edge from Warren Street and the outgoing edge to Mornington
-        // Crescent can't stay perfectly rectilinear as a result; see the
-        // pass-through comment in setupGeometry().
+        // passThroughDy nudges Euston off the spine's row (per explicit instruction) to sit visually between spine and loop;
+        // beforeApproachOffset keeps Warren Street beside rather than beneath it; allowedDiagonals covers the resulting two non-rectilinear edges.
         loopRect: { stations: charingCrossLoop, from: 'Kennington', to: 'Camden Town', downCount: 1, acrossCount: 6, downSpacing: 20, passThroughDy: 10, beforeApproachOffset: 24, allowedDiagonals: 2 },
         spurCount: 0,
         loopClosure: [],
@@ -2120,9 +2030,12 @@
   const summaryAreaEl = $('summaryArea');
   const summaryTitleEl = $('summaryTitle');
   const summarySubEl = $('summarySub');
+  const statProgressEl = $('statProgress');
   const statMidEl = $('statMid');
   const statBestEl = $('statBest');
+  const statAccEl = $('statAcc');
   const statTimeEl = $('statTime');
+  const gameCardEl = $('gameCard');
   const liveDotEl = $('liveDot');
   const hintBtnEl = $('hintBtn');
   const themeToggleEl = $('themeToggle');
@@ -2172,10 +2085,9 @@
   }
 
   function popCard(){
-    const card = $('gameCard');
-    card.classList.remove('pop');
-    void card.offsetWidth;
-    card.classList.add('pop');
+    gameCardEl.classList.remove('pop');
+    void gameCardEl.offsetWidth;
+    gameCardEl.classList.add('pop');
   }
 
   function flashNewBest(el){
@@ -2262,10 +2174,9 @@
   }
 
   function flashScore(){
-    const el = $('statAcc');
-    el.classList.remove('score-pop');
-    void el.offsetWidth; // restart the animation if it's already mid-flash
-    el.classList.add('score-pop');
+    statAccEl.classList.remove('score-pop');
+    void statAccEl.offsetWidth; // restart the animation if it's already mid-flash
+    statAccEl.classList.add('score-pop');
   }
 
   // Correct/wrong/completion chimes, synthesized via Web Audio rather than a
@@ -2463,7 +2374,7 @@
       streakFlameEl.style.top = MC_FLAME_PEEK_TOP + 'px';
       streakFlameEl.style.bottom = 'auto';
     } else {
-      const cardRect = $('gameCard').getBoundingClientRect();
+      const cardRect = gameCardEl.getBoundingClientRect();
       const anchorRect = inputRow.getBoundingClientRect();
       streakFlameEl.style.right = (cardRect.right - anchorRect.right) + 'px';
       streakFlameEl.style.bottom = (cardRect.bottom - anchorRect.top + STREAK_FLAME_GAP) + 'px';
@@ -2490,7 +2401,7 @@
     // above in-card content, so it never needs this gutter there. Kept
     // reserved through the extinguish animation too, so text doesn't jump
     // until the badge is actually gone.
-    $('gameCard').classList.toggle('streak-active', (active || flameActive) && mode !== 'mc');
+    gameCardEl.classList.toggle('streak-active', (active || flameActive) && mode !== 'mc');
     if(active){
       clearTimeout(flameExtinguishTimer);
       const reigniting = !flameActive;
@@ -2523,7 +2434,7 @@
       flameExtinguishTimer = setTimeout(function(){
         streakFlameEl.classList.add('hidden');
         streakFlameEl.classList.remove('extinguishing');
-        $('gameCard').classList.remove('streak-active');
+        gameCardEl.classList.remove('streak-active');
       }, FLAME_EXTINGUISH_MS);
     }
   }
@@ -2534,7 +2445,7 @@
     clearTimeout(flameExtinguishTimer);
     streakFlameEl.classList.add('hidden');
     streakFlameEl.classList.remove('extinguishing', 'bump');
-    $('gameCard').classList.remove('streak-active');
+    gameCardEl.classList.remove('streak-active');
     flameActive = false;
   }
 
@@ -3149,9 +3060,9 @@
   }
 
   function updateStats(){
-    $('statProgress').textContent = idx + '/' + totalSteps();
+    statProgressEl.textContent = idx + '/' + totalSteps();
     if(mode === 'warmup'){
-      $('statAcc').textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
+      statAccEl.textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
       statMidEl.textContent = currentWpm();
       statBestEl.textContent = bestWpm;
     } else {
@@ -3159,7 +3070,7 @@
       // flame badge (all modes) is now the live-streak cue; this cell goes
       // back to accuracy (score already owns the #statAcc cell), and best
       // streak stays put as the one surviving cross-run streak stat here
-      $('statAcc').textContent = score;
+      statAccEl.textContent = score;
       statMidEl.textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
       statBestEl.textContent = bestStreak;
     }
