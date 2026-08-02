@@ -2268,14 +2268,22 @@
     el.classList.add('score-pop');
   }
 
-  // Simple correct/wrong answer chimes, all modes — synthesized via Web
-  // Audio rather than a fetched/embedded audio file, keeping the app's
-  // zero-dependency, single-file nature and needing no CSP allowance for
-  // an audio resource. The AudioContext is created lazily on first use:
-  // browsers block audio from starting without a user gesture, and the
-  // very first answer submission (a click or Enter keypress) already is
-  // one, so there's no separate "unlock" step needed. Wrapped defensively
-  // — a chime failing to play should never break answer submission itself.
+  // Correct/wrong/completion chimes, synthesized via Web Audio rather than a
+  // fetched/embedded audio file, keeping the app's zero-dependency,
+  // single-file nature and needing no CSP allowance for an audio resource.
+  // The AudioContext is created lazily on first use: browsers block audio
+  // from starting without a user gesture, and the very first answer
+  // submission (a click or Enter keypress) already is one, so there's no
+  // separate "unlock" step needed. Wrapped defensively — a chime failing to
+  // play should never break answer submission or run completion itself.
+  //
+  // All three share one bell timbre (playBell) prototyped and refined in a
+  // standalone Chime Lab artifact: a sine fundamental, an octave-ish
+  // overtone for body, and a higher inharmonic partial (x3.76 — real bells
+  // ring inharmonic overtones, not clean integer multiples) for metallic
+  // shimmer. All three are also built from the same underlying two-note
+  // "bing-bong" shape (G5→E5), so they read as belonging to one sound
+  // world rather than three unrelated jingles.
   let audioCtx = null;
   function getAudioCtx(){
     if(!audioCtx){
@@ -2285,31 +2293,88 @@
     if(audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
-  function playTone(freq, startDelay, duration, type){
+  function playTone(freq, startDelay, duration, type, peakGain){
     const ctx = getAudioCtx();
     const startTime = ctx.currentTime + startDelay;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.001, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.16, startTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
     osc.connect(gain).connect(ctx.destination);
     osc.start(startTime);
-    osc.stop(startTime + duration + 0.02);
+    osc.stop(startTime + duration + 0.03);
   }
-  // A quick two-note rising blip (A5 then E6) for correct, one low square
-  // buzz for wrong — deliberately short and simple, not a full jingle.
+  function playBell(freq, startDelay, duration, peakGain){
+    playTone(freq, startDelay, duration, 'sine', peakGain);
+    const ctx = getAudioCtx();
+    const startTime = ctx.currentTime + startDelay;
+
+    const o1 = ctx.createOscillator();
+    const g1 = ctx.createGain();
+    o1.type = 'sine';
+    o1.frequency.value = freq * 2.01;
+    g1.gain.setValueAtTime(0.0001, startTime);
+    g1.gain.exponentialRampToValueAtTime(peakGain * 0.42, startTime + 0.012);
+    g1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.6);
+    o1.connect(g1).connect(ctx.destination);
+    o1.start(startTime);
+    o1.stop(startTime + duration + 0.03);
+
+    const o2 = ctx.createOscillator();
+    const g2 = ctx.createGain();
+    o2.type = 'sine';
+    o2.frequency.value = freq * 3.76;
+    g2.gain.setValueAtTime(0.0001, startTime);
+    g2.gain.exponentialRampToValueAtTime(peakGain * 0.24, startTime + 0.008);
+    g2.gain.exponentialRampToValueAtTime(0.0001, startTime + duration * 0.32);
+    o2.connect(g2).connect(ctx.destination);
+    o2.start(startTime);
+    o2.stop(startTime + duration + 0.03);
+  }
+
+  const CHIME_G5 = 783.99, CHIME_FS5 = 739.99, CHIME_E5 = 659.25,
+        CHIME_A5 = 880.00, CHIME_C6 = 1046.50, CHIME_E6 = 1318.51, CHIME_G6 = 1567.98;
+
+  // "Bing-Bong-Ding": the bing-bong (G5→E5) plus a bright top note, all
+  // three fired back to back.
   function playCorrectChime(){
     try{
-      playTone(880, 0, 0.11, 'sine');
-      playTone(1318.5, 0.09, 0.14, 'sine');
+      playBell(CHIME_G5, 0,     0.16, 0.20);
+      playBell(CHIME_E5, 0.095, 0.16, 0.20);
+      playBell(CHIME_C6, 0.19,  0.30, 0.24);
     } catch(e){ /* audio is a nice-to-have, never block on it */ }
   }
+  // "Chromatic Neighbor": the same bing-bong shape, but the second note is
+  // F#5 — a semitone below G5 — instead of resolving down to E5.
   function playWrongChime(){
     try{
-      playTone(220, 0, 0.16, 'square');
+      playBell(CHIME_G5,  0,     0.16, 0.20);
+      playBell(CHIME_FS5, 0.095, 0.30, 0.22);
+    } catch(e){ /* audio is a nice-to-have, never block on it */ }
+  }
+  // "Grand Resolve": plays once per run, on every finish regardless of
+  // accuracy (unlike confetti, which stays accuracy-gated — see
+  // finishRun()). Extends the bing-bong as a single melodic line one step
+  // higher (G6) before descending back down, landing on a closing
+  // G5+C6+E6 chord.
+  function playCompletionChime(){
+    try{
+      playBell(CHIME_G5, 0,     0.16, 0.20);
+      playBell(CHIME_E5, 0.095, 0.16, 0.20);
+      playBell(CHIME_G5, 0.19,  0.16, 0.20);
+      playBell(CHIME_C6, 0.285, 0.16, 0.22);
+      playBell(CHIME_E6, 0.38,  0.16, 0.22);
+      playBell(CHIME_G6, 0.475, 0.16, 0.22);
+      playBell(CHIME_E6, 0.57,  0.16, 0.20);
+      playBell(CHIME_C6, 0.665, 0.16, 0.20);
+      playBell(CHIME_A5, 0.76,  0.16, 0.20);
+      playBell(CHIME_G5, 0.855, 0.16, 0.20);
+      playBell(CHIME_G5, 0.95,  0.68, 0.16);
+      playBell(CHIME_C6, 0.95,  0.68, 0.16);
+      playBell(CHIME_E6, 0.95,  0.68, 0.16);
     } catch(e){ /* audio is a nice-to-have, never block on it */ }
   }
 
@@ -3275,6 +3340,7 @@
   }
 
   function finishRun(){
+    playCompletionChime();
     gameAreaEl.classList.add('hidden');
     const area = summaryAreaEl;
     area.classList.remove('hidden');

@@ -778,16 +778,38 @@ catch.
 - **Confetti fires for any run over 79% accuracy, not just a perfect one** — see the
   extra `acc > 79` check alongside the existing new-best-WPM/perfect-run conditions in
   `finishRun()`. A strong run still feels worth celebrating even with a miss or two.
-- **Correct/wrong answer chimes are synthesized via Web Audio (`playCorrectChime()`/
-  `playWrongChime()`), not a fetched or embedded audio file.** Keeps the app's zero-
-  dependency, single-file nature and needs no CSP allowance for an audio resource, unlike
-  the embedded fonts/logo which do need `data:` URIs. `AudioContext` is created lazily on
-  first use rather than at boot, since browsers block audio starting without a user gesture
-  — the first answer submission (a click or Enter keypress) already is one, so there's no
-  separate "unlock" step. Wired into both `submitAnswer()` (warmup/quiz) and
-  `handleMcAnswer()` (MC), all three modes, every line. Wrapped in `try/catch` — a chime
-  failing to play (or `AudioContext` not existing at all, e.g. under jsdom in the test
-  suite) must never block the actual answer-submission logic around it.
+- **Correct/wrong/completion chimes are synthesized via Web Audio (`playCorrectChime()`/
+  `playWrongChime()`/`playCompletionChime()`), not a fetched or embedded audio file.** Keeps
+  the app's zero-dependency, single-file nature and needs no CSP allowance for an audio
+  resource, unlike the embedded fonts/logo which do need `data:` URIs. `AudioContext` is
+  created lazily on first use rather than at boot, since browsers block audio starting
+  without a user gesture — the first answer submission (a click or Enter keypress) already
+  is one, so there's no separate "unlock" step. `playCorrectChime()`/`playWrongChime()` are
+  wired into both `submitAnswer()` (warmup/quiz) and `handleMcAnswer()` (MC), all three
+  modes, every line; `playCompletionChime()` is wired into `finishRun()` and plays on every
+  run's completion regardless of accuracy, deliberately independent of the confetti
+  accuracy-gate just below it in the same function (confetti stays conditional on a
+  new-best/perfect/>79%-accuracy run; the chime doesn't gate on anything, since finishing a
+  run is itself worth marking, win or not). Wrapped in `try/catch` — a chime failing to play
+  (or `AudioContext` not existing at all, e.g. under jsdom in the test suite) must never
+  block the actual answer-submission or run-completion logic around it.
+  All three share one bell timbre (`playBell()`, layered under the plain-oscillator
+  `playTone()`): a sine fundamental, a quiet octave-ish overtone (`freq*2.01`) for body, and
+  a higher inharmonic partial (`freq*3.76` — real bells ring inharmonic overtones, not clean
+  integer multiples) for metallic shimmer, each with its own short exponential decay envelope
+  — this reads as an actual chiming bell rather than a plain synth blip, and was tuned (this
+  timbre, these gain levels, these note timings) in a standalone "Chime Lab" prototyping
+  artifact before being ported here, rather than designed directly in the game code. All
+  three chimes are also built from the same underlying two-note "bing-bong" shape (G5→E5),
+  so they read as one consistent sound world rather than three unrelated jingles: correct
+  ("Bing-Bong-Ding") adds a bright top note (C6) after the bing-bong; wrong ("Chromatic
+  Neighbor") replaces the resolving E5 with F#5, a semitone below G5, for a deliberately
+  "off" clash instead of a resolution; completion ("Grand Resolve") extends the same shape
+  into a full ten-note melodic line that pushes one step higher (G6) before descending back
+  down, closing on a G5+C6+E6 chord. Note timings across all three (~0.095s stagger between
+  quick notes) are intentionally slower than an early prototyping pass that used a faster
+  ~0.07s stagger — the slower spacing gave each note more room to actually ring before the
+  next one started, especially noticeable on the completion chime's longer melody.
 - **`.mc-options` is a 2-column grid at every width, including narrow phones, by explicit
   instruction** — a long station name wrapping to two lines there is an accepted tradeoff,
   not a bug. The old `@media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; }
