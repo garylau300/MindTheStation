@@ -635,7 +635,14 @@ catch.
   rather than a second embedded image — the source icon is a solid black circle, which
   all but disappears against this app's near-black dark background; `body.light
   .pt-icon{ filter:none }` reverts to the icon's true colors in light mode, where black
-  already reads fine.
+  already reads fine. The whole title (`.page-title`) and each icon are `user-select:none`
+  (both text and image, since this is a wordmark, not real content worth selecting/
+  copying), and each `.pt-icon` additionally has `pointer-events:none` plus a
+  `draggable="false"` attribute on the `<img>` itself, by explicit instruction — the
+  pointer-events removal means a right-click on the icon no longer offers "Save image as"
+  at all (the click falls through to a non-image parent instead), and `draggable="false"`
+  blocks the drag-to-desktop save path. Neither is a real security boundary (view-source
+  and devtools still show everything), just a reasonable deterrent for a decorative icon.
 - **The "Elapsed" label next to the live run timer (`#statTime`) was removed by explicit
   instruction** — the stopwatch icon/ticking dot already make it obvious what the number is;
   don't re-add a text label there.
