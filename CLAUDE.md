@@ -810,6 +810,31 @@ catch.
   quick notes) are intentionally slower than an early prototyping pass that used a faster
   ~0.07s stagger — the slower spacing gave each note more room to actually ring before the
   next one started, especially noticeable on the completion chime's longer melody.
+- **The 3-2-1 countdown and its "Go!" also have sound (`playCountdownTick()` /
+  `playTrainWhistle()`), wired into `runCountdown()`'s own `show(text, isGo)` helper** — a
+  countdown tick plays for each of 3/2/1, a whistle plays once for "Go!" instead of a fourth
+  tick, both fired from the exact same call that already drives the number's pop animation,
+  so a repeat/restarted countdown (see the `countdownInterval` hard rule below) can never
+  drift out of sync with what's on screen. The three ticks step up in pitch (C6→D6→E6, same
+  bell timbre as the game chimes via `playBell()`) to build a little anticipation toward
+  "Go!" rather than repeating one flat tone. `playTrainWhistle()` is a genuinely different
+  timbre from every other chime in the app — two close triangle-wave tones (2637Hz/2960Hz,
+  brighter/more piercing than the bell chimes' sine base) each carrying their own fast LFO
+  vibrato (24Hz) on frequency, giving the warble/trill character of a real guard's pea
+  whistle rather than a flat synth tone. Deliberately not built from `playBell()` — a
+  whistle blast reads as a distinct sonic event marking "the run has actually started", not
+  another note in the bell family the other five chimes already share.
+- **Every button click gets a short, quiet feedback tick (`playClickSound()`), wired once
+  via a single delegated `document.addEventListener('click', ...)` that checks
+  `e.target.closest('button')`, not attached per-button.** This is deliberately the plainest
+  sound in the app — a single `playTone()` call with no bell overtones at all — so it reads
+  as a neutral UI click rather than a sixth musical chime competing with the others (correct/
+  wrong/completion/countdown/whistle all use the shared bell or whistle timbres; this one
+  doesn't). Firing from a delegated document-level listener means it needs no changes
+  whenever a new button is added anywhere in the app, and it naturally still fires alongside
+  a button's own more specific chime (e.g. Submit's correct/wrong chime) rather than
+  replacing it — the click sound is quiet enough (peak gain 0.07, vs. 0.16-0.24 for the
+  other chimes) that the two layer without competing.
 - **`.mc-options` is a 2-column grid at every width, including narrow phones, by explicit
   instruction** — a long station name wrapping to two lines there is an accepted tradeoff,
   not a bug. The old `@media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; }

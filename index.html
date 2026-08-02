@@ -2336,7 +2336,8 @@
   }
 
   const CHIME_G5 = 783.99, CHIME_FS5 = 739.99, CHIME_E5 = 659.25,
-        CHIME_A5 = 880.00, CHIME_C6 = 1046.50, CHIME_E6 = 1318.51, CHIME_G6 = 1567.98;
+        CHIME_A5 = 880.00, CHIME_C6 = 1046.50, CHIME_D6 = 1174.66,
+        CHIME_E6 = 1318.51, CHIME_G6 = 1567.98;
 
   // "Bing-Bong-Ding": the bing-bong (G5→E5) plus a bright top note, all
   // three fired back to back.
@@ -2377,6 +2378,61 @@
       playBell(CHIME_E6, 0.95,  0.68, 0.16);
     } catch(e){ /* audio is a nice-to-have, never block on it */ }
   }
+  // Countdown ticks (3, 2, 1) step up in pitch (C6→D6→E6) — same bell timbre
+  // as the game chimes, building a little anticipation toward "Go!", which
+  // gets the train whistle below instead of a fourth tick.
+  function playCountdownTick(n){
+    try{
+      const freq = n === 3 ? CHIME_C6 : n === 2 ? CHIME_D6 : CHIME_E6;
+      playBell(freq, 0, 0.14, 0.18);
+    } catch(e){ /* audio is a nice-to-have, never block on it */ }
+  }
+  // A guard's-whistle-style "peep": two close, triangle-wave tones (a
+  // brighter, more piercing timbre than the sine-based bell chimes) each
+  // with their own fast LFO vibrato on frequency, giving the characteristic
+  // warble/trill of a real pea whistle rather than a plain flat tone.
+  function playTrainWhistle(){
+    try{
+      const ctx = getAudioCtx();
+      const startTime = ctx.currentTime;
+      const duration = 0.55;
+      [2637, 2960].forEach(function(freq){
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.type = 'sine';
+        lfo.frequency.value = 24;
+        lfoGain.gain.value = freq * 0.02;
+        lfo.connect(lfoGain).connect(osc.frequency);
+        lfo.start(startTime);
+        lfo.stop(startTime + duration + 0.03);
+
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.15, startTime + 0.02);
+        gain.gain.setValueAtTime(0.15, startTime + duration - 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.03);
+      });
+    } catch(e){ /* audio is a nice-to-have, never block on it */ }
+  }
+  // A quiet, short tick for general button feedback — plain playTone (no
+  // bell overtones), deliberately so it reads as a neutral UI click rather
+  // than another musical chime. Wired once, globally, via a delegated
+  // listener below rather than on every individual button.
+  function playClickSound(){
+    try{
+      playTone(1400, 0, 0.045, 'sine', 0.07);
+    } catch(e){ /* audio is a nice-to-have, never block on it */ }
+  }
+  document.addEventListener('click', function(e){
+    if(e.target.closest('button')) playClickSound();
+  });
 
   // Positions the flame badge so it never overlaps real content, but the two
   // modes need genuinely different treatment, not just a different anchor:
@@ -3000,6 +3056,7 @@
       numberEl.classList.remove('pop');
       void numberEl.offsetWidth; // restart the pop animation even on repeated identical text
       numberEl.classList.add('pop');
+      if(isGo) playTrainWhistle(); else playCountdownTick(text);
     }
     let n = 3;
     show(n);
