@@ -1010,3 +1010,24 @@ significant change, don't assume it stays clean.
   line (and the `sitemap.xml` it points to) once the domain is live; a single-page app like
   this doesn't strictly need a sitemap to be crawled, but it's a cheap, standard addition
   once there's a real URL to put in it.
+- **`<html lang="en-GB">`, not plain `en`** — matches the British-spelling copy
+  ("memorise", not "memorize") and `og:locale`'s existing `en_GB`, so the three don't drift
+  out of sync with each other.
+- **`<meta name="theme-color">` tracks the app's own manual light/dark toggle via JS
+  (`themeColorMetaEl.setAttribute('content', ...)` inside `toggleTheme()`), not a static
+  `prefers-color-scheme` media-query pair.** This app never actually reads OS color-scheme
+  preference at all — it always boots light (`isLight = true`, `<body class="light">`) and
+  only changes via the explicit toggle button — so a static `media="(prefers-color-scheme:
+  dark)"` variant would tell a device with system dark mode enabled to paint its browser
+  chrome dark while the page itself still rendered light-cream underneath, until the person
+  happened to click the toggle. A single tag kept in sync with the one real source of truth
+  (`isLight`) is correct instead; don't reintroduce the OS-media-query variant without first
+  making the app actually honor `prefers-color-scheme` on boot.
+- **`apple-touch-icon` (180×180) reuses the same "Arrow Upper Right" Flaticon asset as the
+  favicon/title icons**, fetched fresh at a real 512×512 source resolution
+  (`cdn-icons-png.flaticon.com`, same icon ID) and downsized with Pillow rather than
+  upscaling the existing 64×64 favicon PNG, which would have rendered soft/blurry at Apple's
+  minimum recommended size.
+- **JSON-LD's `creator`/`publisher` are both Studio Espero** (an `Organization`, matching the
+  footer's copyright line) — free structured-data enrichment that needs no hosted asset or
+  domain, unlike `og:image`/canonical/sitemap above.
