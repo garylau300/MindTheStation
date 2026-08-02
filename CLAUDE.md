@@ -607,27 +607,35 @@ catch.
   Mind the Station'` on every line switch; that call (and the matching static `<title>` in
   `<head>`, which used to hardcode the default line's own name) are both gone. Don't
   reintroduce a per-line browser-tab title without checking first.
-- **The favicon and the small icon on the page title's second line are the same asset**:
-  "Arrow Upper Right" by kosonicon, from Flaticon, under Flaticon's free "with attribution"
-  license — the required credit lives in the Terms modal's own Attribution section, not
-  just a code comment, since that's the user-facing surface. Embedded as a base64
-  `data:image/png` URI (a 64×64 PNG, same pattern as the fonts elsewhere in this file) in
-  three places: the `<link rel="icon">` tag and both `.page-title` instances (Setup and
-  Play). `.pt-icon` sits first in `.pt-line2`'s flex row, before `.pt-line2-text`
-  ("Station") — since it's the very first thing in that row, it lands flush under the "M"
-  of "Mind" for free, with no separate JS measurement needed the way "Station"'s own
-  the-alignment needs (`alignPageTitleLines()` still has to account for the icon's
-  rendered width *plus* margin when computing `.pt-line2-text`'s margin-left, though, or
-  the icon would push "Station" further right than intended — done by temporarily
-  resetting the text's margin-left to 0 and reading its natural post-icon position, rather
-  than measuring the icon's own box directly). `.pt-line2{ align-items:flex-end }` (not
-  `center`) lines the icon's bottom edge up with "Station"'s own baseline/bottom instead —
-  centering let the icon (no font ascent/descent of its own) hang down below where the
-  text visually ends. Dark mode inverts the icon via a plain CSS `filter: invert(1)` rather
-  than a second embedded image — the source icon is a solid black circle, which all but
-  disappears against this app's near-black dark background; `body.light .pt-icon{
-  filter:none }` reverts to the icon's true colors in light mode, where black already
-  reads fine.
+- **The favicon and the two small icons on the page title's second line are the same
+  asset**: "Arrow Upper Right" by kosonicon, from Flaticon, under Flaticon's free "with
+  attribution" license — the required credit lives in the Terms modal's own Attribution
+  section, not just a code comment, since that's the user-facing surface. Embedded as a
+  base64 `data:image/png` URI (a 64×64 PNG, same pattern as the fonts elsewhere in this
+  file) in five places: the `<link rel="icon">` tag and two `<img class="pt-icon">`
+  copies in each `.page-title` instance (Setup and Play) — by explicit instruction, a
+  second identical icon was added right after the first, both still ahead of
+  `.pt-line2-text`. Whichever icons are present sit first in `.pt-line2`'s flex row,
+  before the text — since that's the very first thing in the row, it lands flush under
+  the "M" of "Mind" for free, with no separate JS measurement needed the way "Station"'s
+  own the-alignment needs. `alignPageTitleLines()` still has to account for however much
+  horizontal space the icon(s) actually take up when computing `.pt-line2-text`'s
+  margin-left, though, or they'd push "Station" further right than intended — done by
+  temporarily resetting the text's margin-left to 0 and reading its natural post-icon(s)
+  position, rather than measuring any one icon's own box directly, so this keeps working
+  regardless of how many icons end up in front of the text. `.pt-line2{ align-items:
+  flex-end }` (not `center`) lines each icon's bottom edge up with "Station"'s own
+  baseline/bottom instead — centering let the icon (no font ascent/descent of its own)
+  hang visibly below where the text's real glyph ink ends, something a `getBoundingClientRect()`
+  comparison on the text *element* doesn't reveal (its box includes reserved descender
+  space below the actual baseline) — confirmed instead by a real zoomed-in screenshot,
+  not just coordinates. `.pt-icon`'s own `margin-bottom` is the knob that pulls it up to
+  close that gap; re-check with a real screenshot (not just element rects) if this ever
+  looks off again. Dark mode inverts the icon(s) via a plain CSS `filter: invert(1)`
+  rather than a second embedded image — the source icon is a solid black circle, which
+  all but disappears against this app's near-black dark background; `body.light
+  .pt-icon{ filter:none }` reverts to the icon's true colors in light mode, where black
+  already reads fine.
 - **The "Elapsed" label next to the live run timer (`#statTime`) was removed by explicit
   instruction** — the stopwatch icon/ticking dot already make it obvious what the number is;
   don't re-add a text label there.
