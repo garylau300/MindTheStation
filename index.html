@@ -200,6 +200,12 @@
      square-ish image with no font ascent/descent of its own) hang down
      below where the text visually ends. */
   .pt-line2{ display:flex; align-items:flex-end; }
+  /* Nudged up a couple of px relative to the icon(s) it sits next to, by
+     explicit instruction — position:relative (not a margin change) so it's
+     a pure paint-time offset that doesn't affect alignPageTitleLines()'s
+     own left-position math or the flex row's align-items:flex-end
+     calculation for the icon(s) beside it. */
+  .pt-line2-text{ position:relative; top:-0.06em; }
   /* Sized in em, not a fixed px, so it scales with .page-title's own
      clamp()'d font-size and the two breakpoint overrides below it,
      matching the "Station" text right next to it — a fixed size would

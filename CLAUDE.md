@@ -643,6 +643,11 @@ catch.
   at all (the click falls through to a non-image parent instead), and `draggable="false"`
   blocks the drag-to-desktop save path. Neither is a real security boundary (view-source
   and devtools still show everything), just a reasonable deterrent for a decorative icon.
+  `.pt-line2-text` ("Station") also carries a small `position:relative; top:-0.06em`
+  nudge upward relative to the icon(s) beside it, by explicit instruction — a pure
+  paint-time offset (not a margin change) so it doesn't feed back into
+  `alignPageTitleLines()`'s own left-position math or the row's `align-items:flex-end`
+  calculation for the icon(s).
 - **The "Elapsed" label next to the live run timer (`#statTime`) was removed by explicit
   instruction** — the stopwatch icon/ticking dot already make it obvious what the number is;
   don't re-add a text label there.
