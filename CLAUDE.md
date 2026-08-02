@@ -11,6 +11,23 @@ narrative handoff (architecture, every bug that shipped and how it was fixed, de
 iteration history) written at the end of the original chat-based build process — read it
 for the "why", this file for quick working rules.
 
+## Branches and deployment
+
+A `production` branch exists (pushed once from `main`, no other history of its own yet),
+intended to become Vercel's **Production Branch** once a custom domain is bought and pointed
+at it — Vercel's Production Branch setting is a per-project dashboard toggle
+(Settings → Git → Production Branch), not something a coding session's tools can flip, so
+that step is still pending on the human side. **As of right now `main` is still Vercel's
+actual Production Branch** — nothing about the live deployment has changed yet; `production`
+existing on GitHub doesn't do anything on its own until that dashboard setting is switched.
+
+Once that switch happens, the intended workflow is: every regular change still merges into
+`main` exactly as before (so `main` stays the always-current dev/preview branch, each push
+getting its own Preview Deployment) — `production` only moves forward when a change is
+explicitly meant to go live on the real domain, i.e. a deliberate "ship this" step, not an
+automatic side effect of every commit. Don't merge into `production` as part of routine work
+unless asked to promote/ship a change.
+
 ## What it does
 
 Pick a line (and branch/direction if applicable), then practice recalling station order:
