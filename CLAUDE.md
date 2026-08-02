@@ -1031,3 +1031,52 @@ significant change, don't assume it stays clean.
 - **JSON-LD's `creator`/`publisher` are both Studio Espero** (an `Organization`, matching the
   footer's copyright line) — free structured-data enrichment that needs no hosted asset or
   domain, unlike `og:image`/canonical/sitemap above.
+
+## Performance (page weight)
+
+`index.html` was 402KB, almost entirely three embedded custom fonts (P22 Underground,
+LT Railway, British Rail — 125KB combined binary, ~167KB as base64 text) shipped as their
+full, unsubsetted commercial releases: hundreds of glyphs covering Latin Extended, Cyrillic-
+adjacent symbols, math operators, and OpenType features this English-only, fixed-vocabulary
+app never uses. Subsetted all three down to exactly the characters actually rendered
+anywhere in the app — verified by extracting every JS string literal and HTML text node in
+the file (not guessed) — and converted them from raw TTF/OTF to WOFF2 (compressed, and the
+standard modern web font format; supported by every browser this app already targets, since
+it already relies on CSS Grid/custom properties that are just as recent). Combined, this took
+the file from 402KB to 267KB (~135KB / 34% smaller), with the fonts themselves shrinking from
+125KB to ~24KB combined (P22 Underground 37KB→8KB, LT Railway 52KB→7KB, British Rail
+37KB→9KB).
+
+- **The kept Unicode set is `U+0020-007E` (full ASCII printable) plus `©`/`·`/`–`/`—`/`…`**
+  (U+00A9, U+00B7, U+2013, U+2014, U+2026) — not a hand-picked minimal set per font. Full
+  ASCII is deliberately generous headroom (station names, branch labels, and the LED "Calling
+  at" ticker all need the complete alphabet/digits/punctuation anyway) rather than subsetting
+  down to each font's exact narrow use — British Rail, for instance, only ever renders "Mind
+  the"/"Station", but keeping it at full-ASCII-plus-extras costs almost nothing at these
+  sizes and removes any fragility if that wordmark text ever changed. The five extras were
+  found by extracting every string literal in the app's own `<script>` and every HTML text
+  node, then checking which non-ASCII characters actually survived that extraction and were
+  genuinely rendered (not, e.g., merely `–` in the *literal* Ealing–Upminster branch label,
+  or `…` in `<input placeholder>` text). `✓`/`✕` (used in feedback messages and SVG tick
+  marks) and `°` (only ever appears inside a code *comment*, never rendered) were deliberately
+  left out — checked against each font's own cmap and confirmed absent from all three even
+  before subsetting, so they were already falling back to Cabin/system-sans-serif regardless;
+  subsetting couldn't remove a glyph that was never there.
+- **Regenerating a subset if the app's text ever needs a new character**: extract the
+  relevant `@font-face` block's base64 payload, decode it, run `pyftsubset <font> --unicodes=
+  <set> --flavor=woff2 --output-file=<name>.subset.woff2` (fontTools + the `brotli` package,
+  both available in this environment), re-encode to base64, and replace the `src: url(...)
+  format(...)` in place — same "placeholder + Python script" embedding discipline as every
+  other base64 asset in this file (favicon, title icons), never paste the payload directly
+  into an editor/context.
+- **`format('truetype')`/`format('opentype')` became `format('woff2')`** (and the `data:`
+  MIME type from `font/ttf`/`font/otf` to `font/woff2`) — no CSP change needed, since
+  `font-src`'s existing `data:` allowance covers any font MIME subtype, not just the two that
+  happened to be in use before.
+- Icon duplication (the same 64×64 favicon PNG embedded 5 separate times — once as
+  `<link rel="icon">`, four times across the two `.pt-icon` `<img>` pairs on Setup/Play) was
+  *not* touched here — it's ~7KB total, small next to the font savings above, and
+  de-duplicating it would mean either a dynamic JS-inserted `src` (against this app's
+  static-markup icon conventions) or a `<template>`-based reuse pattern not currently used
+  anywhere else in the file. Worth revisiting only if page weight becomes a priority again
+  beyond this pass.
