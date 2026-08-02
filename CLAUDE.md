@@ -993,11 +993,24 @@ significant change, don't assume it stays clean.
   (not derived from `document.title`/per-line state) since the page's actual content is
   gated behind JS interaction (pick a line, click Start) that a crawler or a social-media
   link-preview bot won't perform — the tags describe the app itself, not whatever line
-  happens to be selected. `og:image`/`twitter:image`/`og:url` and a `<link rel="canonical">`
-  are deliberately **not** included yet — they need a real hosted 1200×630 image asset and
-  the app's eventual real domain, neither of which exist yet. Add all four once the domain
-  from the Vercel Production Branch setup is live, plus a `Sitemap:` line in `robots.txt` and
-  a `sitemap.xml` (both meaningless without a real canonical domain to reference).
+  happens to be selected.
+- **`<link rel="canonical">` and `og:url` both point at `https://mindthestation.com/`** — the
+  real domain, live on Vercel's Production Branch. This matters beyond generic best practice:
+  the project's own `*.vercel.app` URL (`mindthestation.vercel.app`) serves the exact same
+  `index.html`, and a single static file can't serve a different `<meta name="robots">` per
+  hostname — so without a canonical tag, both hostnames would look like identical duplicate
+  content to a crawler with no signal for which one is the "real" one. The canonical tag is
+  that signal. Also worth checking in the Vercel dashboard (Settings → Domains): a
+  "redirect to primary domain" toggle, which 308-redirects the `.vercel.app` URL to the
+  custom domain at the HTTP level — stronger than a canonical hint since there's then
+  nothing at that URL to index at all. `test/security.test.js`'s CSP-origin-matching test
+  has explicit skips for `rel="canonical"` and `property="og:url"` lines, alongside its
+  existing CSP-meta-line and JSON-LD `"@context"` skips — the site's own domain named in
+  metadata is never actually fetched by the browser, so it's not a real CSP gap.
+  `og:image`/`twitter:image` are still **not** included — they need a real hosted 1200×630
+  image asset, which doesn't exist yet. A `Sitemap:` line in `robots.txt` plus a
+  `sitemap.xml` are also still pending — cheap to add now that a real domain exists, just
+  not done yet.
 - **JSON-LD structured data** (`<script type="application/ld+json">`, `WebApplication`
   schema) needs no CSP allowance — it's inline and `script-src` already has
   `'unsafe-inline'`, and a JSON-LD payload never causes the browser to actually fetch
