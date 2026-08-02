@@ -5,8 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
 <meta name="referrer" content="no-referrer">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>Mind the Station</title>
+<meta name="description" content="Mind the Station is a free browser game for memorizing London Underground station order. Practice warm-up, recall quiz, and multiple-choice modes for every Tube line and branch, with a live route diagram and progress stats.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mind the Station">
+<meta property="og:title" content="Mind the Station — London Underground Station Trainer">
+<meta property="og:description" content="A free browser game for memorizing London Underground station order — warm-up, recall quiz, and multiple-choice modes for every Tube line.">
+<meta property="og:locale" content="en_GB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mind the Station — London Underground Station Trainer">
+<meta name="twitter:description" content="A free browser game for memorizing London Underground station order — warm-up, recall quiz, and multiple-choice modes for every Tube line.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Mind the Station",
+  "description": "A free browser game for memorizing London Underground station order, with warm-up, recall quiz, and multiple-choice modes for every Tube line.",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Any",
+  "isAccessibleForFree": true,
+  "inLanguage": "en-GB",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" }
+}
+</script>
 <!-- Favicon: "Arrow Upper Right" icon by kosonicon (Flaticon), used under
      Flaticon's free-tier "Free for personal and commercial purpose with
      attribution" license — see the Terms modal's Attribution section for
@@ -84,6 +106,13 @@
      "what's the right display value when visible" question is answered
      once, in CSS, by whoever owns the layout — JS just says yes or no. */
   .hidden{ display:none !important; }
+
+  /* Visually-hidden but still present for screen readers/crawlers — unlike
+     .hidden's display:none, this keeps the element in the accessibility
+     tree and out of any "hidden content" suspicion, the standard pattern
+     for a real semantic heading that duplicates a purely decorative
+     wordmark (see the sr-only <h1> right after <body>). */
+  .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
   /* Gentle Setup <-> Play page transition (see showPage() in JS): the
      outgoing page fades/slides out first, then — only once it's actually
@@ -906,6 +935,7 @@
  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </head>
 <body class="light">
+<h1 class="sr-only">Mind the Station — London Underground Station Memorization Trainer</h1>
 <div class="wrap">
 
   <div id="setupPage">

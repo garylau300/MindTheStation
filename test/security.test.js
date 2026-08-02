@@ -37,6 +37,7 @@ test('CSP origin allowances exactly match actual resource usage (no gaps, nothin
   const directOrigins = new Set();
   for(const line of html.split('\n')){
     if(line.includes('Content-Security-Policy')) continue; // the policy itself lists origins; not a "usage"
+    if(line.includes('"@context"')) continue; // JSON-LD's schema.org URI is a data identifier, never fetched by the browser
     let m;
     while((m = directOriginPattern.exec(line))) directOrigins.add(m[1]);
   }
@@ -81,9 +82,15 @@ test('vercel.json ships the same CSP as an HTTP header, byte-for-byte', () => {
   assert.equal(header.value, metaCsp, 'vercel.json CSP header must exactly match the <meta> tag CSP in index.html');
 });
 
-test('referrer and robots meta tags stay locked down', () => {
+test('referrer stays locked down; robots is deliberately index/follow', () => {
+  // referrer stays locked down regardless of indexing policy — no reason
+  // for this app to leak the referring URL to any destination.
   assert.match(html, /<meta name="referrer" content="no-referrer">/);
-  assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
+  // The site was deliberately noindex,nofollow during early development;
+  // switched to index,follow once ready for public search discovery. If
+  // this ever needs to go back to noindex, that's a deliberate edit here
+  // too, not a silent regression.
+  assert.match(html, /<meta name="robots" content="index, follow">/);
 });
 
 test('no eval/Function-constructor/document.write/javascript: URIs', () => {

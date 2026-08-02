@@ -63,7 +63,13 @@ function loadPage(){
   window.setTimeout = (fn, _ms, ...args) => realSetTimeout(fn, 1, ...args);
   window.setInterval = (fn, _ms, ...args) => realSetInterval(fn, 1, ...args);
 
-  const scripts = Array.from(window.document.querySelectorAll('script')).filter(s => !s.src);
+  // Only executable scripts — a real browser never runs a non-JS <script>
+  // (e.g. type="application/ld+json" structured data) as code either, so
+  // this stays accurate to reality rather than an artifact of there
+  // previously being exactly one inline <script> in the file.
+  const JS_TYPES = new Set(['', 'text/javascript', 'application/javascript']);
+  const scripts = Array.from(window.document.querySelectorAll('script'))
+    .filter(s => !s.src && JS_TYPES.has((s.getAttribute('type') || '').toLowerCase()));
   scripts.forEach(s => window.eval(s.textContent));
 
   if(!window.__TEST__){

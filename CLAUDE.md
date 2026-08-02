@@ -962,3 +962,51 @@ significant change, don't assume it stays clean.
   no visible error. If Vercel ever changes the script back to a cross-origin beacon target,
   re-verify by fetching the script directly rather than assuming the old domain is still
   right.
+
+## SEO
+
+- **`<meta name="robots">` is deliberately `index, follow`, not the `noindex, nofollow` it
+  shipped with during early development.** This was a real, tested lockdown (see
+  `test/security.test.js`'s "referrer stays locked down; robots is deliberately
+  index/follow"), not an oversight — don't flip it back without checking first, since it's
+  the single setting that determines whether any other SEO work here has any effect at all.
+  `referrer` stays `no-referrer` regardless of the indexing decision — no reason for this app
+  to leak the referring URL to any destination either way.
+- **Meta description, Open Graph, and Twitter Card tags are all static, hand-written text**
+  (not derived from `document.title`/per-line state) since the page's actual content is
+  gated behind JS interaction (pick a line, click Start) that a crawler or a social-media
+  link-preview bot won't perform — the tags describe the app itself, not whatever line
+  happens to be selected. `og:image`/`twitter:image`/`og:url` and a `<link rel="canonical">`
+  are deliberately **not** included yet — they need a real hosted 1200×630 image asset and
+  the app's eventual real domain, neither of which exist yet. Add all four once the domain
+  from the Vercel Production Branch setup is live, plus a `Sitemap:` line in `robots.txt` and
+  a `sitemap.xml` (both meaningless without a real canonical domain to reference).
+- **JSON-LD structured data** (`<script type="application/ld+json">`, `WebApplication`
+  schema) needs no CSP allowance — it's inline and `script-src` already has
+  `'unsafe-inline'`, and a JSON-LD payload never causes the browser to actually fetch
+  `schema.org` (it's a data identifier, not a resource load), which is why
+  `test/security.test.js`'s CSP-origin-matching test has an explicit `"@context"` line-skip
+  alongside its existing CSP-meta-line skip, rather than treating it as a real missing CSP
+  allowance.
+- **`test/test-utils.js`'s script-execution loop now filters by `type` before `eval`-ing.**
+  It used to grab every `<script>` element without a `src` and eval its contents
+  unconditionally — harmless while there was exactly one inline script in the whole file, but
+  the JSON-LD `<script type="application/ld+json">` tag added above is *not* JavaScript, and
+  jsdom doesn't skip non-JS script types the way a real browser silently does. Rather than
+  special-case JSON-LD specifically, the harness now filters to actual executable types
+  (empty/`text/javascript`/`application/javascript`) — the same behavior a real browser
+  already has, so this is a correctness fix, not a workaround.
+- **The page has no visible `<h1>`** — `.page-title` is styled `<span>`s by design (see the
+  header hard rule above), not a real heading, and CLAUDE.md's own hard rule against
+  changing that layout predates this SEO pass. Real heading structure for
+  crawlers/screen-readers instead comes from a `.sr-only` `<h1>` placed right after `<body>`,
+  using the standard clip-rect visually-hidden pattern (kept in the accessibility tree,
+  unlike `.hidden`'s `display:none`, which would drop it entirely and could read as
+  cloaking/hidden text to a search engine). Don't reuse `.hidden` for anything
+  crawler/screen-reader-facing that should still visually disappear — they're for two
+  different purposes now.
+- **`robots.txt`** at the repo root currently just allows all crawling (`Allow: /`), with no
+  `Sitemap:` line — there's no real canonical domain yet to point one at. Add the `Sitemap:`
+  line (and the `sitemap.xml` it points to) once the domain is live; a single-page app like
+  this doesn't strictly need a sitemap to be crawled, but it's a cheap, standard addition
+  once there's a real URL to put in it.
