@@ -13,20 +13,31 @@ for the "why", this file for quick working rules.
 
 ## Branches and deployment
 
-A `production` branch exists (pushed once from `main`, no other history of its own yet),
-intended to become Vercel's **Production Branch** once a custom domain is bought and pointed
-at it — Vercel's Production Branch setting is a per-project dashboard toggle
-(Settings → Git → Production Branch), not something a coding session's tools can flip, so
-that step is still pending on the human side. **As of right now `main` is still Vercel's
-actual Production Branch** — nothing about the live deployment has changed yet; `production`
-existing on GitHub doesn't do anything on its own until that dashboard setting is switched.
+**Live now**: `production` is Vercel's actual Production Branch, bound to the real domain
+`mindthestation.com`. `main` stays the always-current dev branch — every regular change
+merges into `main` exactly as before, and `production` only moves forward when a change is
+explicitly meant to go live, i.e. a deliberate "ship this" step, never an automatic side
+effect of routine work. Don't merge into `production` unless asked to promote/ship a change.
 
-Once that switch happens, the intended workflow is: every regular change still merges into
-`main` exactly as before (so `main` stays the always-current dev/preview branch, each push
-getting its own Preview Deployment) — `production` only moves forward when a change is
-explicitly meant to go live on the real domain, i.e. a deliberate "ship this" step, not an
-automatic side effect of every commit. Don't merge into `production` as part of routine work
-unless asked to promote/ship a change.
+`mindthestation.vercel.app` (the project's own default domain, previously tracking
+Production automatically) is meant to be manually reassigned in the Vercel dashboard to
+track `main` instead, so it works as a stable preview URL for in-progress work, separate
+from the live domain.
+
+- **`vercel.json` deliberately differs between `main` and `production` — it is NOT meant to
+  be kept identical across the two.** `main`'s copy carries an extra response header,
+  `X-Robots-Tag: noindex, nofollow`, that `production`'s copy omits. This exists because of a
+  real gap confirmed against Vercel's own docs: Vercel normally adds that header
+  automatically to Preview Deployments to keep them out of search results, *but that
+  automatic protection stops applying the moment any domain — including the project's own
+  default `.vercel.app` one — is manually assigned to a non-Production branch*, which is
+  exactly what `mindthestation.vercel.app` now is. Without this explicit header, the
+  `main`-tracked URL would be just as indexable as the real site, defeating the entire point
+  of keeping it separate. When touching `vercel.json`, always check which branch you're
+  actually pushing to — merging `main`'s copy into `production` would silently noindex the
+  real site, and merging `production`'s copy into `main` would silently remove the
+  protection. Neither should ever happen by accident (see the git-workflow instructions this
+  session operates under for how commits are meant to reach each branch).
 
 ## What it does
 
