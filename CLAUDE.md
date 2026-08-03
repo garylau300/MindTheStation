@@ -1075,6 +1075,16 @@ significant change, don't assume it stays clean.
   (`cdn-icons-png.flaticon.com`, same icon ID) and downsized with Pillow rather than
   upscaling the existing 64×64 favicon PNG, which would have rendered soft/blurry at Apple's
   minimum recommended size.
+- **`favicon.ico` is a real static file at the repo root** (multi-resolution: 16/32/48/64px,
+  generated from the same 512×512 source via Pillow), separate from the data-URI
+  `<link rel="icon">` in `index.html`'s `<head>`. Found via a live-site check: browsers use
+  the `<link>` tag and never needed this, but Google's search-result favicon fetcher and
+  some crawlers specifically probe `/favicon.ico` at the domain root regardless of what the
+  page's own `<link>` tag says — that path was a real 404 before this was added, which risks
+  no favicon (or a stale default) showing next to this site in Google search results even
+  though the in-browser tab icon was always correct. No CSP change needed since nothing in
+  `index.html` references it — it's picked up purely by external tools probing the
+  conventional path directly.
 - **JSON-LD's `creator`/`publisher` are both Studio Espero** (an `Organization`, matching the
   footer's copyright line) — free structured-data enrichment that needs no hosted asset or
   domain, unlike `og:image`/canonical/sitemap above.
