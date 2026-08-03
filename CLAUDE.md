@@ -1005,23 +1005,29 @@ significant change, don't assume it stays clean.
   gated behind JS interaction (pick a line, click Start) that a crawler or a social-media
   link-preview bot won't perform — the tags describe the app itself, not whatever line
   happens to be selected.
-- **`<link rel="canonical">` and `og:url` both point at `https://mindthestation.com/`** — the
-  real domain, live on Vercel's Production Branch. This matters beyond generic best practice:
-  the project's own `*.vercel.app` URL (`mindthestation.vercel.app`) serves the exact same
-  `index.html`, and a single static file can't serve a different `<meta name="robots">` per
-  hostname — so without a canonical tag, both hostnames would look like identical duplicate
-  content to a crawler with no signal for which one is the "real" one. The canonical tag is
-  that signal. Also worth checking in the Vercel dashboard (Settings → Domains): a
-  "redirect to primary domain" toggle, which 308-redirects the `.vercel.app` URL to the
-  custom domain at the HTTP level — stronger than a canonical hint since there's then
-  nothing at that URL to index at all. `test/security.test.js`'s CSP-origin-matching test
-  has explicit skips for `rel="canonical"` and `property="og:url"` lines, alongside its
-  existing CSP-meta-line and JSON-LD `"@context"` skips — the site's own domain named in
-  metadata is never actually fetched by the browser, so it's not a real CSP gap.
-  `og:image`/`twitter:image` are still **not** included — they need a real hosted 1200×630
-  image asset, which doesn't exist yet. A `Sitemap:` line in `robots.txt` plus a
-  `sitemap.xml` are also still pending — cheap to add now that a real domain exists, just
-  not done yet.
+- **`<link rel="canonical">`, `og:url`, `sitemap.xml`'s `<loc>`, and `robots.txt`'s
+  `Sitemap:` line all point at `https://www.mindthestation.com/` — the `www` subdomain, not
+  the bare apex domain — because that's what Vercel actually serves.** Verified directly
+  against the live site (`curl -sD -`, not assumed): `https://mindthestation.com/` returns
+  an HTTP 308 to `https://www.mindthestation.com/` for every path (confirmed on `/`,
+  `/robots.txt`), and the `www` host is the one serving real 200 content. Pointing the
+  canonical/sitemap/robots references at the apex — which was the first pass, before this
+  was checked against reality — created a real canonicalization conflict: a page declaring
+  itself canonical at a URL that just redirects elsewhere is a known cause of delayed or
+  unpredictable Google indexing (confirmed as the likely cause after a "request indexing" in
+  Search Console sat unprocessed). **If the apex/`www` redirect direction ever changes in the
+  Vercel dashboard, all four of these need to flip together** — they must always agree with
+  whichever host is actually the non-redirecting one, checked live, not assumed from the
+  domain name alone.
+  This matters beyond that specific bug too: the project's own `*.vercel.app` URL
+  (`mindthestation.vercel.app`) serves the same `index.html`, and a single static file can't
+  serve a different `<meta name="robots">` per hostname — so the canonical tag is also the
+  signal that stops the `.vercel.app` host from reading as duplicate content.
+  `test/security.test.js`'s CSP-origin-matching test has explicit skips for `rel="canonical"`
+  and `property="og:url"` lines, alongside its existing CSP-meta-line and JSON-LD
+  `"@context"` skips — the site's own domain named in metadata is never actually fetched by
+  the browser, so it's not a real CSP gap. `og:image`/`twitter:image` are still **not**
+  included — they need a real hosted 1200×630 image asset, which doesn't exist yet.
 - **JSON-LD structured data** (`<script type="application/ld+json">`, `WebApplication`
   schema) needs no CSP allowance — it's inline and `script-src` already has
   `'unsafe-inline'`, and a JSON-LD payload never causes the browser to actually fetch

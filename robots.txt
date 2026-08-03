@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mindthestation.com/sitemap.xml
+Sitemap: https://www.mindthestation.com/sitemap.xml
