@@ -891,6 +891,41 @@ catch.
   a button's own more specific chime (e.g. Submit's correct/wrong chime) rather than
   replacing it — the click sound is quiet enough (peak gain 0.07, vs. 0.16-0.24 for the
   other chimes) that the two layer without competing.
+- **The theme toggle (`#themeToggle`/`#themeTogglePlay`) is icon-only (`☀`/`☾`, no "Light"/
+  "Dark" text label) by explicit instruction, and a same-styled sound toggle
+  (`#soundToggle`/`#soundTogglePlay`) sits directly to its right on both Setup
+  (`.header-row`) and Play (`.play-topbar`).** The sound button's glyph is always the plain `♪`
+  (EIGHTH NOTE, the same pre-emoji Unicode range as `☀`/`☾`/`✓`/`✕`) — not `🔊`/`🔇` (full-color
+  emoji pictographs, visually inconsistent with the flat monochrome glyphs everywhere else in
+  this app) and not a swapped-in `⊘`/similar "off" character either, since a generic
+  prohibition symbol read as disconnected from "sound" specifically once tried. Muted state is
+  instead a CSS-drawn diagonal line over the same note glyph (`.muted` class toggled by
+  `toggleSound()`, drawn via `#soundToggle.muted::after`/`#soundTogglePlay.muted::after`) —
+  crisp and font-independent, rather than gambling on a Unicode combining "enclosing circle
+  backslash" mark (designed for exactly this "no-X over a base glyph" purpose) that turned out
+  to render as an unsupported tofu box in testing. `.theme-toggle` changed from text-driven
+  padding to a fixed `width:38px; height:38px` circle so both buttons stay the same size
+  regardless of which glyph they hold. Removing the visible text meant the state cue moved
+  entirely to `aria-label` (`toggleTheme()`/`toggleSound()` update it on every click —
+  "Switch to dark/light theme", "Mute/Unmute sound" — alongside the glyph itself) rather than
+  relying on visible text the way most other toggles in this app do. Play's topbar needed a
+  `.topbar-toggles` wrapper `<div>` around both buttons — `.play-topbar` is
+  `justify-content:space-between` with exactly two flex participants expected (back button,
+  the toggle group), and adding a bare third top-level button would have landed centered
+  between them instead of paired with the theme toggle; Setup's `.header-row` needed no
+  equivalent wrapper since it's already `justify-content:flex-end` with a single `gap` between
+  whatever flex children it has. `toggleSound()` flips a new session-only `soundEnabled` flag
+  (resets to on/unmuted on refresh, same as every other piece of state here) — muting doesn't
+  gate each of the six chime functions individually; `getAudioCtx()` (the one function every
+  `playXChime()`/`playClickSound()` call already routes through, directly or via
+  `playTone()`/`playBell()`) throws when `soundEnabled` is false, which every caller's existing
+  `try/catch` ("audio is a nice-to-have, never block on it") already silently absorbs — the
+  same mechanism a real audio failure already uses, not a new code path. A side effect of this,
+  not specially coded for: since the sound button's own click listener runs before the
+  document-level delegated `playClickSound()` listener (bubbling from the button up to
+  `document`), clicking to mute never plays its own click tick (already muted by the time the
+  delegated listener checks), while clicking to unmute does (already unmuted by then) — reads
+  as a natural "you just turned sound back on" confirmation rather than an inconsistency.
 - **`.mc-options` is a 2-column grid at every width, including narrow phones, by explicit
   instruction** — a long station name wrapping to two lines there is an accepted tradeoff,
   not a bug. The old `@media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; }
