@@ -999,6 +999,33 @@ catch.
   Elizabeth as a real line also surfaced a genuine pre-existing gap the interchange test
   hadn't been able to check before (Elizabeth wasn't real, so Canary Wharf was never
   cross-referenced against it): Canary Wharf was missing its own Jubilee badge.
+- **Launch announcement banner** (`#announcementBanner`), Setup page only — not Play, which
+  stays a focused gameplay screen. Fixed to Elizabeth's own true colour rather than
+  `--line-accent`, since switching the currently-selected line shouldn't change what a static
+  announcement about a specific other line looks like (the same "always the real brand
+  colour" reasoning as the route map/diagram, applied to a new context). Square corners, full
+  viewport width (the `calc(50% - 50vw)` breakout trick, independent of `.wrap`'s own
+  max-width breakpoints), centred text, and a tight, thin profile (`padding: 5px 36px`) — by
+  explicit instruction, deliberately not styled like this app's other rounded, padded cards
+  (which would read as a floating toast/popup rather than an integrated, flush-to-the-page
+  banner). A negative top margin (`-28px`, cancelling `body`'s own top padding, the only thing
+  between this element and the actual page edge) pulls it flush against the very top of the
+  page with no gap above it, also by explicit instruction. The whole banner is clickable
+  straight into `setLine('elizabeth')` — a one-click way to actually try the thing being
+  announced, not just a passive notice. It's a `<div role="button" tabindex="0">`, not a
+  real `<button>`, specifically so it can contain a real, separately-focusable `<button
+  class="banner-close">` for dismissal (a button can't contain another button) — which needs
+  its own `stopPropagation()` so closing it doesn't also trigger `setLine()`, and the outer
+  div needs a manual `keydown` handler for Enter/Space since a plain `role="button"` element
+  gets no native keyboard activation the way a real `<button>` would. The close button is
+  absolutely positioned in the corner rather than a trailing flex child, so its own width
+  doesn't skew the centred text off from the bar's true centre — equal left/right padding on
+  the bar itself (not extra padding on just the close-button side) is what keeps that
+  centering true regardless of the button. Dismissal is session-only like every other piece
+  of state in this app (no client-side storage) — it reappears on a fresh page load. This is
+  meant as a temporary launch callout, not a permanent fixture — remove it once the Elizabeth
+  line has been out long enough that
+  announcing it is no longer news, rather than leaving it around indefinitely.
 - DLR and London Overground remain discussed future extensions (see PROJECT_HISTORY.md §7),
   scoped as their own separate project phases.
 
