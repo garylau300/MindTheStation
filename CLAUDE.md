@@ -587,6 +587,34 @@ catch.
   network to exhaustively verify station-by-station in one pass — treat any particular
   `nationalrail` badge as worth double-checking against the station's own infobox if it's
   ever in question, rather than assuming the existing ~40 are all correct.
+- **Adding a line that introduces brand-new stations (not shared with any existing line)
+  needs its own dedicated interchange pass — badging only the stations it shares with
+  existing lines isn't enough.** Elizabeth line's initial `STATION_INTERCHANGES` work only
+  added `elizabeth` badges to stations that already had entries (i.e. shared with an
+  existing tube line); it silently skipped the ~29 brand-new western (Reading branch) and
+  eastern (Shenfield branch) stations that don't appear on any other line at all, so real
+  National Rail/DLR/Overground interchanges there (Reading, Slough, Romford, Shenfield,
+  Abbey Wood, Custom House, etc.) were missing entirely — caught only by direct user
+  review, not by any test, since `test/interchanges.test.js` can't see a station that isn't
+  shared with a second `LINES` entry. Verified each one against its own Wikipedia infobox
+  rather than assuming a blanket "outer London = National Rail" pattern, since the two
+  branches turned out to behave differently: the 2015 TfL Rail takeover left most
+  intermediate Anglia-side (Shenfield branch) stations **fully Elizabeth-exclusive** —
+  Greater Anglia no longer calls at all (confirmed individually for Maryland, Forest Gate,
+  Manor Park, Ilford, Seven Kings, Goodmayes, Chadwell Heath) — while the GWR-side (Reading
+  branch) mostly kept at least a residual GWR service even after Elizabeth line took over
+  local stopping (Reading, Twyford, Maidenhead, Taplow, Burnham, Slough, Langley, Iver, West
+  Drayton, Hayes & Harlington, Southall, West Ealing all keep a `nationalrail` badge; only
+  Hanwell and Acton Main Line on that side are genuinely Elizabeth-only, breaking from their
+  own branch's pattern). Romford is the one Anglia-side exception (still real Greater Anglia
+  service, plus the northern terminus of Overground's Liberty line). Custom House is a
+  genuine walkable DLR interchange; Woolwich is the same "same name, different building" trap
+  as this file's other exceptions — the real National Rail/DLR interchange there is the
+  separate, nearby "Woolwich Arsenal" station, not "Woolwich" itself, so it stays badge-free.
+  First pass also missed Ilford outright (no entry at all, not just a wrong badge) since it
+  was overlooked while iterating the station list by eye — re-verified by diffing every
+  station name in each Elizabeth branch array against `STATION_INTERCHANGES`' own keys
+  programmatically rather than trusting a manual pass a second time.
 - **CSS-only diagram sizing, no scroll boxes.** `.diagram-card svg { width:92%; height:auto }`
   is a deliberate, explicit user preference over the earlier JS-computed-pixel-size approach.
   Don't reintroduce horizontal scroll containers for wide diagrams without checking first.

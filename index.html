@@ -1523,7 +1523,57 @@
     "Woodside Park": [],
     "Totteridge & Whetstone": [],
     "High Barnet": [],
-    "Mill Hill East": []
+    "Mill Hill East": [],
+
+    // ---- Elizabeth line ----
+    // Every station verified against its own Wikipedia infobox — the western (GWR) side and
+    // eastern (Anglia) side turned out to have genuinely different patterns, not assumable
+    // from either alone: on the Anglia side, TfL Rail's 2015 takeover left most intermediate
+    // stations Elizabeth-line *exclusive* (Greater Anglia no longer calls at all), while on
+    // the GWR side almost every station kept at least a handful of real GWR services (often
+    // described as "a small number of early morning and late evening" trains) even after the
+    // Elizabeth line took over the bulk of local stopping services. Reading, Slough, Twyford,
+    // and Maidenhead keep a fuller GWR service; Hanwell and Acton Main Line are the only two
+    // stops on the western trunk that are genuinely Elizabeth-only, matching the Anglia-side
+    // pattern instead of their own GWR neighbours.
+    "Reading": [badge('nationalrail','National Rail')],
+    "Twyford": [badge('nationalrail','National Rail')],
+    "Maidenhead": [badge('nationalrail','National Rail')],
+    "Taplow": [badge('nationalrail','National Rail')],
+    "Burnham": [badge('nationalrail','National Rail')],
+    "Slough": [badge('nationalrail','National Rail')],
+    "Langley": [badge('nationalrail','National Rail')],
+    "Iver": [badge('nationalrail','National Rail')],
+    "West Drayton": [badge('nationalrail','National Rail')],
+    "Hayes & Harlington": [badge('nationalrail','National Rail')],
+    "Southall": [badge('nationalrail','National Rail')],
+    "Hanwell": [],
+    "West Ealing": [badge('nationalrail','National Rail')],
+    "Acton Main Line": [],
+    // Anglia's own local stopping service at every one of these was fully absorbed by TfL
+    // Rail/the Elizabeth line in 2015 — confirmed per station (9 checked directly), not
+    // assumed once the pattern held for the first few.
+    "Maryland": [],
+    "Forest Gate": [],
+    "Manor Park": [],
+    "Ilford": [],
+    "Seven Kings": [],
+    "Goodmayes": [],
+    "Chadwell Heath": [],
+    // Romford is the one Anglia-side exception: still a genuine Greater Anglia interchange,
+    // and also the northern terminus of London Overground's Liberty line to Upminster.
+    "Romford": [badge('nationalrail','National Rail'), badge('liberty','Liberty')],
+    "Gidea Park": [],
+    "Harold Wood": [],
+    "Brentwood": [],
+    "Shenfield": [badge('nationalrail','National Rail')],
+    // a genuine, walkable interchange with the adjacent DLR station of the same name — not
+    // the "same name, different building" situation Woolwich below is
+    "Custom House": [badge('dlr','DLR')],
+    // a real, separate building from the nearby "Woolwich Arsenal" (National Rail + DLR) —
+    // same "same name, not an interchange" situation as this line's own Heathrow Terminal 4
+    "Woolwich": [],
+    "Abbey Wood": [badge('nationalrail','National Rail')]
   };
 
   const LINES = {
