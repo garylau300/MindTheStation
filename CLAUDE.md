@@ -956,9 +956,51 @@ catch.
   line — including disambiguating a garbled AI-summarized source that briefly suggested
   Mill Hill East was a through-station rather than the genuine dead-end spur off Finchley
   Central it actually is.
-- Elizabeth line, DLR, and London Overground are discussed future extensions (see
-  PROJECT_HISTORY.md §7) — Elizabeth needs its own (non-red-circle/blue-bar) roundel
-  treatment when built; Overground is scoped as its own separate project phase.
+- **Elizabeth** (41 stations) — `branch-tree` layout, Reading–Whitechapel as the horizontal
+  spine (Reading is the spine's own western end, not a fork — same convention as District's
+  Ealing Broadway–Upminster spine), per explicit instruction. Two Y-shaped forks, both per
+  explicit instruction on their exact shape:
+  - **Heathrow**, off the spine at Hayes & Harlington (the real fork is the unstaffed Airport
+    Junction just west of it — simplified to the nearest named station, same simplification
+    Piccadilly already makes at Acton Town): drops straight down to Heathrow Terminals 2 & 3,
+    then splits into a Y **opening downward** — Terminal 5 to the left, Terminal 4 to the
+    right — deliberately "vertically inverted" from Piccadilly's own Heathrow Y, which opens
+    sideways off the spine's own end rather than downward off its middle.
+  - **Shenfield/Abbey Wood**, off the spine's eastern end at Whitechapel: a Y opening
+    rightward, Shenfield's arm forking up and Abbey Wood's arm forking down (placed below
+    Shenfield, per explicit instruction), each then continuing as its own flat "parallel
+    line" further east — not a loop or a shared pass-through; the two branches diverge
+    completely at Whitechapel and never share another station.
+  Exactly 9 branches, screenshot-verified against the real TfL branch list rather than
+  assumed: the 5 real full through-services (Reading/Heathrow T4/Heathrow T5 crossed with
+  Abbey Wood/Shenfield, except Reading×Shenfield, which never runs) plus the 4 real partial
+  services that don't cross the central tunnel (Reading/Heathrow T4/Heathrow T5 each
+  terminating at Paddington, and Shenfield terminating at Liverpool Street). Every station
+  and fork point verified against its own Wikipedia infobox — the eastern split at
+  Whitechapel in particular (which stations continue toward Stratford vs which continue
+  toward Canary Wharf) needed real per-station verification, since an initial broader-article
+  fetch produced two different, self-contradictory station orderings for it (inventing a
+  shared "Wanstead Park"/duplicating "Chadwell Heath" across both branches, and inserting
+  Abbey Wood-branch stations like Woolwich into the Shenfield list) before the per-station
+  infobox pass caught and corrected it.
+  Elizabeth's ribbon chip is a real, fully-interactive line now — the `.soon` class and its
+  `showEggToast()` "coming soon" click handler are gone, replaced with `setLine('elizabeth')`
+  like every other real line, and it moved from being pinned last in `LINE_RAINBOW_ORDER`
+  into its actual rainbow position (between Piccadilly's blue and Metropolitan's magenta,
+  where violet falls in a real spectrum) — both `paintLineChips()`'s "soon" special case and
+  `insertLineChipInRainbowOrder()`'s "soon" fallback were dead-code-removed accordingly.
+  **Elizabeth's own "Heathrow Terminal 4" is a separate, adjacent building from Piccadilly's
+  same-named station** (confirmed per-station, not assumed) — same "same name, not a real
+  interchange" situation as Bakerloo's Edgware Road, documented at that
+  `STATION_INTERCHANGES` entry and exempted in `test/interchanges.test.js`'s
+  `KNOWN_NAME_COLLISIONS`, though unlike Edgware Road it needs no `renderInterchanges()`
+  special case, since neither building has any other real interchange of its own and the
+  shared empty `[]` already produces the correct "no badges" result for both. Adding
+  Elizabeth as a real line also surfaced a genuine pre-existing gap the interchange test
+  hadn't been able to check before (Elizabeth wasn't real, so Canary Wharf was never
+  cross-referenced against it): Canary Wharf was missing its own Jubilee badge.
+- DLR and London Overground remain discussed future extensions (see PROJECT_HISTORY.md §7),
+  scoped as their own separate project phases.
 
 ## Security
 

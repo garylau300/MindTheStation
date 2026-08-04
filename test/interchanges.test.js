@@ -13,9 +13,16 @@ const { loadPage, closePage } = require('./test-utils');
 // Same station *name*, genuinely different physical station — not a real
 // interchange, so it's correctly excluded from badge data. renderInterchanges()
 // has an explicit special case for this exact one (Bakerloo's Edgware Road is
-// not the Circle/District/H&C station of the same name nearby).
+// not the Circle/District/H&C station of the same name nearby). Heathrow
+// Terminal 4 is the same situation between Piccadilly (the tube-only
+// building) and Elizabeth (the separate, adjacent mainline-tunnel building)
+// — but since neither building has any other real interchange of its own,
+// STATION_INTERCHANGES' shared empty [] for that name already produces the
+// correct "no badges" result for both without needing a renderInterchanges()
+// special case too.
 const KNOWN_NAME_COLLISIONS = {
-  'Edgware Road': new Set(['bakerloo'])
+  'Edgware Road': new Set(['bakerloo']),
+  'Heathrow Terminal 4': new Set(['piccadilly', 'elizabeth'])
 };
 
 test('every station shared by two lines carries an interchange badge for both', () => {

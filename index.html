@@ -343,16 +343,18 @@
      flex-grow width transition alone is what plays when you click a line. */
   /* flat, not hatched: a diagonal-stripe pattern left the expanded label
      half-illegible (white text vanishing over the lighter stripe bands) —
-     now that the chip is genuinely interactive and its name/"soon" is
-     meant to be read on hover, a plain dimmed fill of its own true colour
-     (opacity, same as before) reads clearly everywhere instead */
+     a plain dimmed fill of the chip's own true colour (opacity) reads
+     clearly everywhere instead. Not currently used by any chip (Elizabeth
+     dropped it once it became a real playable line) — reserved for a
+     future not-yet-playable line, e.g. DLR/Overground per the roadmap. */
   .line-chip.soon{ flex: 0.6 1 0%; opacity:.4; }
   /* .expand has to come after .soon: both are two-class selectors of equal
-     specificity, and Elizabeth's chip carries both classes at once (it's
-     .soon but still fully hoverable) — CSS breaks a specificity tie by
-     source order, so whichever of these two rules is written last is the
-     one that actually wins the "flex" shorthand on that chip. Placed here,
-     .expand's flex:7 correctly overrides .soon's flex:0.6 while hovered. */
+     specificity, and a "soon" chip is still expected to carry both classes
+     at once (soon but still fully hoverable) — CSS breaks a specificity
+     tie by source order, so whichever of these two rules is written last
+     is the one that actually wins the "flex" shorthand on that chip.
+     Placed here, .expand's flex:7 correctly overrides .soon's flex:0.6
+     while hovered. */
   .line-chip.expand{ flex: 7 1 0%; }
 
   .direction-row{ margin-bottom: 16px; }
@@ -958,11 +960,11 @@
       <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
       <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
       <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
+      <button type="button" class="line-chip" id="lineElizabethBtn" data-line-id="elizabeth"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">41 stations</span></span></button>
       <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
       <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">Hammersmith &amp; City</b><span class="chip-count">29 stations</span></span></button>
       <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
       <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
-      <button type="button" class="line-chip soon" id="lineElizabethBtn" data-line-id="elizabeth" title="Elizabeth line — coming soon"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">soon</span></span></button>
     </div>
   </header>
 
@@ -1272,7 +1274,7 @@
     "London Bridge": [badge('jubilee','Jubilee'), badge('northern','Northern'), badge('nationalrail','National Rail')],
     "Bermondsey": [],
     "Canada Water": [badge('windrush','Windrush')],
-    "Canary Wharf": [badge('dlr','DLR'), badge('elizabeth','Elizabeth')],
+    "Canary Wharf": [badge('dlr','DLR'), badge('jubilee','Jubilee'), badge('elizabeth','Elizabeth')],
     "North Greenwich": [],
     "Canning Town": [badge('dlr','DLR')],
     "West Ham": [badge('hammersmithcity',"H&C"), badge('district','District'), badge('dlr','DLR'), badge('jubilee','Jubilee')],
@@ -1445,7 +1447,7 @@
     "Hounslow Central": [],
     "Hounslow West": [],
     "Hatton Cross": [],
-    // Terminal 4's tube station is Piccadilly-only — Elizabeth line's "Heathrow Terminal 4" is a separate, adjacent mainline-tunnel station, not the same building
+    // Terminal 4's tube station (Piccadilly) and Elizabeth line's "Heathrow Terminal 4" are two separate, adjacent buildings, not one shared station — same "same name, not an interchange" situation as Bakerloo's Edgware Road, except here neither building has any other real interchange of its own, so the shared empty [] below is already correct for both and needs no special-case in renderInterchanges(). Never add a piccadilly/elizabeth cross-badge to it.
     "Heathrow Terminals 2 & 3": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
     "Heathrow Terminal 4": [],
     "Heathrow Terminal 5": [badge('piccadilly','Piccadilly'), badge('elizabeth','Elizabeth'), badge('nationalrail','National Rail')],
@@ -1917,6 +1919,87 @@
             label: 'Morden – High Barnet via Charing Cross',
             stations: [...southSpine, ...charingCrossMiddle, "Camden Town", ...highBarnetFull]
           }
+        }
+      };
+    })(),
+    // Elizabeth: every station and fork point verified against its own
+    // Wikipedia infobox (preceding/following service), not assumed from
+    // memory — the eastern split at Whitechapel in particular (Stratford
+    // side vs Canary Wharf side) is easy to get wrong since both continue
+    // as real, differently-shaped routes. Reading–Whitechapel is drawn as
+    // the horizontal trunk (Reading is the spine's own western end, not a
+    // fork — same convention as District's Ealing Broadway–Upminster
+    // spine), with Heathrow forking off at Hayes & Harlington (the real
+    // fork is at the unstaffed Airport Junction just west of it — simplified
+    // to the nearest named station, same simplification Piccadilly already
+    // makes at Acton Town). Exactly the 9 branches matching the real
+    // service pattern (screenshot-verified): 5 full through-services
+    // (Reading/Heathrow T4/Heathrow T5 crossed with Abbey Wood/Shenfield,
+    // except Reading×Shenfield which never runs) plus the 4 real partial
+    // services that don't cross the central tunnel (Reading/Heathrow T4/
+    // Heathrow T5 each terminating at Paddington, and Shenfield terminating
+    // at Liverpool Street).
+    elizabeth: (function(){
+      const readingArm = ["Reading","Twyford","Maidenhead","Taplow","Burnham","Slough","Langley","Iver","West Drayton"];
+      const trunk = ["Hayes & Harlington","Southall","Hanwell","West Ealing","Ealing Broadway","Acton Main Line","Paddington","Bond Street","Tottenham Court Road","Farringdon","Liverpool Street","Whitechapel"];
+      const terminal4Arm = ["Heathrow Terminal 4"];
+      const terminal5Arm = ["Heathrow Terminal 5"];
+      const heathrowT23 = ["Heathrow Terminals 2 & 3"];
+      const shenfieldArm = ["Stratford","Maryland","Forest Gate","Manor Park","Ilford","Seven Kings","Goodmayes","Chadwell Heath","Romford","Gidea Park","Harold Wood","Brentwood","Shenfield"];
+      const abbeyWoodArm = ["Canary Wharf","Custom House","Woolwich","Abbey Wood"];
+
+      const spine = [...readingArm, ...trunk];
+      const hayesIdx = spine.indexOf('Hayes & Harlington');
+      const whitechapelIdx = spine.indexOf('Whitechapel');
+      const paddingtonIdx = trunk.indexOf('Paddington');
+      const liverpoolStIdx = trunk.indexOf('Liverpool Street');
+
+      // Heathrow drops straight down from the trunk, then forks — a Y
+      // opening downward (vertically inverted from Piccadilly's own
+      // Heathrow Y, which opens sideways off the spine's own end), with
+      // Terminal 5 to the left and Terminal 4 to the right, per explicit
+      // instruction.
+      const segments = [
+        { id:'spine', stations: spine, parent:null, dx:1, dy:0, spacing:16, startX:60, startY:250 },
+        { id:'heathrowT23', stations: heathrowT23, parent:'spine', parentIndex: hayesIdx, dx:0, dy:1, spacing:26 },
+        { id:'terminal5Arm', stations: terminal5Arm, parent:'heathrowT23', parentIndex:0, dx:-1, dy:1, spacing:22 },
+        { id:'terminal4Arm', stations: terminal4Arm, parent:'heathrowT23', parentIndex:0, dx:1, dy:1, spacing:22 },
+        // eastern Y at Whitechapel: Shenfield forks up, Abbey Wood forks
+        // down (placed below Shenfield, per explicit instruction), each
+        // then continuing as its own flat "parallel line" further east
+        { id:'shenfieldDrop', stations: [shenfieldArm[0]], parent:'spine', parentIndex: whitechapelIdx, dx:1, dy:-1, spacing:22 },
+        { id:'shenfieldArm', stations: shenfieldArm.slice(1), parent:'shenfieldDrop', parentIndex:0, dx:1, dy:0, spacing:16 },
+        { id:'abbeyWoodDrop', stations: [abbeyWoodArm[0]], parent:'spine', parentIndex: whitechapelIdx, dx:1, dy:1, spacing:22 },
+        { id:'abbeyWoodArm', stations: abbeyWoodArm.slice(1), parent:'abbeyWoodDrop', parentIndex:0, dx:1, dy:0, spacing:16 }
+      ];
+
+      // full station arrays for gameplay — independent of the geometry
+      // tree above, built directly from verified real sequences
+      const toPaddington = trunk.slice(0, paddingtonIdx + 1);
+      const fromLiverpoolSt = trunk.slice(liverpoolStIdx);
+      const readingToWhitechapel = spine;
+      const heathrowT4ToWhitechapel = [...terminal4Arm, ...heathrowT23, ...trunk];
+      const heathrowT5ToWhitechapel = [...terminal5Arm, ...heathrowT23, ...trunk];
+
+      return {
+        id: 'elizabeth',
+        label: 'Elizabeth',
+        color: '#6950A1',
+        layout: 'branch-tree',
+        segments: segments,
+        spurCount: 0,
+        loopClosure: [],
+        defaultBranch: 'readingAbbeyWood',
+        branches: {
+          readingAbbeyWood: { label: 'Reading – Abbey Wood', stations: [...readingToWhitechapel, ...abbeyWoodArm] },
+          heathrowT4AbbeyWood: { label: 'Heathrow Terminal 4 – Abbey Wood', stations: [...heathrowT4ToWhitechapel, ...abbeyWoodArm] },
+          heathrowT5AbbeyWood: { label: 'Heathrow Terminal 5 – Abbey Wood', stations: [...heathrowT5ToWhitechapel, ...abbeyWoodArm] },
+          heathrowT4Shenfield: { label: 'Heathrow Terminal 4 – Shenfield', stations: [...heathrowT4ToWhitechapel, ...shenfieldArm] },
+          heathrowT5Shenfield: { label: 'Heathrow Terminal 5 – Shenfield', stations: [...heathrowT5ToWhitechapel, ...shenfieldArm] },
+          readingPaddington: { label: 'Reading – London Paddington', stations: [...readingArm, ...toPaddington] },
+          heathrowT4Paddington: { label: 'Heathrow Terminal 4 – London Paddington', stations: [...terminal4Arm, ...heathrowT23, ...toPaddington] },
+          heathrowT5Paddington: { label: 'Heathrow Terminal 5 – London Paddington', stations: [...terminal5Arm, ...heathrowT23, ...toPaddington] },
+          shenfieldLiverpoolSt: { label: 'Shenfield – London Liverpool Street', stations: [...fromLiverpoolSt, ...shenfieldArm] }
         }
       };
     })(),
@@ -2563,20 +2646,19 @@
   // order the buttons happen to be declared in below — Waterloo & City
   // slots in with the real lines (between District and Victoria, its own
   // teal sitting between green and cyan-blue) even though its chip isn't
-  // in the DOM until the Drain egg is found; jubilee's silver and
-  // northern's black have no real hue, so they sit after the spectrum
-  // rather than arbitrarily mixed into it. Elizabeth (not a real line yet)
-  // always stays last regardless, via insertLineChipInRainbowOrder() below.
+  // in the DOM until the Drain egg is found; Elizabeth's purple sits
+  // between Piccadilly's blue and Metropolitan's magenta, where violet
+  // falls in a real spectrum; jubilee's silver and northern's black have
+  // no real hue, so they sit after the spectrum rather than arbitrarily
+  // mixed into it.
   const LINE_RAINBOW_ORDER = [
     'central', 'bakerloo', 'circle', 'district', 'waterloocity', 'victoria',
-    'piccadilly', 'metropolitan', 'hammersmithcity', 'jubilee', 'northern'
+    'piccadilly', 'elizabeth', 'metropolitan', 'hammersmithcity', 'jubilee', 'northern'
   ];
 
   // Inserts a dynamically-created chip (currently just the Waterloo & City
   // egg) at its correct spot in LINE_RAINBOW_ORDER among whichever chips
-  // are already in the DOM, rather than just appending it at the end —
-  // and always before the Elizabeth "soon" chip, which stays last no
-  // matter what else gets unlocked.
+  // are already in the DOM, rather than just appending it at the end.
   function insertLineChipInRainbowOrder(chip, lineId){
     const container = document.querySelector('.line-select');
     const myPos = LINE_RAINBOW_ORDER.indexOf(lineId);
@@ -2585,12 +2667,7 @@
       const pos = LINE_RAINBOW_ORDER.indexOf(el.dataset.lineId);
       return pos !== -1 && pos > myPos;
     });
-    if(nextChip){
-      container.insertBefore(chip, nextChip);
-    } else {
-      const soon = container.querySelector('.line-chip.soon');
-      container.insertBefore(chip, soon || null);
-    }
+    container.insertBefore(chip, nextChip || null);
   }
 
   function paintLineChips(){
@@ -2600,11 +2677,6 @@
       chip.style.setProperty('--chip-color', def.color);
       chip.style.setProperty('--chip-ink', bestContrastInk(def.color));
     });
-    const soon = document.querySelector('.line-select .line-chip.soon');
-    if(soon){
-      soon.style.setProperty('--chip-color', LINE_BADGE_COLORS.elizabeth);
-      soon.style.setProperty('--chip-ink', bestContrastInk(LINE_BADGE_COLORS.elizabeth));
-    }
   }
 
   // Expand-on-hover/focus preview for the line ribbon (see paintLineChips()
@@ -3563,14 +3635,7 @@
   $('lineCentralBtn').addEventListener('click', function(){ setLine('central'); });
   $('linePiccadillyBtn').addEventListener('click', function(){ setLine('piccadilly'); });
   $('lineNorthernBtn').addEventListener('click', function(){ setLine('northern'); });
-  // Elizabeth isn't a real playable line yet, but the chip is still fully
-  // interactive (hover/focus preview like every other chip, via the shared
-  // wiring loop below) rather than an inert div — clicking it just surfaces
-  // the same "coming soon" toast the hidden easter eggs already use, since
-  // there's no LINES.elizabeth to actually switch to.
-  $('lineElizabethBtn').addEventListener('click', function(){
-    showEggToast('🚧 Elizabeth line — coming soon');
-  });
+  $('lineElizabethBtn').addEventListener('click', function(){ setLine('elizabeth'); });
   document.querySelectorAll('.line-select .line-chip[data-line-id]').forEach(wireLineChipHover);
 
   // ---- secret: "The Drain" ----
