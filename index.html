@@ -293,10 +293,29 @@
     pointer-events:none; -webkit-user-drag:none; user-select:none; -webkit-user-select:none;
   }
 
+  /* Icon-only — the "Light"/"Dark" text label was dropped by explicit
+     instruction, the ☀/☾ glyph alone is enough once there are two of these
+     buttons side by side (theme + sound). Fixed equal width/height (rather
+     than text-driven padding) keeps both buttons the same size and shape
+     regardless of which icon glyph they hold. */
   .theme-toggle{
-    flex:none; background: var(--panel); color: var(--ink-dim); border: 1px solid var(--line);
-    font-family:var(--font-main); font-weight:400; font-size:12.5px; padding: 8px 13px;
+    position:relative; flex:none; width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+    background: var(--panel); color: var(--ink-dim); border: 1px solid var(--line);
+    font-family:var(--font-main); font-size:16px; padding:0;
     border-radius: 999px; cursor:pointer;
+  }
+  /* The sound toggle's muted state stays the plain ♪ glyph at all times — a
+     bare ⊘ (or a swapped-in different character) read as too generic/
+     disconnected from "sound" specifically, and Unicode's combining
+     enclosing-circle-backslash mark (designed for exactly this "no-X"
+     purpose) isn't reliably supported across fonts/browsers (renders as a
+     tofu box on several). A CSS-drawn diagonal line laid over the note via
+     ::after is crisp and font-independent instead — the same "don't trust
+     fragile font rendering, build it precisely" approach this app already
+     takes with its embedded fonts and synthesized (not font-glyph) audio. */
+  #soundToggle.muted::after, #soundTogglePlay.muted::after{
+    content:''; position:absolute; left:50%; top:50%; width:22px; height:1.6px;
+    background: currentColor; transform: translate(-50%,-50%) rotate(-45deg);
   }
 
   .section-label{ display:block; margin-bottom:8px; }
@@ -310,6 +329,11 @@
   .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; }
 
   .play-topbar{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; min-height:70px; }
+  /* Groups the theme/sound toggles as one flex child so .play-topbar's own
+     justify-content:space-between still only ever sees two participants
+     (back-btn, this group) — a bare third top-level button would land
+     centered between them instead of paired with the theme toggle. */
+  .topbar-toggles{ flex:none; display:flex; align-items:center; gap:12px; }
   .back-btn{
     background: var(--panel); color: var(--ink-dim); border:1px solid var(--line);
     font-family:var(--font-main); font-weight:400; font-size:12.5px;
@@ -981,7 +1005,8 @@
   <header>
     <div class="header-row">
       <div class="page-title"><span class="pt-line1">Mind <span class="pt-the">the</span></span><span class="pt-line2"><img class="pt-icon" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFgklEQVR42uWbS28cRRDHf9u7ji/hGePAhXByIocLOHAwL3FHIA7JxZJNbkThRpD4ALGC8jDiwhdAIMWC8DpALgRB4JTIEIGAA5ccEhQHhygvx7szy2GrnEozu8yjZ3dWbqm169lxd/2rq6uqq6prhGs1oA60vOc7gF3Ak8BO4FHgIWAzsEneWQOuA5eB88BvwFngjHxvm/EaQOQ9G2hT4NrqwHPAYQFxU4jN028BS8Ax4AUBb+epDRq8Bb4VeAs4lwAkEsmIgFi6/44+t+/67/wCvA080oWGvjVnuD8OzAOXPDBNAzivBChDmt44l4F3hOkqha5f4K0Y7gcuGMKaXVYuVFdm6N8XgTe60FbqXt8JnPKAxyUCT5IMy4hvgcfL1A1WxPYC1wYEvBcjrglt/hYNAl4HWzCTtwYI3O+WloUEugsruxHgeEVWPY00HBd9UIgJKvYN4EsZeK2CwP2uNH4htOfaDlbhLQ4ReJ8Ji3kVo5qTd4cQvM+EhawmUlf+tSEG7zNhLq3XqKZuO3BDtGscWFGF6mnnawmW7R7GrvveAT+UYOpCm820brbO+6Ngu0sf1DzRj4B9wPvyj6Fcy7bMFQNXA9jnOnBPhvcVy37BpljXCdHPB4Hf5ZNAB4xYxvkAOAQsBzjLjwDTAmZcxnP/QwPAFYlP/G0W5i7lMG+cnVBi2pbARhntZW+eXl0xHfIVoq7+GLCSUcmknXReJhw13lmRrnv5ftlS7RQ0K64rEpGqATVnODEHPCDcDHWQ0HEmZNxIiE/TSSFdLiEE14uWSJi2V8ao6w8Nib3FJZznI7HHuwOfTpEFW0kpAdZy/KFnBR1oWkxfXEJkpW0I/k4CKLUeirAF3CsHmo+EnjiBAW1hwJ/y2U4puYrxeeB7fXg0sPIr2r8BtvQ4yOSVAHuaXbDe31IGbVrUGWp26be8A4xvpl0gBijGn1QHTACrGQcpy2c/YTw1l+CshWCA9lVghwOeFvMUDyjO3hTH5oQoyth4jU6I3QzMhoryyNijwFMOmPK9ogGA/xTY0wV8XYIbsyk8viyKGWDKAZM9RK1f4Hf3AL8IvAj8VYIZnWwA2wbAgLTgPwZekecjJTBgmxMXmAqDXy0x6zOGsQCD1vbOeKWfmfdtpNeP7xWxAmoJ+mb68oBvl8yA2FVU7JuB93xXa+CE0xsRPMCao1OZUZYfkMbJSQu+lvJZFj/ghqOTay/bw9sTYOWjhPNAXHDhlgFOlnAQUgX2SUaF1yuqe9okOEbl+2PA7RxRLMV60mZ8WxUEbwmOgBkvMvxhTtpbNms0E1AC8pq6NAkO/f458J45wucxf4p1JuRxuCzwaYBkzU5pBdpEqIBIP8FrUCUqyLQlq1SPFAiJNUvY82V2pfeINQfP5JSA1gDEPtS2mbb2NE9YXMF/NWTgY8GqJTTrCdADGbaB2t01ybXZVFNVwVtsbxqfYj3OliU1pr//A9zHnVqceoXBK64VEwOpFUmO6lZ5yXMvqwjeYjroJ0etFGwR/zhKoQt0P10EXgUeBp4Avq5YksV6ksuS+k+MLitH9uUEcJVqFlFaLK8nrb6VAi2ROZ0BiG85qgbeHqb+UyLjtyJFUiHrCkIqvtRFUv5WmKugIsvros/2Ev2kpr7BwhAzIXehpNUHcKdIekOVytqUdENycxuqWNr3DxoMX7n8SKhssh3kWEXNXWkXJkio0NhwV2aSFGPVLk2dEppyK7wsrUrX5i4IDeQxdUWaf3HyIP29OHlJTq7jCVu0r82/OnsA+Jnyrs6eo3M9d2sXGgbS/MvTDniWzuXpMxS7PH2TzgXsw3QuZDsPeBATF5oRSdfnp6RP0inJGaNT77/J6I7rcl4/D/wqwM/SKd/3dVCw6/P/AsZVDdx2PSXLAAAAAElFTkSuQmCC" alt=""><img class="pt-icon" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFgklEQVR42uWbS28cRRDHf9u7ji/hGePAhXByIocLOHAwL3FHIA7JxZJNbkThRpD4ALGC8jDiwhdAIMWC8DpALgRB4JTIEIGAA5ccEhQHhygvx7szy2GrnEozu8yjZ3dWbqm169lxd/2rq6uqq6prhGs1oA60vOc7gF3Ak8BO4FHgIWAzsEneWQOuA5eB88BvwFngjHxvm/EaQOQ9G2hT4NrqwHPAYQFxU4jN028BS8Ax4AUBb+epDRq8Bb4VeAs4lwAkEsmIgFi6/44+t+/67/wCvA080oWGvjVnuD8OzAOXPDBNAzivBChDmt44l4F3hOkqha5f4K0Y7gcuGMKaXVYuVFdm6N8XgTe60FbqXt8JnPKAxyUCT5IMy4hvgcfL1A1WxPYC1wYEvBcjrglt/hYNAl4HWzCTtwYI3O+WloUEugsruxHgeEVWPY00HBd9UIgJKvYN4EsZeK2CwP2uNH4htOfaDlbhLQ4ReJ8Ji3kVo5qTd4cQvM+EhawmUlf+tSEG7zNhLq3XqKZuO3BDtGscWFGF6mnnawmW7R7GrvveAT+UYOpCm820brbO+6Ngu0sf1DzRj4B9wPvyj6Fcy7bMFQNXA9jnOnBPhvcVy37BpljXCdHPB4Hf5ZNAB4xYxvkAOAQsBzjLjwDTAmZcxnP/QwPAFYlP/G0W5i7lMG+cnVBi2pbARhntZW+eXl0xHfIVoq7+GLCSUcmknXReJhw13lmRrnv5ftlS7RQ0K64rEpGqATVnODEHPCDcDHWQ0HEmZNxIiE/TSSFdLiEE14uWSJi2V8ao6w8Nib3FJZznI7HHuwOfTpEFW0kpAdZy/KFnBR1oWkxfXEJkpW0I/k4CKLUeirAF3CsHmo+EnjiBAW1hwJ/y2U4puYrxeeB7fXg0sPIr2r8BtvQ4yOSVAHuaXbDe31IGbVrUGWp26be8A4xvpl0gBijGn1QHTACrGQcpy2c/YTw1l+CshWCA9lVghwOeFvMUDyjO3hTH5oQoyth4jU6I3QzMhoryyNijwFMOmPK9ogGA/xTY0wV8XYIbsyk8viyKGWDKAZM9RK1f4Hf3AL8IvAj8VYIZnWwA2wbAgLTgPwZekecjJTBgmxMXmAqDXy0x6zOGsQCD1vbOeKWfmfdtpNeP7xWxAmoJ+mb68oBvl8yA2FVU7JuB93xXa+CE0xsRPMCao1OZUZYfkMbJSQu+lvJZFj/ghqOTay/bw9sTYOWjhPNAXHDhlgFOlnAQUgX2SUaF1yuqe9okOEbl+2PA7RxRLMV60mZ8WxUEbwmOgBkvMvxhTtpbNms0E1AC8pq6NAkO/f458J45wucxf4p1JuRxuCzwaYBkzU5pBdpEqIBIP8FrUCUqyLQlq1SPFAiJNUvY82V2pfeINQfP5JSA1gDEPtS2mbb2NE9YXMF/NWTgY8GqJTTrCdADGbaB2t01ybXZVFNVwVtsbxqfYj3OliU1pr//A9zHnVqceoXBK64VEwOpFUmO6lZ5yXMvqwjeYjroJ0etFGwR/zhKoQt0P10EXgUeBp4Avq5YksV6ksuS+k+MLitH9uUEcJVqFlFaLK8nrb6VAi2ROZ0BiG85qgbeHqb+UyLjtyJFUiHrCkIqvtRFUv5WmKugIsvros/2Ev2kpr7BwhAzIXehpNUHcKdIekOVytqUdENycxuqWNr3DxoMX7n8SKhssh3kWEXNXWkXJkio0NhwV2aSFGPVLk2dEppyK7wsrUrX5i4IDeQxdUWaf3HyIP29OHlJTq7jCVu0r82/OnsA+Jnyrs6eo3M9d2sXGgbS/MvTDniWzuXpMxS7PH2TzgXsw3QuZDsPeBATF5oRSdfnp6RP0inJGaNT77/J6I7rcl4/D/wqwM/SKd/3dVCw6/P/AsZVDdx2PSXLAAAAAElFTkSuQmCC" alt=""><span class="pt-line2-text">Station</span></span></div>
-      <button type="button" id="themeToggle" class="theme-toggle">☀ Light</button>
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Switch to dark theme">☀</button>
+      <button type="button" id="soundToggle" class="theme-toggle" aria-label="Mute sound">♪</button>
     </div>
     <span class="direction-label section-label line-select-label">Line</span>
     <div class="line-select" role="group" aria-label="Choose a line">
@@ -1057,7 +1082,10 @@
     <div class="play-topbar">
       <button type="button" id="backToSetupBtn" class="back-btn">← Setup</button>
       <div class="page-title"><span class="pt-line1">Mind <span class="pt-the">the</span></span><span class="pt-line2"><img class="pt-icon" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFgklEQVR42uWbS28cRRDHf9u7ji/hGePAhXByIocLOHAwL3FHIA7JxZJNbkThRpD4ALGC8jDiwhdAIMWC8DpALgRB4JTIEIGAA5ccEhQHhygvx7szy2GrnEozu8yjZ3dWbqm169lxd/2rq6uqq6prhGs1oA60vOc7gF3Ak8BO4FHgIWAzsEneWQOuA5eB88BvwFngjHxvm/EaQOQ9G2hT4NrqwHPAYQFxU4jN028BS8Ax4AUBb+epDRq8Bb4VeAs4lwAkEsmIgFi6/44+t+/67/wCvA080oWGvjVnuD8OzAOXPDBNAzivBChDmt44l4F3hOkqha5f4K0Y7gcuGMKaXVYuVFdm6N8XgTe60FbqXt8JnPKAxyUCT5IMy4hvgcfL1A1WxPYC1wYEvBcjrglt/hYNAl4HWzCTtwYI3O+WloUEugsruxHgeEVWPY00HBd9UIgJKvYN4EsZeK2CwP2uNH4htOfaDlbhLQ4ReJ8Ji3kVo5qTd4cQvM+EhawmUlf+tSEG7zNhLq3XqKZuO3BDtGscWFGF6mnnawmW7R7GrvveAT+UYOpCm820brbO+6Ngu0sf1DzRj4B9wPvyj6Fcy7bMFQNXA9jnOnBPhvcVy37BpljXCdHPB4Hf5ZNAB4xYxvkAOAQsBzjLjwDTAmZcxnP/QwPAFYlP/G0W5i7lMG+cnVBi2pbARhntZW+eXl0xHfIVoq7+GLCSUcmknXReJhw13lmRrnv5ftlS7RQ0K64rEpGqATVnODEHPCDcDHWQ0HEmZNxIiE/TSSFdLiEE14uWSJi2V8ao6w8Nib3FJZznI7HHuwOfTpEFW0kpAdZy/KFnBR1oWkxfXEJkpW0I/k4CKLUeirAF3CsHmo+EnjiBAW1hwJ/y2U4puYrxeeB7fXg0sPIr2r8BtvQ4yOSVAHuaXbDe31IGbVrUGWp26be8A4xvpl0gBijGn1QHTACrGQcpy2c/YTw1l+CshWCA9lVghwOeFvMUDyjO3hTH5oQoyth4jU6I3QzMhoryyNijwFMOmPK9ogGA/xTY0wV8XYIbsyk8viyKGWDKAZM9RK1f4Hf3AL8IvAj8VYIZnWwA2wbAgLTgPwZekecjJTBgmxMXmAqDXy0x6zOGsQCD1vbOeKWfmfdtpNeP7xWxAmoJ+mb68oBvl8yA2FVU7JuB93xXa+CE0xsRPMCao1OZUZYfkMbJSQu+lvJZFj/ghqOTay/bw9sTYOWjhPNAXHDhlgFOlnAQUgX2SUaF1yuqe9okOEbl+2PA7RxRLMV60mZ8WxUEbwmOgBkvMvxhTtpbNms0E1AC8pq6NAkO/f458J45wucxf4p1JuRxuCzwaYBkzU5pBdpEqIBIP8FrUCUqyLQlq1SPFAiJNUvY82V2pfeINQfP5JSA1gDEPtS2mbb2NE9YXMF/NWTgY8GqJTTrCdADGbaB2t01ybXZVFNVwVtsbxqfYj3OliU1pr//A9zHnVqceoXBK64VEwOpFUmO6lZ5yXMvqwjeYjroJ0etFGwR/zhKoQt0P10EXgUeBp4Avq5YksV6ksuS+k+MLitH9uUEcJVqFlFaLK8nrb6VAi2ROZ0BiG85qgbeHqb+UyLjtyJFUiHrCkIqvtRFUv5WmKugIsvros/2Ev2kpr7BwhAzIXehpNUHcKdIekOVytqUdENycxuqWNr3DxoMX7n8SKhssh3kWEXNXWkXJkio0NhwV2aSFGPVLk2dEppyK7wsrUrX5i4IDeQxdUWaf3HyIP29OHlJTq7jCVu0r82/OnsA+Jnyrs6eo3M9d2sXGgbS/MvTDniWzuXpMxS7PH2TzgXsw3QuZDsPeBATF5oRSdfnp6RP0inJGaNT77/J6I7rcl4/D/wqwM/SKd/3dVCw6/P/AsZVDdx2PSXLAAAAAElFTkSuQmCC" alt=""><img class="pt-icon" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFgklEQVR42uWbS28cRRDHf9u7ji/hGePAhXByIocLOHAwL3FHIA7JxZJNbkThRpD4ALGC8jDiwhdAIMWC8DpALgRB4JTIEIGAA5ccEhQHhygvx7szy2GrnEozu8yjZ3dWbqm169lxd/2rq6uqq6prhGs1oA60vOc7gF3Ak8BO4FHgIWAzsEneWQOuA5eB88BvwFngjHxvm/EaQOQ9G2hT4NrqwHPAYQFxU4jN028BS8Ax4AUBb+epDRq8Bb4VeAs4lwAkEsmIgFi6/44+t+/67/wCvA080oWGvjVnuD8OzAOXPDBNAzivBChDmt44l4F3hOkqha5f4K0Y7gcuGMKaXVYuVFdm6N8XgTe60FbqXt8JnPKAxyUCT5IMy4hvgcfL1A1WxPYC1wYEvBcjrglt/hYNAl4HWzCTtwYI3O+WloUEugsruxHgeEVWPY00HBd9UIgJKvYN4EsZeK2CwP2uNH4htOfaDlbhLQ4ReJ8Ji3kVo5qTd4cQvM+EhawmUlf+tSEG7zNhLq3XqKZuO3BDtGscWFGF6mnnawmW7R7GrvveAT+UYOpCm820brbO+6Ngu0sf1DzRj4B9wPvyj6Fcy7bMFQNXA9jnOnBPhvcVy37BpljXCdHPB4Hf5ZNAB4xYxvkAOAQsBzjLjwDTAmZcxnP/QwPAFYlP/G0W5i7lMG+cnVBi2pbARhntZW+eXl0xHfIVoq7+GLCSUcmknXReJhw13lmRrnv5ftlS7RQ0K64rEpGqATVnODEHPCDcDHWQ0HEmZNxIiE/TSSFdLiEE14uWSJi2V8ao6w8Nib3FJZznI7HHuwOfTpEFW0kpAdZy/KFnBR1oWkxfXEJkpW0I/k4CKLUeirAF3CsHmo+EnjiBAW1hwJ/y2U4puYrxeeB7fXg0sPIr2r8BtvQ4yOSVAHuaXbDe31IGbVrUGWp26be8A4xvpl0gBijGn1QHTACrGQcpy2c/YTw1l+CshWCA9lVghwOeFvMUDyjO3hTH5oQoyth4jU6I3QzMhoryyNijwFMOmPK9ogGA/xTY0wV8XYIbsyk8viyKGWDKAZM9RK1f4Hf3AL8IvAj8VYIZnWwA2wbAgLTgPwZekecjJTBgmxMXmAqDXy0x6zOGsQCD1vbOeKWfmfdtpNeP7xWxAmoJ+mb68oBvl8yA2FVU7JuB93xXa+CE0xsRPMCao1OZUZYfkMbJSQu+lvJZFj/ghqOTay/bw9sTYOWjhPNAXHDhlgFOlnAQUgX2SUaF1yuqe9okOEbl+2PA7RxRLMV60mZ8WxUEbwmOgBkvMvxhTtpbNms0E1AC8pq6NAkO/f458J45wucxf4p1JuRxuCzwaYBkzU5pBdpEqIBIP8FrUCUqyLQlq1SPFAiJNUvY82V2pfeINQfP5JSA1gDEPtS2mbb2NE9YXMF/NWTgY8GqJTTrCdADGbaB2t01ybXZVFNVwVtsbxqfYj3OliU1pr//A9zHnVqceoXBK64VEwOpFUmO6lZ5yXMvqwjeYjroJ0etFGwR/zhKoQt0P10EXgUeBp4Avq5YksV6ksuS+k+MLitH9uUEcJVqFlFaLK8nrb6VAi2ROZ0BiG85qgbeHqb+UyLjtyJFUiHrCkIqvtRFUv5WmKugIsvros/2Ev2kpr7BwhAzIXehpNUHcKdIekOVytqUdENycxuqWNr3DxoMX7n8SKhssh3kWEXNXWkXJkio0NhwV2aSFGPVLk2dEppyK7wsrUrX5i4IDeQxdUWaf3HyIP29OHlJTq7jCVu0r82/OnsA+Jnyrs6eo3M9d2sXGgbS/MvTDniWzuXpMxS7PH2TzgXsw3QuZDsPeBATF5oRSdfnp6RP0inJGaNT77/J6I7rcl4/D/wqwM/SKd/3dVCw6/P/AsZVDdx2PSXLAAAAAElFTkSuQmCC" alt=""><span class="pt-line2-text">Station</span></span></div>
-      <button type="button" id="themeTogglePlay" class="theme-toggle">☀ Light</button>
+      <div class="topbar-toggles">
+        <button type="button" id="themeTogglePlay" class="theme-toggle" aria-label="Switch to dark theme">☀</button>
+        <button type="button" id="soundTogglePlay" class="theme-toggle" aria-label="Mute sound">♪</button>
+      </div>
     </div>
     <div class="play-info">
       <div class="play-info-main">
@@ -2240,6 +2268,8 @@
   const hintBtnEl = $('hintBtn');
   const themeToggleEl = $('themeToggle');
   const themeTogglePlayEl = $('themeTogglePlay');
+  const soundToggleEl = $('soundToggle');
+  const soundTogglePlayEl = $('soundTogglePlay');
   const themeColorMetaEl = $('themeColorMeta');
   const announcementBannerEl = $('announcementBanner');
   const announcementBannerCloseEl = $('announcementBannerClose');
@@ -2399,7 +2429,17 @@
   // "bing-bong" shape (G5→E5), so they read as belonging to one sound
   // world rather than three unrelated jingles.
   let audioCtx = null;
+  // Session-only, like every other piece of state here — resets to on
+  // (unmuted) on a page refresh. Every chime/click sound below routes
+  // through getAudioCtx() (directly or via playTone/playBell) as its one
+  // shared entry point, so muting there is enough to silence all of them
+  // without a separate enabled-check in each of the six sound functions —
+  // each already wraps its own body in try/catch as "audio is a nice-to-have,
+  // never block on it", so throwing here when muted is silently absorbed
+  // the same way a real audio failure already would be.
+  let soundEnabled = true;
   function getAudioCtx(){
+    if(!soundEnabled) throw new Error('sound muted');
     if(!audioCtx){
       const AC = window.AudioContext || window.webkitAudioContext;
       audioCtx = new AC();
@@ -3831,9 +3871,14 @@
   function toggleTheme(){
     isLight = !isLight;
     document.body.classList.toggle('light', isLight);
-    const label = isLight ? '☀ Light' : '☾ Dark';
-    themeToggleEl.textContent = label;
-    themeTogglePlayEl.textContent = label;
+    // Icon-only by explicit instruction — the "Light"/"Dark" text label was
+    // removed, so the glyph itself plus aria-label are the only cues left.
+    const icon = isLight ? '☀' : '☾';
+    const label = isLight ? 'Switch to dark theme' : 'Switch to light theme';
+    themeToggleEl.textContent = icon;
+    themeTogglePlayEl.textContent = icon;
+    themeToggleEl.setAttribute('aria-label', label);
+    themeTogglePlayEl.setAttribute('aria-label', label);
     // keeps the mobile browser chrome (address bar etc.) in sync with the
     // app's own manual light/dark toggle — this app doesn't follow OS
     // prefers-color-scheme at all (always boots light regardless), so a
@@ -3846,6 +3891,27 @@
   }
   themeToggleEl.addEventListener('click', toggleTheme);
   themeTogglePlayEl.addEventListener('click', toggleTheme);
+
+  // Same-style icon-only button to the right of the theme toggle, muting
+  // every synthesized chime (see getAudioCtx() below, the single choke
+  // point every playXChime()/playClickSound() call passes through) rather
+  // than gating each of the six sound functions individually. The glyph
+  // itself (♪, the same pre-emoji Unicode range as ☀/☾/✓/✕, not a
+  // full-color 🔊/🔇 emoji pictograph) never changes — muted state is a
+  // CSS-drawn diagonal line over it (the `.muted` class, see the
+  // `#soundToggle.muted::after` rule) rather than swapping to a different
+  // character, since no single well-supported glyph read as specifically
+  // "muted sound" rather than generically "off/none".
+  function toggleSound(){
+    soundEnabled = !soundEnabled;
+    const label = soundEnabled ? 'Mute sound' : 'Unmute sound';
+    soundToggleEl.classList.toggle('muted', !soundEnabled);
+    soundTogglePlayEl.classList.toggle('muted', !soundEnabled);
+    soundToggleEl.setAttribute('aria-label', label);
+    soundTogglePlayEl.setAttribute('aria-label', label);
+  }
+  soundToggleEl.addEventListener('click', toggleSound);
+  soundTogglePlayEl.addEventListener('click', toggleSound);
 
   const termsOverlayEl = $('termsOverlay');
   function openTerms(){ termsOverlayEl.classList.remove('hidden'); }
