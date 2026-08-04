@@ -160,6 +160,36 @@
   @media (min-width: 900px){ .wrap{ max-width: 960px; } }
   @media (min-width: 1300px){ .wrap{ max-width: 1180px; } }
 
+  /* New-line announcement — Setup page only (not Play, which stays a
+     focused gameplay screen), session-only dismiss like every other piece
+     of state in this app (no client-side storage). A fixed colour (the announced
+     line's own true colour, not --line-accent) rather than whatever line
+     happens to be currently selected, since switching lines shouldn't
+     change what this banner itself looks like. Square corners and spans
+     the full viewport width — the calc(50% - 50vw) trick breaks it out of
+     .wrap's own centered, max-width column regardless of breakpoint —
+     with a negative top margin (cancelling body's own 28px top padding,
+     the only thing between this element and the actual page top) so it
+     sits flush at the very top of the page with no gap above or to
+     either side, unlike every other card here. Centered text with the
+     close button pulled out to an absolutely-positioned corner (rather
+     than a trailing flex child) so the button's own width doesn't skew
+     the text off from the bar's true centre; equal left/right padding
+     (not just extra on the close-button side) keeps that centering true
+     regardless of the button. */
+  .announcement-banner{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100vw; margin: -28px calc(50% - 50vw) 14px;
+    border:none; border-radius:0; padding:5px 36px;
+    font-family:var(--font-main); font-weight:600;
+    font-size:12.5px; text-align:center; cursor:pointer; position:relative;
+  }
+  .announcement-banner .banner-close{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:inherit; opacity:.7; font-size:14px;
+    line-height:1; padding:4px 6px; cursor:pointer;
+  }
+  .announcement-banner .banner-close:hover{ opacity:1; }
   header{ margin-bottom: 22px; }
   /* min-height leaves room for the title's two stacked lines (see
      .page-title above) since it's position:absolute and out of flow —
@@ -853,7 +883,7 @@
 
   @media (prefers-reduced-motion: reduce){ *{ animation: none !important; transition: none !important; } }
 
-  button:focus-visible, input:focus-visible, .mode-btn:focus-visible, .branch-chip:focus-visible, .dest-board:focus-visible, .line-chip:focus-visible{
+  button:focus-visible, input:focus-visible, .mode-btn:focus-visible, .branch-chip:focus-visible, .dest-board:focus-visible, .line-chip:focus-visible, .announcement-banner:focus-visible{
     outline: 2px solid var(--accent-ink); outline-offset: 2px;
   }
 
@@ -947,6 +977,7 @@
 <div class="wrap">
 
   <div id="setupPage">
+  <div class="announcement-banner" id="announcementBanner" role="button" tabindex="0">🚇 The Elizabeth line is now live — practice Reading, Heathrow, Shenfield &amp; Abbey Wood<button type="button" class="banner-close" id="announcementBannerClose" aria-label="Dismiss">✕</button></div>
   <header>
     <div class="header-row">
       <div class="page-title"><span class="pt-line1">Mind <span class="pt-the">the</span></span><span class="pt-line2"><img class="pt-icon" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFgklEQVR42uWbS28cRRDHf9u7ji/hGePAhXByIocLOHAwL3FHIA7JxZJNbkThRpD4ALGC8jDiwhdAIMWC8DpALgRB4JTIEIGAA5ccEhQHhygvx7szy2GrnEozu8yjZ3dWbqm169lxd/2rq6uqq6prhGs1oA60vOc7gF3Ak8BO4FHgIWAzsEneWQOuA5eB88BvwFngjHxvm/EaQOQ9G2hT4NrqwHPAYQFxU4jN028BS8Ax4AUBb+epDRq8Bb4VeAs4lwAkEsmIgFi6/44+t+/67/wCvA080oWGvjVnuD8OzAOXPDBNAzivBChDmt44l4F3hOkqha5f4K0Y7gcuGMKaXVYuVFdm6N8XgTe60FbqXt8JnPKAxyUCT5IMy4hvgcfL1A1WxPYC1wYEvBcjrglt/hYNAl4HWzCTtwYI3O+WloUEugsruxHgeEVWPY00HBd9UIgJKvYN4EsZeK2CwP2uNH4htOfaDlbhLQ4ReJ8Ji3kVo5qTd4cQvM+EhawmUlf+tSEG7zNhLq3XqKZuO3BDtGscWFGF6mnnawmW7R7GrvveAT+UYOpCm820brbO+6Ngu0sf1DzRj4B9wPvyj6Fcy7bMFQNXA9jnOnBPhvcVy37BpljXCdHPB4Hf5ZNAB4xYxvkAOAQsBzjLjwDTAmZcxnP/QwPAFYlP/G0W5i7lMG+cnVBi2pbARhntZW+eXl0xHfIVoq7+GLCSUcmknXReJhw13lmRrnv5ftlS7RQ0K64rEpGqATVnODEHPCDcDHWQ0HEmZNxIiE/TSSFdLiEE14uWSJi2V8ao6w8Nib3FJZznI7HHuwOfTpEFW0kpAdZy/KFnBR1oWkxfXEJkpW0I/k4CKLUeirAF3CsHmo+EnjiBAW1hwJ/y2U4puYrxeeB7fXg0sPIr2r8BtvQ4yOSVAHuaXbDe31IGbVrUGWp26be8A4xvpl0gBijGn1QHTACrGQcpy2c/YTw1l+CshWCA9lVghwOeFvMUDyjO3hTH5oQoyth4jU6I3QzMhoryyNijwFMOmPK9ogGA/xTY0wV8XYIbsyk8viyKGWDKAZM9RK1f4Hf3AL8IvAj8VYIZnWwA2wbAgLTgPwZekecjJTBgmxMXmAqDXy0x6zOGsQCD1vbOeKWfmfdtpNeP7xWxAmoJ+mb68oBvl8yA2FVU7JuB93xXa+CE0xsRPMCao1OZUZYfkMbJSQu+lvJZFj/ghqOTay/bw9sTYOWjhPNAXHDhlgFOlnAQUgX2SUaF1yuqe9okOEbl+2PA7RxRLMV60mZ8WxUEbwmOgBkvMvxhTtpbNms0E1AC8pq6NAkO/f458J45wucxf4p1JuRxuCzwaYBkzU5pBdpEqIBIP8FrUCUqyLQlq1SPFAiJNUvY82V2pfeINQfP5JSA1gDEPtS2mbb2NE9YXMF/NWTgY8GqJTTrCdADGbaB2t01ybXZVFNVwVtsbxqfYj3OliU1pr//A9zHnVqceoXBK64VEwOpFUmO6lZ5yXMvqwjeYjroJ0etFGwR/zhKoQt0P10EXgUeBp4Avq5YksV6ksuS+k+MLitH9uUEcJVqFlFaLK8nrb6VAi2ROZ0BiG85qgbeHqb+UyLjtyJFUiHrCkIqvtRFUv5WmKugIsvros/2Ev2kpr7BwhAzIXehpNUHcKdIekOVytqUdENycxuqWNr3DxoMX7n8SKhssh3kWEXNXWkXJkio0NhwV2aSFGPVLk2dEppyK7wsrUrX5i4IDeQxdUWaf3HyIP29OHlJTq7jCVu0r82/OnsA+Jnyrs6eo3M9d2sXGgbS/MvTDniWzuXpMxS7PH2TzgXsw3QuZDsPeBATF5oRSdfnp6RP0inJGaNT77/J6I7rcl4/D/wqwM/SKd/3dVCw6/P/AsZVDdx2PSXLAAAAAElFTkSuQmCC" alt=""><img class="pt-icon" draggable="false" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAFgklEQVR42uWbS28cRRDHf9u7ji/hGePAhXByIocLOHAwL3FHIA7JxZJNbkThRpD4ALGC8jDiwhdAIMWC8DpALgRB4JTIEIGAA5ccEhQHhygvx7szy2GrnEozu8yjZ3dWbqm169lxd/2rq6uqq6prhGs1oA60vOc7gF3Ak8BO4FHgIWAzsEneWQOuA5eB88BvwFngjHxvm/EaQOQ9G2hT4NrqwHPAYQFxU4jN028BS8Ax4AUBb+epDRq8Bb4VeAs4lwAkEsmIgFi6/44+t+/67/wCvA080oWGvjVnuD8OzAOXPDBNAzivBChDmt44l4F3hOkqha5f4K0Y7gcuGMKaXVYuVFdm6N8XgTe60FbqXt8JnPKAxyUCT5IMy4hvgcfL1A1WxPYC1wYEvBcjrglt/hYNAl4HWzCTtwYI3O+WloUEugsruxHgeEVWPY00HBd9UIgJKvYN4EsZeK2CwP2uNH4htOfaDlbhLQ4ReJ8Ji3kVo5qTd4cQvM+EhawmUlf+tSEG7zNhLq3XqKZuO3BDtGscWFGF6mnnawmW7R7GrvveAT+UYOpCm820brbO+6Ngu0sf1DzRj4B9wPvyj6Fcy7bMFQNXA9jnOnBPhvcVy37BpljXCdHPB4Hf5ZNAB4xYxvkAOAQsBzjLjwDTAmZcxnP/QwPAFYlP/G0W5i7lMG+cnVBi2pbARhntZW+eXl0xHfIVoq7+GLCSUcmknXReJhw13lmRrnv5ftlS7RQ0K64rEpGqATVnODEHPCDcDHWQ0HEmZNxIiE/TSSFdLiEE14uWSJi2V8ao6w8Nib3FJZznI7HHuwOfTpEFW0kpAdZy/KFnBR1oWkxfXEJkpW0I/k4CKLUeirAF3CsHmo+EnjiBAW1hwJ/y2U4puYrxeeB7fXg0sPIr2r8BtvQ4yOSVAHuaXbDe31IGbVrUGWp26be8A4xvpl0gBijGn1QHTACrGQcpy2c/YTw1l+CshWCA9lVghwOeFvMUDyjO3hTH5oQoyth4jU6I3QzMhoryyNijwFMOmPK9ogGA/xTY0wV8XYIbsyk8viyKGWDKAZM9RK1f4Hf3AL8IvAj8VYIZnWwA2wbAgLTgPwZekecjJTBgmxMXmAqDXy0x6zOGsQCD1vbOeKWfmfdtpNeP7xWxAmoJ+mb68oBvl8yA2FVU7JuB93xXa+CE0xsRPMCao1OZUZYfkMbJSQu+lvJZFj/ghqOTay/bw9sTYOWjhPNAXHDhlgFOlnAQUgX2SUaF1yuqe9okOEbl+2PA7RxRLMV60mZ8WxUEbwmOgBkvMvxhTtpbNms0E1AC8pq6NAkO/f458J45wucxf4p1JuRxuCzwaYBkzU5pBdpEqIBIP8FrUCUqyLQlq1SPFAiJNUvY82V2pfeINQfP5JSA1gDEPtS2mbb2NE9YXMF/NWTgY8GqJTTrCdADGbaB2t01ybXZVFNVwVtsbxqfYj3OliU1pr//A9zHnVqceoXBK64VEwOpFUmO6lZ5yXMvqwjeYjroJ0etFGwR/zhKoQt0P10EXgUeBp4Avq5YksV6ksuS+k+MLitH9uUEcJVqFlFaLK8nrb6VAi2ROZ0BiG85qgbeHqb+UyLjtyJFUiHrCkIqvtRFUv5WmKugIsvros/2Ev2kpr7BwhAzIXehpNUHcKdIekOVytqUdENycxuqWNr3DxoMX7n8SKhssh3kWEXNXWkXJkio0NhwV2aSFGPVLk2dEppyK7wsrUrX5i4IDeQxdUWaf3HyIP29OHlJTq7jCVu0r82/OnsA+Jnyrs6eo3M9d2sXGgbS/MvTDniWzuXpMxS7PH2TzgXsw3QuZDsPeBATF5oRSdfnp6RP0inJGaNT77/J6I7rcl4/D/wqwM/SKd/3dVCw6/P/AsZVDdx2PSXLAAAAAElFTkSuQmCC" alt=""><span class="pt-line2-text">Station</span></span></div>
@@ -2160,6 +2191,8 @@
   const themeToggleEl = $('themeToggle');
   const themeTogglePlayEl = $('themeTogglePlay');
   const themeColorMetaEl = $('themeColorMeta');
+  const announcementBannerEl = $('announcementBanner');
+  const announcementBannerCloseEl = $('announcementBannerClose');
   const modeWarmupBtnEl = $('modeWarmupBtn');
   const modeQuizBtnEl = $('modeQuizBtn');
   const modeMcBtnEl = $('modeMcBtn');
@@ -2676,6 +2709,32 @@
       if(!def) return;
       chip.style.setProperty('--chip-color', def.color);
       chip.style.setProperty('--chip-ink', bestContrastInk(def.color));
+    });
+  }
+
+  // New-line announcement banner, Setup page only. Fixed to Elizabeth's own
+  // true colour rather than --line-accent, since switching the currently
+  // selected line shouldn't change what this banner looks like. Clicking
+  // anywhere on it jumps straight to the Elizabeth line (a one-click way to
+  // actually try the thing being announced); the close button is a real,
+  // separately-focusable <button> nested inside the div (not another
+  // <button>, which the div itself can't contain) so it needs its own
+  // stopPropagation() to dismiss without also triggering setLine(). The div
+  // itself carries a manual keydown handler since a plain role="button"
+  // element gets no native Enter/Space activation the way a real <button>
+  // would. Dismissal is session-only, like every other piece of state in
+  // this app — no client-side storage, so it reappears on a fresh page load.
+  function wireAnnouncementBanner(){
+    if(!announcementBannerEl) return;
+    announcementBannerEl.style.background = LINES.elizabeth.color;
+    announcementBannerEl.style.color = bestContrastInk(LINES.elizabeth.color);
+    announcementBannerEl.addEventListener('click', function(){ setLine('elizabeth'); });
+    announcementBannerEl.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setLine('elizabeth'); }
+    });
+    announcementBannerCloseEl.addEventListener('click', function(e){
+      e.stopPropagation();
+      announcementBannerEl.classList.add('hidden');
     });
   }
 
@@ -4330,6 +4389,7 @@
   applyLineTheme();
   updateDirectionBoard();
   paintLineChips();
+  wireAnnouncementBanner();
   setupGeometry();
   drawRoutePreview();
   document.addEventListener('click', function(e){
