@@ -346,6 +346,14 @@
     font-family:var(--font-main); color: var(--ink);
   }
   #playInfoLine{ color: var(--accent-ink); }
+  /* Network mode's heading is "Start → End" (e.g. "Regent's Park →
+     Woodford"), not a real line's own name — tinting it to whichever real
+     line's color happens to be current (the live theme-shift accent) would
+     misleadingly suggest the whole journey belongs to just that one line,
+     so it stays plain neutral ink instead, unlike every other mode's
+     heading (which legitimately is a real line's own name in its own
+     color). */
+  #playInfoLine.network-heading{ color: var(--ink); }
   .play-info-dot{ width:11px; height:11px; border-radius:50%; background: var(--line-accent); flex:none; }
   .play-info-sub{
     margin-top:6px; font-size:14px; color: var(--ink-dim);
@@ -3181,20 +3189,37 @@
   // .line-chip can. Purely a desktop/keyboard bonus: the active button's
   // own callout stays visible at rest regardless (see setMode()), so a
   // phone with no hover still always shows the current mode's name.
+  //
+  // Unlike the Line ribbon (which reverts instantly on mouseleave/blur),
+  // the callout here lingers for a short moment before collapsing — by
+  // explicit instruction, so a quick, slightly-overshooting mouse movement
+  // off the button doesn't snap the popup away before it's actually been
+  // read. collapseModeBtnsToActive() itself stays instant (still used
+  // directly by setMode() and boot init); only the hover/blur path is
+  // delayed, via a single shared timer that a fresh preview() cancels, so
+  // moving straight to another button still swaps instantly with no lag.
+  const MODE_BTN_COLLAPSE_DELAY_MS = 900;
+  let modeBtnCollapseTimer = null;
   function collapseModeBtnsToActive(){
+    clearTimeout(modeBtnCollapseTimer);
     document.querySelectorAll('.mode-select .mode-btn').forEach(function(b){
       b.classList.toggle('expand', b.classList.contains('active'));
     });
   }
+  function scheduleCollapseModeBtns(){
+    clearTimeout(modeBtnCollapseTimer);
+    modeBtnCollapseTimer = setTimeout(collapseModeBtnsToActive, MODE_BTN_COLLAPSE_DELAY_MS);
+  }
   function wireModeBtnHover(btn){
     function preview(){
+      clearTimeout(modeBtnCollapseTimer);
       document.querySelectorAll('.mode-select .mode-btn').forEach(function(b){
         b.classList.toggle('expand', b === btn);
       });
     }
     btn.addEventListener('mouseenter', preview);
     btn.addEventListener('focus', preview);
-    btn.addEventListener('mouseleave', collapseModeBtnsToActive);
+    btn.addEventListener('mouseleave', scheduleCollapseModeBtns);
     btn.addEventListener('blur', collapseModeBtnsToActive);
   }
 
@@ -3622,6 +3647,7 @@
   function updatePlayContextLabel(){
     const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice', network: 'Network' };
     $('playInfoLine').textContent = LINE.def.label;
+    $('playInfoLine').classList.toggle('network-heading', LINE.def.layout === 'network');
     $('playInfoMode').textContent = modeLabels[mode];
     $('playInfoDot').style.background = LINE.def.color;
 

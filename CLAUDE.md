@@ -568,6 +568,30 @@ catch.
   `filter: brightness(1.12)`, matching `.line-chip`/`.dest-board`'s own hover treatment,
   since a button now always has its own color to brighten rather than a neutral state to
   leave behind.
+- **A mode button's callout lingers for `MODE_BTN_COLLAPSE_DELAY_MS` (900ms) after the mouse
+  leaves before it collapses, rather than reverting instantly** — by explicit instruction, so
+  a quick or slightly-overshooting mouse movement off the button doesn't snap the popup away
+  before it's actually been read. `scheduleCollapseModeBtns()` is the delayed path
+  (`mouseleave` only); `collapseModeBtnsToActive()` itself is still instant and still used
+  directly everywhere else (`setMode()`, boot init, `blur` — keyboard focus-out stays
+  immediate, unlike mouse hover, since a delayed collapse has no equivalent benefit for
+  keyboard users). A single shared `modeBtnCollapseTimer` means moving straight from one
+  button to another still swaps instantly with no lag — `preview()` (on `mouseenter`/`focus`)
+  clears any pending collapse before showing the newly-hovered button's own callout, and
+  `collapseModeBtnsToActive()` itself clears the timer too, so a stray already-scheduled
+  collapse can never fire after a state change that already made it irrelevant.
+- **The Play page's live "which line's colour is this" heading — `#playInfoLine`, e.g.
+  "Central" in Central red — stays plain neutral ink (`--ink`) for Network mode specifically,
+  not the live-shifting accent colour every other element there uses.** In every other mode
+  `#playInfoLine` shows a real line's own name, so tinting it that line's own accent colour is
+  correct and intentional; in Network mode it shows the journey's "Start → End" framing (e.g.
+  "Regent's Park → Woodford"), which isn't any single line's own name — tinting it to
+  whichever real line the player currently happens to be walking (the same
+  `updateNetworkLineBadge()`-driven accent shift the badge/theme already use) would misleadingly
+  suggest the whole journey belongs to just that one line. `updatePlayContextLabel()` toggles
+  `#playInfoLine.network-heading` based on `LINE.def.layout === 'network'`, which resets the
+  color back to the same `--ink` every other heading-adjacent text already defaults to,
+  overriding `#playInfoLine`'s own default `--accent-ink`.
 - **The hover/selected reveal is a floating callout card, not the Line ribbon's flex-grow
   expansion.** `wireModeBtnHover()`/`collapseModeBtnsToActive()` are ported 1:1 from
   `wireLineChipHover()`/`collapseChipsToActive()` (same one-expanded-at-a-time pattern:
