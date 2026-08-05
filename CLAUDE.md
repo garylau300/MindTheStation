@@ -550,6 +550,24 @@ catch.
   full row width the way the Line ribbon/Branch grid/Direction board deliberately are — by
   explicit instruction, since these buttons read as one cohesive control rather than a
   full-bleed section.
+- **Each mode button has its own fixed identity color** (`--mode-color`, set per button via
+  an ID selector — `#modeWarmupBtn`/`#modeQuizBtn`/`#modeMcBtn`/`#modeNetworkBtn`), not
+  `--line-accent` — an earlier version colored whichever mode button was `.active` using the
+  *currently selected line's* accent color, so every mode read as "whatever color Central
+  (or whichever line) happens to be" instead of having its own distinct look, by explicit
+  instruction to fix. Warm-up = amber `#E4780C`, Recall quiz = blue `#2E75D6`, Multiple
+  choice = green `#2FA84F`, Network = purple `#9B3FC4` — picked to stay visually distinct
+  from every real TfL line color already in use elsewhere in this app (Bakerloo's brown,
+  Central's red, Circle's yellow, District's green, Piccadilly's blue, Elizabeth's purple,
+  etc.), so a mode button is never mistaken for a line swatch, verified by eye against the
+  full `LINE_BADGE_COLORS` list rather than assumed. The color applies always, not just when
+  selected (`border-color`/icon `color` both read `var(--mode-color)` unconditionally) —
+  `.active` only adds a `color-mix(in srgb, var(--mode-color) 16%, transparent)` background
+  tint on top, the same visual-weight pattern `--line-accent` used before. The hover rule
+  (`@media (hover: hover)`) switched from swapping to a neutral ink color to
+  `filter: brightness(1.12)`, matching `.line-chip`/`.dest-board`'s own hover treatment,
+  since a button now always has its own color to brighten rather than a neutral state to
+  leave behind.
 - **The hover/selected reveal is a floating callout card, not the Line ribbon's flex-grow
   expansion.** `wireModeBtnHover()`/`collapseModeBtnsToActive()` are ported 1:1 from
   `wireLineChipHover()`/`collapseChipsToActive()` (same one-expanded-at-a-time pattern:
