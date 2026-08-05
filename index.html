@@ -322,8 +322,13 @@
   .line-select-label{ margin-top:18px; }
   .route-map-label{ margin-top:18px; }
 
+  /* Deliberately not full-width like every other Setup control (Line
+     ribbon/Branch grid/Direction board) — by explicit instruction, a
+     narrower, taller pill reads as a single deliberate action rather than
+     one more full-bleed section, and centers itself in the row instead. */
   .start-playing-btn{
-    display:block; width:100%; margin-top: 6px; padding: 15px 20px; font-size:16px;
+    display:block; width:max-content; max-width:100%; margin: 6px auto 0;
+    padding: 20px 52px; font-size:16px;
     font-weight:400; border-radius: 12px;
   }
   .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; }

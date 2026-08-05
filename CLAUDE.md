@@ -598,6 +598,13 @@ catch.
   flush against the "Branch" label directly below it — it previously relied entirely on
   `.mode-row`'s own (much larger) margin for breathing room, which stopped being reliable once
   that margin was tightened back down (see above).
+- **"Start playing" (`.start-playing-btn`) is a narrower, taller pill centered in the row, not
+  a full-width bar like every other Setup control** — by explicit instruction, across every
+  screen/mode. `width:max-content` (capped by `max-width:100%` for very narrow phones) plus
+  `margin: 6px auto 0` sizes it to its own content instead of stretching to `.wrap`'s full
+  width, and taller vertical padding (`20px`, up from `15px`) gives it a visibly bigger tap
+  target despite the narrower footprint. Reads as one deliberate, single action rather than
+  one more full-bleed section like the Line ribbon/Branch grid/Direction board above it.
 - **The Play page's live "which line's colour is this" heading — `#playInfoLine`, e.g.
   "Central" in Central red — stays plain neutral ink (`--ink`) for Network mode specifically,
   not the live-shifting accent colour every other element there uses.** In every other mode
