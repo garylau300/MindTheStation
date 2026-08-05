@@ -43,7 +43,9 @@ from the live domain.
 
 Pick a line (and branch/direction if applicable), then practice recalling station order:
 **Warm-up** (target shown, type it), **Recall quiz** (previous station shown, type the
-next), **Multiple choice** (4 options). A 3-2-1 countdown precedes each run.
+next), **Multiple choice** (4 options), or **Network** (two random stations anywhere in the
+system, type the real route between them — see its own section below). A 3-2-1 countdown
+precedes each run.
 
 Typed-answer matching (`normalize()`, warm-up/quiz only — MC is button-click, no typing)
 lowercases, strips diacritics, and drops all non-alphanumeric characters before comparing —
@@ -166,6 +168,119 @@ they reset on page refresh, not just on a new run. Within a session:
   not this API) or the "no client-side storage" rule (the OS clipboard isn't app-persisted
   state). Button text flips to "Copied!" (or "Copy failed" if the promise rejects) for
   1.6s, then reverts.
+
+### Network mode
+
+A 4th mode (`#modeNetworkBtn`, alongside Warm-up/Recall quiz/Multiple choice): the app picks
+two random stations anywhere in the whole system and the player types every real stop of the
+shortest route between them — a genuine "can you actually navigate the Tube" challenge,
+rather than one line's own fixed stop order. Reuses Recall quiz's exact "type the next
+station from memory" flow end to end (`render()`'s `mode === 'quiz' || mode === 'network'`
+branch, including withholding the very first station's name the same way quiz already does)
+rather than being a wholly separate UI — the two are functionally identical once a journey
+exists, they just differ in *where that journey's station list comes from*.
+
+- **The whole feature reduces to one graph-shortest-path problem, not a new UI paradigm.**
+  Every function downstream of the single global `LINE` runtime object (`seq()`, `origIndex()`,
+  `totalSteps()`, `submitAnswer()`, `advance()`, `terminusNames()`, `updateDirectionBoard()`)
+  only ever reads `LINE.stations`/`journeyNames`/`journeyIndices`/`JOURNEY_LEN` — none of them
+  check *where* that data came from. So Network mode never generalizes those functions; it
+  just builds a `LINE`-shaped object from a computed path
+  (`buildNetworkRuntimeFromPath()`/`generateNetworkJourney()`) and assigns it to the same
+  global, the same way `setLine()`/`setBranch()` already do for a real line. The only new
+  field is `edgeLines` (which real line each `path[i]→path[i+1]` edge belongs to, for the
+  live-theme/badge cue below) — `def.branches` is `null`, `def.layout` is the synthetic
+  `'network'`, and MC's `generateMcOptions()` is never even called in this mode (Network only
+  ever uses the typing mechanic), so it needed no changes to draw distractors correctly.
+- **`buildNetworkGraph()` (index.html) builds one whole-network adjacency graph from the
+  existing `LINES` data — no separate interchange dataset needed.** For every line (or every
+  branch, for a branching line), each consecutive station pair becomes a graph edge; two
+  stations with the exact same name across different lines automatically become the *same*
+  graph node. That structural coincidence — same name, same node — **is** the
+  interchange-hopping mechanic, entirely for free. Circle's real physical loop closure
+  (`def.loopClosure`) also becomes a real edge (`stations[N-1]` → `stations[loopClosure[0]]`),
+  not just a gameplay-journey artifact, so a random path can correctly route across the
+  spiral's own closing stretch too.
+- **`KNOWN_NAME_COLLISIONS` (index.html, promoted out of what was previously
+  `test/interchanges.test.js`-only exception data) is what stops the graph from merging a
+  same-name-but-different-station pair into a fake interchange** — Bakerloo's own "Edgware
+  Road" vs. the Circle/District/H&C one, Piccadilly's own "Heathrow Terminal 4" vs.
+  Elizabeth's. Without this, a random shortest path could silently "teleport" through a
+  connection that doesn't physically exist. `networkNodeId(name, lineId)` namespaces exactly
+  those excepted (name, line) pairs into their own graph node (`"Edgware Road::bakerloo"`,
+  distinct from the plain `"Edgware Road"` node every other line's own station still shares)
+  — `test/network.test.js` asserts the namespaced and plain nodes are never the same object
+  and are never direct graph neighbors of each other. `test/interchanges.test.js` now reads
+  this same shared constant via a `getKnownNameCollisions()` test hook rather than keeping its
+  own separately-maintained copy.
+- **Random pair, deterministic path**: `generateNetworkJourney()` re-rolls a random start/end
+  node pair (`pickRandomNetworkPath()`) until the BFS shortest-path length falls in a target
+  ~5–15 stop range (roughly matching an average existing line run) — the real network is fully
+  connected in practice, so this always resolves in a handful of attempts; a bounded retry
+  count falls back to the last rolled pair rather than looping forever on the off chance it
+  doesn't. `networkShortestPath()`'s BFS always expands neighbors in a fixed sorted order, so
+  the *path* for any given pair is always deterministic even though *which* pair gets picked
+  is random each time — this is what makes `test/network.test.js`'s hand-verified-length
+  assertions and its "repeated calls agree" check possible.
+- **Called fresh on every "Start playing" *and* every "Play again"** (`beginRun()`, guarded on
+  `mode === 'network'`) — "randomized each run" means literally that, not a route fixed once
+  per session. Both entry points already funnel through `beginRun()`, so this needed no
+  separate wiring for the restart path.
+- **Live "which real line am I on" cue, both a small badge and the app's own accent theme** —
+  `currentRealLineId()` is the one function everything else should read through instead of
+  `LINE.def.id` directly (interchange badges, the badge pill, the theme), since
+  `LINE.def.id` is the synthetic `'network'` in this mode; it resolves to
+  `LINE.edgeLines[idx-1]` (clamped, falling back to the very first edge at question 0, before
+  anything's actually been "walked" yet). `updateNetworkLineBadge()` only touches the DOM
+  (re-applies `applyLineTheme()` with the new line's real color, mutating `LINE.def.color` in
+  place first) on an actual leg change, not on every single question, via
+  `currentNetworkBadgeLineId` tracking the last-applied line — the same "don't re-trigger
+  unless something really changed" discipline the streak flame's own reignite-vs-bump
+  distinction already uses. The badge itself reuses `.interchange-chip`'s exact CSS rather
+  than introducing a new chip style.
+- **`renderInterchanges()`'s two `LINE.def.id`-keyed checks (the Bakerloo/Edgware Road
+  exception and the "don't badge your own current line" filter) both route through
+  `currentRealLineId()` too** — reading `LINE.def.id` directly would silently break both once
+  it's the synthetic `'network'` value; this fix applies to every mode, not just Network,
+  since `currentRealLineId()` is a no-op passthrough (`return LINE.def.id`) whenever
+  `LINE.def.layout !== 'network'`.
+- **No SVG diagram, no line/branch/direction Setup UI at all.** `setupGeometry()`/
+  `drawDiagram()`/`drawRoutePreview()` all guard on `LINE.def.layout === 'network'` and return
+  immediately — a path that can cross an arbitrary number of differently-shaped lines has no
+  single sane diagram to lay out (see the existing "station name labels on the route map...
+  tried repeatedly and abandoned" precedent above; this is the same kind of rabbit hole, not
+  attempted). Since Network mode ignores line selection entirely, `setMode('network')` also
+  hides the Line ribbon, Branch grid, Direction board, and both diagram cards (Setup's route
+  map and Play's "Line progress") outright, collapsing Setup to just Mode row → Start playing
+  — extending the same per-mode show/hide pattern MC's own direction-row hiding already
+  established, not a new mechanism. The Play page's LED "Calling at" board is the one
+  exception that *stays* — `terminusNames()`/`updateDirectionBoard()`/`viaText()` only read
+  `LINE.stations`/`journeyNames` and a null-guarded `LINE.def.branches`, all already correctly
+  populated by the network runtime object, so it needed no changes at all.
+- **Leaving Network mode restores the real line that was active before entering it** —
+  `preNetworkLine` (`{ id, branchId }`) is captured once, on entry (the Line ribbon is hidden
+  the entire time Network mode is active, so nothing can change this underneath it), and
+  `setMode()` rebuilds `LINE = buildLineRuntime(...)` from it on the way back out to any other
+  mode, re-running `renderBranchRow()`/`applyLineTheme()`/`updateDirectionBoard()`/
+  `setupGeometry()`/`drawRoutePreview()` to resync everything a real line's own Setup state
+  depends on. `reverseDirection` is force-reset to `false` on *entering* Network mode too —
+  `seq()` reads it regardless of mode, and a leftover reverse toggle from whatever real line
+  was active before would otherwise silently quiz the freshly-generated path backwards, out of
+  sync with its own forward-built `def.label` framing text (`"Warren Street → Stratford"`).
+- **`test/network.test.js`** splits into the same two tiers this repo's other suites use: an
+  exhaustive pure-function tier (graph-collision safety, BFS determinism, a handful of
+  hand-verified station pairs with known expected path lengths — including one, Bond
+  Street/Green Park, that's a trap for assuming the *obvious* interchange when a more direct
+  same-line adjacency actually exists) with no jsdom timers/clicks needed, plus a sampled
+  UI-regression tier that plays through 8 full real-randomness runs via "Play again" rather
+  than one fixed pair — the input space (any 2 of 400+ stations) is too large to exhaustively
+  cover, so this samples real end-to-end runs on the theory that a stitching bug would surface
+  in essentially any random run, not just a specific one. `test/geometry.test.js` adds one
+  guard test confirming Network mode never attempts diagram geometry and keeps both diagram
+  containers hidden. Hook-returned path arrays (`window.__TEST__.networkShortestPath()`, etc.)
+  are wrapped in `Array.from()` before any `assert.deepEqual` against a plain local array
+  literal — the same cross-realm jsdom gotcha this file's own "Running tests" section already
+  documents for other hook values, re-encountered here.
 
 ## Running tests
 

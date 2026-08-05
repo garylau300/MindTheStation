@@ -29,7 +29,15 @@ const HOOK_INJECTION = "  setMode('warmup');\n" +
   "    getReverseDirection: () => reverseDirection,\n" +
   "    getSeq: () => seq(),\n" +
   "    getTotalSteps: () => totalSteps(),\n" +
-  "    getGeo: () => geo\n" +
+  "    getGeo: () => geo,\n" +
+  "    getKnownNameCollisions: () => KNOWN_NAME_COLLISIONS,\n" +
+  "    getNetworkGraph: () => buildNetworkGraph(),\n" +
+  "    networkShortestPath: (a, b) => networkShortestPath(buildNetworkGraph(), a, b),\n" +
+  "    buildNetworkJourneyForPair: (a, b) => {\n" +
+  "      const graph = buildNetworkGraph();\n" +
+  "      const path = networkShortestPath(graph, a, b);\n" +
+  "      return path && buildNetworkRuntimeFromPath(graph, path);\n" +
+  "    }\n" +
   "  };\n" +
   "})();\n</script>";
 

@@ -667,6 +667,11 @@
     font-size:11px; font-family:var(--font-main); font-weight:400;
   }
 
+  /* Network mode's "which real line are you on right now" cue — its own
+     chip reuses .interchange-chip's exact look rather than new CSS, filled
+     in by renderNetworkLineBadge() with the current edge's real line color. */
+  .network-line-badge{ display:flex; margin: -4px 0 14px; }
+
   .input-row{ display:flex; gap:10px; }
   input[type=text]{
     flex:1; min-width:0; background: var(--panel-2); border: 2px solid var(--line);
@@ -1008,8 +1013,8 @@
       <button type="button" id="themeToggle" class="theme-toggle" aria-label="Switch to dark theme">☀</button>
       <button type="button" id="soundToggle" class="theme-toggle" aria-label="Mute sound">♪</button>
     </div>
-    <span class="direction-label section-label line-select-label">Line</span>
-    <div class="line-select" role="group" aria-label="Choose a line">
+    <span class="direction-label section-label line-select-label" id="lineSelectLabel">Line</span>
+    <div class="line-select" id="lineSelectGroup" role="group" aria-label="Choose a line">
       <button type="button" class="line-chip active expand" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
       <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
       <button type="button" class="line-chip" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
@@ -1032,6 +1037,7 @@
       <button type="button" class="mode-btn active" id="modeWarmupBtn">Warm-up<small>Type what you see</small></button>
       <button type="button" class="mode-btn" id="modeQuizBtn">Recall quiz<small>Type from memory</small></button>
       <button type="button" class="mode-btn" id="modeMcBtn">Multiple choice<small>Pick from 4</small></button>
+      <button type="button" class="mode-btn" id="modeNetworkBtn">Network<small>Navigate a random journey</small></button>
     </div>
   </div>
 
@@ -1066,8 +1072,8 @@
 
   <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
 
-  <span class="direction-label section-label route-map-label">Route map</span>
-  <div class="diagram-card">
+  <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
+  <div class="diagram-card" id="routeMapCard">
     <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
   </div>
   <div class="station-popup hidden" id="stationPopup">
@@ -1151,6 +1157,7 @@
         <div class="countdown-overlay hidden" id="countdownOverlay">
           <div class="countdown-number" id="countdownNumber">3</div>
         </div>
+        <div class="qc network-line-badge hidden" id="networkLineBadge"></div>
         <div class="context qc" id="contextLine"></div>
         <div class="prompt qc hidden" id="promptLine"></div>
         <div class="target-word qc hidden" id="targetWord"></div>
@@ -1170,7 +1177,7 @@
         <div class="feedback"><span class="feedback-toast" id="feedback"></span></div>
       </div>
 
-      <div class="diagram-card">
+      <div class="diagram-card" id="playDiagramCard">
         <h3>Line progress</h3>
         <svg id="lineSvg" viewBox="0 0 400 260"></svg>
       </div>
@@ -1602,6 +1609,21 @@
     // same "same name, not an interchange" situation as this line's own Heathrow Terminal 4
     "Woolwich": [],
     "Abbey Wood": [badge('nationalrail','National Rail')]
+  };
+
+  // A handful of station names are shared by two genuinely different
+  // physical stations, not a real interchange — Bakerloo's own "Edgware
+  // Road" vs. the Circle/District/H&C one nearby, and Piccadilly's own
+  // "Heathrow Terminal 4" vs. Elizabeth's separate, adjacent building (see
+  // the STATION_INTERCHANGES comments above for the per-station reasoning).
+  // Originally only test/interchanges.test.js's own exception list — promoted
+  // here so Network mode's graph builder (buildNetworkGraph()) can consult
+  // the same, single source of truth: without this, treating these as one
+  // shared graph node would let a random journey "teleport" through a
+  // connection that doesn't physically exist.
+  const KNOWN_NAME_COLLISIONS = {
+    'Edgware Road': new Set(['bakerloo']),
+    'Heathrow Terminal 4': new Set(['piccadilly', 'elizabeth'])
   };
 
   const LINES = {
@@ -2145,6 +2167,163 @@
     };
   }
 
+  // ---- Network mode: a randomly-picked start/end station anywhere in the
+  // whole system, with the player recalling every real stop of the shortest
+  // route between them. The whole thing reduces to one graph-shortest-path
+  // problem: build a single undirected graph from every line's own station/
+  // branch arrays (two same-named stations across different lines become
+  // the same node automatically — that IS the interchange-hopping
+  // mechanic, for free, with no separate interchange dataset needed), then
+  // BFS between a random pair of nodes. See KNOWN_NAME_COLLISIONS above for
+  // the handful of same-name-but-different-station exceptions this must
+  // never merge, or a "shortest route" could silently route the player
+  // through a walk that doesn't physically exist.
+  function networkNodeId(stationName, lineId){
+    const collision = KNOWN_NAME_COLLISIONS[stationName];
+    return (collision && collision.has(lineId)) ? (stationName + '::' + lineId) : stationName;
+  }
+  function networkNodeDisplayName(nodeId){
+    const sep = nodeId.indexOf('::');
+    return sep === -1 ? nodeId : nodeId.slice(0, sep);
+  }
+
+  let networkGraphCache = null;
+  function buildNetworkGraph(){
+    if(networkGraphCache) return networkGraphCache;
+    // nodeId -> { name, edges: Map(neighborNodeId -> Set(lineId)) } — a Set,
+    // not a single lineId, since a shared corridor (e.g. Circle/District's
+    // long overlap) really is served by more than one line at once.
+    const graph = new Map();
+    function ensureNode(nodeId, name){
+      if(!graph.has(nodeId)) graph.set(nodeId, { name, edges: new Map() });
+      return graph.get(nodeId);
+    }
+    function addEdge(idA, nameA, idB, nameB, lineId){
+      const nodeA = ensureNode(idA, nameA), nodeB = ensureNode(idB, nameB);
+      if(!nodeA.edges.has(idB)) nodeA.edges.set(idB, new Set());
+      nodeA.edges.get(idB).add(lineId);
+      if(!nodeB.edges.has(idA)) nodeB.edges.set(idA, new Set());
+      nodeB.edges.get(idA).add(lineId);
+    }
+    function addPath(stations, lineId, loopClosure){
+      for(let i = 0; i < stations.length - 1; i++){
+        const a = stations[i], b = stations[i+1];
+        addEdge(networkNodeId(a, lineId), a, networkNodeId(b, lineId), b, lineId);
+      }
+      // A real physical loop (only Circle today) closes back through the
+      // station(s) named in loopClosure rather than ending at a true
+      // terminus — stations[N-1]'s real next stop is stations[loopClosure[0]].
+      if(loopClosure && loopClosure.length){
+        const a = stations[stations.length - 1], b = stations[loopClosure[0]];
+        addEdge(networkNodeId(a, lineId), a, networkNodeId(b, lineId), b, lineId);
+      }
+    }
+    Object.values(LINES).forEach(def => {
+      if(def.branches){
+        Object.values(def.branches).forEach(branch => addPath(branch.stations, def.id, def.loopClosure));
+      } else {
+        addPath(def.stations, def.id, def.loopClosure);
+      }
+    });
+    networkGraphCache = graph;
+    return graph;
+  }
+
+  // Deterministic BFS — neighbors are always expanded in a fixed sorted
+  // order, so the same start/end node always yields the same path, even
+  // though which start/end gets picked each run is random (needed for
+  // reproducible tests).
+  function networkShortestPath(graph, startId, endId){
+    if(startId === endId) return [startId];
+    if(!graph.has(startId) || !graph.has(endId)) return null;
+    const visited = new Set([startId]);
+    const parent = new Map();
+    const queue = [startId];
+    for(let qi = 0; qi < queue.length; qi++){
+      const current = queue[qi];
+      const neighbors = Array.from(graph.get(current).edges.keys()).sort();
+      for(const next of neighbors){
+        if(visited.has(next)) continue;
+        visited.add(next);
+        parent.set(next, current);
+        if(next === endId){
+          const path = [endId];
+          let cur = endId;
+          while(cur !== startId){ cur = parent.get(cur); path.push(cur); }
+          return path.reverse();
+        }
+        queue.push(next);
+      }
+    }
+    return null; // the real network is fully connected in practice; this
+                 // should never trigger, but a random pair must never crash
+  }
+
+  // Builds the LINE-shaped runtime object from a resolved node-id path —
+  // shared by the real randomized entry point below and a test-only
+  // fixed-pair entry point, so both go through identical stitching logic.
+  function buildNetworkRuntimeFromPath(graph, nodeIdPath){
+    const stations = nodeIdPath.map(networkNodeDisplayName);
+    const N = stations.length;
+    const edgeLines = [];
+    let prevLineId = null;
+    for(let i = 0; i < nodeIdPath.length - 1; i++){
+      const lineIdSet = graph.get(nodeIdPath[i]).edges.get(nodeIdPath[i+1]);
+      // Prefer continuing the previous edge's line where possible, so a run
+      // that never actually needed to change lines doesn't flicker the
+      // accent theme just because a shared corridor's edge happened to be
+      // recorded under a different line id than the edge before it.
+      const lineId = (prevLineId && lineIdSet.has(prevLineId)) ? prevLineId : Array.from(lineIdSet).sort()[0];
+      edgeLines.push(lineId);
+      prevLineId = lineId;
+    }
+    const journeyIndices = [...Array(N).keys()];
+    const reversedJourneyIndices = journeyIndices.slice().reverse();
+    return {
+      def: {
+        id: 'network', label: stations[0] + ' → ' + stations[N-1],
+        color: LINES[edgeLines[0]].color, layout: 'network', branches: null, loopClosure: []
+      },
+      stations, N, branchId: null,
+      journeyIndices, reversedJourneyIndices,
+      journeyNames: stations, reversedJourneyNames: stations.slice().reverse(),
+      JOURNEY_LEN: N,
+      edgeLines
+    };
+  }
+
+  const NETWORK_MIN_STOPS = 5, NETWORK_MAX_STOPS = 15, NETWORK_MAX_ROLLS = 200;
+  let networkRandomFn = Math.random;
+  // Random start/end pick, re-rolled until the shortest path falls in a
+  // target length range roughly matching an average existing line run — the
+  // network is fully connected in practice, so this always resolves
+  // quickly; falls back to whatever the very last rolled pair produced if
+  // the roll budget is ever exhausted, rather than looping forever.
+  function pickRandomNetworkPath(graph, randomFn){
+    const nodeIds = Array.from(graph.keys());
+    let lastPath = null;
+    for(let attempt = 0; attempt < NETWORK_MAX_ROLLS; attempt++){
+      const a = nodeIds[Math.floor(randomFn() * nodeIds.length)];
+      const b = nodeIds[Math.floor(randomFn() * nodeIds.length)];
+      if(a === b) continue;
+      const path = networkShortestPath(graph, a, b);
+      if(!path) continue;
+      lastPath = path;
+      const stops = path.length - 1;
+      if(stops >= NETWORK_MIN_STOPS && stops <= NETWORK_MAX_STOPS) return path;
+    }
+    return lastPath;
+  }
+
+  // Called fresh on every "Start playing"/"Play again" in Network mode
+  // (see beginRun()) — "randomized each run" means literally that, not a
+  // route fixed once for the whole session.
+  function generateNetworkJourney(){
+    const graph = buildNetworkGraph();
+    const path = pickRandomNetworkPath(graph, networkRandomFn);
+    return buildNetworkRuntimeFromPath(graph, path);
+  }
+
   // ---- Small color utility: derive a readable "ink" (text) variant
   // of a line's brand color for light mode, since a color bright
   // enough to read on a dark background (like Circle's yellow) is
@@ -2276,6 +2455,13 @@
   const modeWarmupBtnEl = $('modeWarmupBtn');
   const modeQuizBtnEl = $('modeQuizBtn');
   const modeMcBtnEl = $('modeMcBtn');
+  const modeNetworkBtnEl = $('modeNetworkBtn');
+  const networkLineBadgeEl = $('networkLineBadge');
+  const lineSelectLabelEl = $('lineSelectLabel');
+  const lineSelectGroupEl = $('lineSelectGroup');
+  const routeMapLabelEl = $('routeMapLabel');
+  const routeMapCardEl = $('routeMapCard');
+  const playDiagramCardEl = $('playDiagramCard');
   const directionBoardEl = $('directionBoard');
   const ledDestEl = $('ledDest');
   const ledViaEl = $('ledVia');
@@ -2285,9 +2471,13 @@
   const ledCallingScrollEl = $('ledCallingScroll');
 
   let isLight = true;
-  let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc'
+  let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc' | 'network'
   let reverseDirection = false; // only applies to warmup / quiz
   let idx = 0;
+  // tracks which real line's color/badge is currently applied during a
+  // Network run, so render() only re-touches the DOM on an actual leg
+  // change instead of on every single question
+  let currentNetworkBadgeLineId = null;
   let streak = 0, bestStreak = 0, correctCount = 0, attempts = 0;
   let misses = [];
   let startTime = null, charsTyped = 0, bestWpm = 0, lastRunWpm = 0;
@@ -2724,10 +2914,52 @@
     return origIndex(idx);
   }
 
+  // For every ordinary line, "the current line" is simply LINE.def.id — but
+  // Network mode's LINE.def.id is the synthetic 'network', since a network
+  // run can cross several real lines. Anything that needs to know "which
+  // real line is this station/edge actually on" (interchange badges, the
+  // live accent theme, the per-question line pill) should go through this
+  // rather than reading LINE.def.id directly. LINE.edgeLines[i] holds the
+  // real lineId for the path[i]→path[i+1] edge; the edge relevant to the
+  // question currently on screen is the one just walked to get here, i.e.
+  // edgeLines[idx-1] — except at idx 0, where nothing's been walked yet, so
+  // it falls back to the very first edge (the line the journey starts on).
+  function currentRealLineId(){
+    if(LINE.def.layout !== 'network') return LINE.def.id;
+    const edgeIdx = Math.min(Math.max(idx - 1, 0), LINE.edgeLines.length - 1);
+    return LINE.edgeLines[edgeIdx];
+  }
+
+  // Network mode's "which real line are you on right now" cue — a small
+  // pill (reusing .interchange-chip's own look) plus the whole app's accent
+  // theme, both driven by currentRealLineId(). Only actually touches the
+  // DOM on a genuine leg change (currentNetworkBadgeLineId tracks the last
+  // one applied), not on every single question, the same "don't re-trigger
+  // unless something really changed" discipline the streak flame's own
+  // reignite-vs-bump distinction already uses.
+  function updateNetworkLineBadge(){
+    const realLineId = currentRealLineId();
+    const def = LINES[realLineId];
+    networkLineBadgeEl.innerHTML = '';
+    const chip = document.createElement('span');
+    chip.className = 'interchange-chip';
+    chip.style.background = def.color;
+    chip.style.color = readableTextOn(def.color);
+    chip.textContent = def.label + ' line';
+    networkLineBadgeEl.appendChild(chip);
+    networkLineBadgeEl.classList.remove('hidden');
+    if(realLineId !== currentNetworkBadgeLineId){
+      currentNetworkBadgeLineId = realLineId;
+      LINE.def.color = def.color;
+      applyLineTheme();
+    }
+  }
+
   function resetState(){
     idx = 0; streak = 0; correctCount = 0; attempts = 0; misses = [];
     startTime = null; charsTyped = 0; results = {};
     score = 0; questionStartTime = null; hintUsedThisQuestion = false;
+    currentNetworkBadgeLineId = null;
     resetStreakFlame();
     hideFeedback();
     if(mode === 'mc') mcOrder = shuffle([...Array(LINE.N).keys()]);
@@ -3252,6 +3484,14 @@
     // relying solely on the ResizeObserver in alignPageTitleLines() below
     // to catch the hidden-to-visible transition on its own.
     alignPageTitleLines();
+    // A fresh random journey every "Start playing"/"Play again" — this is
+    // what "randomized each run" means literally, not a route fixed once
+    // for the whole session. Both entry points call beginRun() directly.
+    if(mode === 'network'){
+      LINE = generateNetworkJourney();
+      applyLineTheme();
+      updatePlayContextLabel();
+    }
     resetState();
     render();
     runCountdown(function(){
@@ -3264,7 +3504,7 @@
   $('backToSetupBtn2').addEventListener('click', function(){ showPage('setup'); });
 
   function updatePlayContextLabel(){
-    const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice' };
+    const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice', network: 'Network' };
     $('playInfoLine').textContent = LINE.def.label;
     $('playInfoMode').textContent = modeLabels[mode];
     $('playInfoDot').style.background = LINE.def.color;
@@ -3281,22 +3521,68 @@
     $('playInfoSub').textContent = subParts.join(' · ');
   }
 
+  // The real single line/branch active just before entering Network mode —
+  // the Line ribbon is hidden throughout Network mode (nothing can change
+  // this selection while it's active), so it only ever needs capturing once,
+  // on entry, and restoring once, on exit.
+  let preNetworkLine = null;
   function setMode(newMode){
+    if(newMode === 'network' && mode !== 'network'){
+      preNetworkLine = { id: LINE.def.id, branchId: LINE.branchId };
+      reverseDirection = false; // seq() must always read forward for a
+                                 // network run — its def.label framing
+                                 // ("Warren Street → Stratford") is always
+                                 // built forward too, and a leftover reverse
+                                 // toggle from a prior real-line run would
+                                 // otherwise silently quiz the path backwards
+    } else if(newMode !== 'network' && mode === 'network' && preNetworkLine){
+      LINE = buildLineRuntime(preNetworkLine.id, preNetworkLine.branchId);
+      reverseDirection = false;
+      renderBranchRow();
+      applyLineTheme();
+      updateDirectionBoard();
+      setupGeometry();
+      drawRoutePreview();
+    }
     mode = newMode;
     modeWarmupBtnEl.classList.toggle('active', mode === 'warmup');
     modeQuizBtnEl.classList.toggle('active', mode === 'quiz');
     modeMcBtnEl.classList.toggle('active', mode === 'mc');
+    modeNetworkBtnEl.classList.toggle('active', mode === 'network');
     $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Accuracy';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
     $('statAccLabel').textContent = mode === 'warmup' ? 'Accuracy' : 'Score';
-    promptLine.classList.toggle('hidden', mode !== 'quiz');
+    // Network mode reuses Recall quiz's own "type the next station from
+    // memory" flow end to end (see render()) rather than warmup's
+    // show-and-type or MC's option grid, so it shares quiz's UI toggles too.
+    const quizLike = mode === 'quiz' || mode === 'network';
+    promptLine.classList.toggle('hidden', !quizLike);
     targetWord.classList.toggle('hidden', mode !== 'warmup');
     inputRow.classList.toggle('hidden', mode === 'mc');
     mcOptionsEl.classList.toggle('hidden', mode !== 'mc');
     mcContextCard.classList.toggle('hidden', mode !== 'mc');
-    $('directionRow').classList.toggle('hidden', mode === 'mc');
+    $('directionRow').classList.toggle('hidden', mode === 'mc' || mode === 'network');
     hintBtnEl.classList.toggle('hidden', mode === 'warmup');
     $('rowActions').classList.toggle('single', mode === 'warmup');
+    // Network mode ignores line/branch/direction/route-map entirely — a
+    // random journey can span any number of differently-shaped lines, so
+    // there's no single line to pick or diagram to draw (see drawDiagram()/
+    // setupGeometry()'s own 'network' layout guard).
+    lineSelectLabelEl.classList.toggle('hidden', mode === 'network');
+    lineSelectGroupEl.classList.toggle('hidden', mode === 'network');
+    routeMapLabelEl.classList.toggle('hidden', mode === 'network');
+    routeMapCardEl.classList.toggle('hidden', mode === 'network');
+    playDiagramCardEl.classList.toggle('hidden', mode === 'network');
+    // #branchRow's visibility the rest of the time is renderBranchRow()'s
+    // own job (hidden only for a line with no branches) — only ever force
+    // it here on the way *into* Network mode; the restore branch above
+    // already calls renderBranchRow() on the way back out, which correctly
+    // re-shows or re-hides it for whichever real line is being returned to.
+    if(mode === 'network') $('branchRow').classList.add('hidden');
+    if(mode !== 'network'){
+      networkLineBadgeEl.classList.add('hidden');
+      currentNetworkBadgeLineId = null;
+    }
     updatePlayContextLabel();
     resetState();
     render();
@@ -3346,17 +3632,21 @@
   }
 
   function renderInterchanges(stationName){
-    // Bakerloo's "Edgware Road" is a separate physical station from the
-    // Circle/District/H&C one nearby — same name, not an in-station
-    // interchange, so it must never inherit that station's badges here
-    if(stationName === 'Edgware Road' && LINE.def.id === 'bakerloo'){
+    const realLineId = currentRealLineId();
+    // Same-name-but-different-station exceptions (Bakerloo's own "Edgware
+    // Road", Piccadilly/Elizabeth's own "Heathrow Terminal 4") — see
+    // KNOWN_NAME_COLLISIONS. Reading through currentRealLineId() rather
+    // than LINE.def.id directly means this keeps working correctly in
+    // Network mode too, where LINE.def.id is the synthetic 'network'.
+    const collision = KNOWN_NAME_COLLISIONS[stationName];
+    if(collision && collision.has(realLineId)){
       interchangeRow.innerHTML = '';
       interchangeRow.classList.add('hidden');
       return;
     }
     const full = STATION_INTERCHANGES[stationName] || [];
     // don't show the line you're currently studying as its own "interchange"
-    const list = full.filter(b => b.id !== LINE.def.id);
+    const list = full.filter(b => b.id !== realLineId);
     interchangeRow.innerHTML = '';
     if(list.length === 0){
       interchangeRow.classList.add('hidden');
@@ -3502,7 +3792,12 @@
       targetWord.textContent = list[idx];
       answerInput.placeholder = 'Type it exactly…';
       renderInterchanges(list[idx]);
-    } else if(mode === 'quiz'){
+    } else if(mode === 'quiz' || mode === 'network'){
+      // Network mode reuses this exact flow (including withholding the
+      // very first station's name — the persistent "Warren Street →
+      // Stratford" framing line above the card is where that's discoverable,
+      // same as a real line's own chosen direction already is for quiz)
+      // rather than a separate branch, since the two are otherwise identical.
       interchangeRow.classList.add('hidden');
       if(idx === 0){
         // no station name shown here — naming it would give away the
@@ -3528,6 +3823,7 @@
       questionStartTime = Date.now();
       hintUsedThisQuestion = false;
     }
+    if(LINE.def.layout === 'network') updateNetworkLineBadge();
     updateStats();
     drawDiagram();
     // only pull focus (and pop the mobile keyboard) when continuing an
@@ -3600,6 +3896,10 @@
       summaryTitleEl.textContent = misses.length === 0 ? 'Full journey, zero mistakes' : 'Quiz complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
       perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
+    } else if(mode === 'network'){
+      summaryTitleEl.textContent = misses.length === 0 ? 'Journey complete, zero mistakes' : 'Journey complete';
+      summarySubEl.textContent = LINE.def.label + ' · you got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
+      perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     } else {
       summaryTitleEl.textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
@@ -3659,7 +3959,7 @@
       bestStreak = Math.max(bestStreak, streak);
       charsTyped += list[idx].length + 1;
       results[trueIdx] = 'ok';
-      if(mode === 'quiz') popCard();
+      if(mode === 'quiz' || mode === 'network') popCard();
       answerInput.className = 'right';
       let msg = '✓ Correct';
       if(mode !== 'warmup'){
@@ -3753,6 +4053,11 @@
       line = LINE.def.label + ' line · Warm-up · ' + lastRunWpm + ' WPM · ' + acc + '% accuracy';
     } else if(mode === 'quiz'){
       line = LINE.def.label + ' line · Recall quiz · ' + correctCount + '/' + LINE.JOURNEY_LEN + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
+    } else if(mode === 'network'){
+      // no trailing "line" — LINE.def.label is already "Start → End" here,
+      // not a real line's own name, so appending "line" after it would
+      // read wrong the way it does for the other three modes
+      line = 'Network · ' + LINE.def.label + ' · ' + correctCount + '/' + LINE.JOURNEY_LEN + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
     } else {
       line = LINE.def.label + ' line · Multiple choice · ' + correctCount + '/' + LINE.N + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
     }
@@ -3771,6 +4076,7 @@
   modeWarmupBtnEl.addEventListener('click', function(){ setMode('warmup'); });
   modeQuizBtnEl.addEventListener('click', function(){ setMode('quiz'); });
   modeMcBtnEl.addEventListener('click', function(){ setMode('mc'); });
+  modeNetworkBtnEl.addEventListener('click', function(){ setMode('network'); });
 
   directionBoardEl.addEventListener('click', function(){ setDirection(!reverseDirection); });
 
@@ -3950,6 +4256,12 @@
 
   function setupGeometry(){
     const layout = LINE.def.layout;
+    // A network run can cross an arbitrary number of differently-shaped
+    // lines — there's no sane single diagram to lay out for that (see
+    // CLAUDE.md's own "station name labels on the route map... tried
+    // repeatedly and abandoned" precedent for why this isn't attempted).
+    // drawDiagram()/drawRoutePreview() carry the matching guard.
+    if(layout === 'network') return;
 
     if(layout === 'spur-loop'){
       const cx = 270, cy = 130, r = 160;
@@ -4181,6 +4493,7 @@
   }
 
   function drawRoutePreview(){
+    if(LINE.def.layout === 'network') return; // see setupGeometry()'s own guard
     const svg = routePreviewSvgEl;
     svg.innerHTML = ''; // wipes out whatever dot activeStationDot was pointing at
     activeStationDot = null;
@@ -4389,6 +4702,7 @@
   }
 
   function drawDiagram(){
+    if(LINE.def.layout === 'network') return; // see setupGeometry()'s own guard
     svg.innerHTML = '';
     const ns = 'http://www.w3.org/2000/svg';
     const N = LINE.N;
