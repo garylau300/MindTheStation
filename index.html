@@ -429,10 +429,16 @@
      (16-18px) by explicit instruction — the callout only shows on real
      hover/focus now (not at rest), so a large reserved gap isn't needed.
      A hover-triggered callout visually overlapping the Line ribbon below
-     it is an accepted tradeoff at this spacing — its own z-index (see
-     .mode-btn-callout) keeps it painting on top of the ribbon rather than
-     getting hidden behind it, which is the part that actually matters. */
-  .mode-row{ margin-bottom: 18px; }
+     it is an accepted tradeoff at this spacing, but the ribbon must never
+     paint over/hide the callout — confirmed by screenshot that a z-index
+     on the callout alone wasn't reliably enough (`.mode-btn`, its own
+     positioned ancestor, has z-index:auto and so doesn't itself establish
+     a stacking context, meaning the callout's z-index only reliably
+     escapes to win against later DOM siblings — the Line ribbon here —
+     once the whole row it lives in is explicitly promoted into its own
+     stacking context). `.mode-row` itself is `position:relative` with a
+     real z-index for exactly that reason, not just the leaf callout. */
+  .mode-row{ margin-bottom: 18px; position:relative; z-index: 5; }
   /* LED "next train" style destination board, mimicking a real platform
      departure indicator: a dark plate (--board-bg, still per-theme — see
      applyLineTheme() — pure near-black reads fine against the app's own

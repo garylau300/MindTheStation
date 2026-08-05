@@ -638,10 +638,16 @@ catch.
   close, mirroring `.station-popup`'s own has-arrow-up/has-arrow-down logic) was tried and
   reverted — flipping upward just as easily ran into the page title above instead, trading one
   overlap for another with no net improvement. What actually matters is that the ribbon never
-  visually *hides* the callout, not that the two never touch — `.mode-btn-callout`'s own
-  `z-index:20` already guarantees it paints on top of the ribbon regardless of DOM order, so
-  the accepted overlap reads as a callout floating over the ribbon (like a normal tooltip),
-  never as the ribbon covering the callout.
+  visually *hides* the callout, not that the two never touch — confirmed by screenshot that
+  `z-index` on the callout alone isn't reliably enough for this: `.mode-btn`, the callout's own
+  positioned ancestor, has `z-index:auto` and so doesn't itself establish a stacking context,
+  meaning the callout's `z-index:20` was only escaping as far as wherever the *next* real
+  stacking context landed — not reliably above the Line ribbon in every case. `.mode-row`
+  itself is now `position:relative` with an explicit `z-index:5`, promoting the *whole row*
+  (buttons and their callouts together) into one real stacking context compared directly
+  against the Line ribbon, rather than leaving that to a single leaf descendant's z-index to
+  sort out. With that in place the accepted overlap reads as a callout floating over the
+  ribbon (like a normal tooltip), never as the ribbon covering the callout.
 - **Direction is an LED "next train" style destination board (`#directionBoard`/
   `.dest-board`), not two forward/reverse pill buttons — and Branch is a squared 2-column
   grid (`.branch-grid`/`.branch-chip`), not a wrapping pill row.** Setup order is Branch,
