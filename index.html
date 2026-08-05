@@ -526,11 +526,10 @@
   .mc-context-node.empty{ border-style:dashed; opacity:.35; color: var(--ink-dim); }
   .mc-context-connector{ flex:0 0 10px; width:10px; height:2px; background: var(--line); }
 
-  /* Four round, icon-only mode buttons, evenly spread across the row's full
-     width like every other full-bleed Setup section (Line ribbon, Branch
-     grid, Direction board) — justify-content:space-between rather than
-     gap-only clustering. */
-  .mode-select{ display:flex; justify-content:space-between; margin-bottom: 0; }
+  /* Four round, icon-only mode buttons, clustered together as one compact
+     group (gap-based, not spread edge-to-edge like the Line ribbon/Branch
+     grid/Direction board) — centered in the row by explicit instruction. */
+  .mode-select{ display:flex; justify-content:center; gap:20px; margin-bottom: 0; }
   .mode-btn{
     position:relative; flex:none; width:48px; height:48px; display:flex;
     align-items:center; justify-content:center; padding:0;
@@ -568,16 +567,6 @@
     opacity:0; transition: opacity .18s ease, transform .18s ease;
   }
   .mode-btn.expand .mode-btn-callout{ opacity:1; transform:translateX(-50%) translateY(0); transition-delay:.08s; }
-  /* The first/last buttons sit flush against the row's own ends (see
-     justify-content:space-between above) — a centered callout under either
-     one would overflow .wrap's own left/right edge. Anchor those two
-     callouts to the button's own outer edge instead of centering, the same
-     :first-child/:last-child-beats-plain-class trick .line-chip's own
-     corner rounding already relies on, rather than a JS viewport-clamp. */
-  .mode-select .mode-btn:first-child .mode-btn-callout{ left:0; transform:translateX(0) translateY(4px); }
-  .mode-select .mode-btn:first-child.expand .mode-btn-callout{ transform:translateX(0) translateY(0); }
-  .mode-select .mode-btn:last-child .mode-btn-callout{ left:auto; right:0; transform:translateX(0) translateY(4px); }
-  .mode-select .mode-btn:last-child.expand .mode-btn-callout{ transform:translateX(0) translateY(0); }
   .mode-btn-name{ display:block; font-size:13px; font-weight:700; line-height:1.2; color:var(--ink); }
   .mode-btn-desc{ display:block; font-size:11px; font-weight:400; color:var(--ink-dim); margin-top:2px; }
 
@@ -1072,8 +1061,6 @@
     </div>
   </header>
 
-  <div class="setup-divider"></div>
-
   <div class="mode-row">
     <span class="direction-label section-label">Mode</span>
     <div class="mode-select">
@@ -1159,9 +1146,9 @@
     </button>
   </div>
 
-  <div class="setup-divider"></div>
-
   <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
+
+  <div class="setup-divider"></div>
 
   <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
   <div class="diagram-card" id="routeMapCard">

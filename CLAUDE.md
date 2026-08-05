@@ -515,9 +515,14 @@ catch.
   of `<header>` entirely — `<header>` used to hold both `.header-row` (pure page chrome: the
   title, theme/sound toggles) and the Line ribbon, an asymmetry that predates this change.
   `<header>` now contains only `.header-row`; Mode, Line, Branch, and Direction are four
-  sequential sibling sections below it, all under the same `.setup-divider` that used to
-  separate the header from only three of them. No CSS was scoped to `header .line-select`,
-  so the move needed no other fix-up.
+  sequential sibling sections below it. The `.setup-divider` that used to sit between
+  `<header>` and Mode was removed by explicit instruction (Mode now follows the header
+  directly, with only the header's own `margin-bottom` as spacing) — the app's other
+  `.setup-divider` (between Direction and "Start playing") also moved, from *above* to
+  *below* "Start playing", so it now separates the actionable controls (Mode through the
+  Start button) from the read-only route-map preview beneath, rather than sitting
+  immediately above the button. No CSS was scoped to `header .line-select`, so the Line
+  ribbon's move needed no other fix-up.
 - **The four Mode buttons (`#modeWarmupBtn`/`#modeQuizBtn`/`#modeMcBtn`/`#modeNetworkBtn`)
   are round, icon-only circles, not the old rectangular button + `<small>`-subtitle row** —
   the full label/description only shows in a floating `.mode-btn-callout` card on hover,
@@ -540,7 +545,11 @@ catch.
   `.mode-btn`'s diameter scales at the existing 900px/1300px breakpoints (48→54→60px, a flat
   +6px per step — the same cadence `.line-select{ height:56px→62px→68px }` already uses)
   rather than staying a fixed size like `.theme-toggle` does, since these are primary Setup
-  controls, not secondary utility icons.
+  controls, not secondary utility icons. The four sit close together as one clustered group
+  (`.mode-select{ justify-content:center; gap:20px }`), not spread edge-to-edge across the
+  full row width the way the Line ribbon/Branch grid/Direction board deliberately are — by
+  explicit instruction, since these buttons read as one cohesive control rather than a
+  full-bleed section.
 - **The hover/selected reveal is a floating callout card, not the Line ribbon's flex-grow
   expansion.** `wireModeBtnHover()`/`collapseModeBtnsToActive()` are ported 1:1 from
   `wireLineChipHover()`/`collapseChipsToActive()` (same one-expanded-at-a-time pattern:
@@ -552,21 +561,24 @@ catch.
   not: `.station-popup` needs `getBoundingClientRect()`-measured, scroll/zoom-safe JS
   placement because it anchors to an arbitrary, pannable station dot; the Mode row's geometry
   is fixed and known ahead of time (always exactly 4 buttons in one static row), so the
-  callout is positioned with plain CSS. It opens **downward**, not upward — tried upward
-  first (open space above Mode, being the first Setup section now), but the "Mode" section
-  label and the banner above left too little clearance and the callout visibly cut across
-  that label's own text. Opening downward toward the Line ribbon had the same problem in
-  reverse, so `.mode-row`'s own `margin-bottom` is deliberately oversized (64px, vs. every
+  callout is positioned with plain CSS, always centered under its own button
+  (`left:50%; transform:translateX(-50%)`) — an earlier version special-cased the first/last
+  buttons to anchor their callout to the button's own outer edge instead of centering (to
+  avoid overflowing `.wrap` when the row was spread edge-to-edge via
+  `justify-content:space-between`), but that's no longer needed now that the buttons are a
+  centered, gapped cluster with real margin on both sides — don't reintroduce it unless the
+  row layout goes back to a full-width spread. It opens **downward**, not upward — tried
+  upward first (open space above Mode, being the first Setup section now), but the "Mode"
+  section label and the banner above left too little clearance and the callout visibly cut
+  across that label's own text. Opening downward toward the Line ribbon had the same problem
+  in reverse, so `.mode-row`'s own `margin-bottom` is deliberately oversized (64px, vs. every
   other Setup section's 16-18px gap) — real reserved clearance for the callout to fully open
   without cutting across the Line ribbon beneath it, confirmed by screenshot after both
-  directions were tried and measured, not assumed. `:first-child`/`:last-child` overrides
-  anchor the two end buttons' callouts to their own outer edge instead of centering — the
-  same specificity-by-source-order trick `.line-chip:first-child`/`:last-child`'s own corner
-  rounding already relies on — so neither ever overflows `.wrap`'s edge. `setMode()` toggles
-  `.expand` in lockstep with `.active` on every real mode switch, mirroring `setLine()`'s own
-  paired `.active`/`.expand` toggle (not `collapseModeBtnsToActive()`'s hover-revert path,
-  reserved for the mouseleave/blur handlers only), so the selected mode's callout always stays
-  visible at rest with no hover required.
+  directions were tried and measured, not assumed. `setMode()` toggles `.expand` in lockstep
+  with `.active` on every real mode switch, mirroring `setLine()`'s own paired
+  `.active`/`.expand` toggle (not `collapseModeBtnsToActive()`'s hover-revert path, reserved
+  for the mouseleave/blur handlers only), so the selected mode's callout always stays visible
+  at rest with no hover required.
 - **Direction is an LED "next train" style destination board (`#directionBoard`/
   `.dest-board`), not two forward/reverse pill buttons — and Branch is a squared 2-column
   grid (`.branch-grid`/`.branch-chip`), not a wrapping pill row.** Setup order is Branch,
