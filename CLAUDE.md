@@ -508,6 +508,65 @@ catch.
   diagonal-hatch pattern an earlier version used — the hatch made the expanded label
   half-illegible (white text vanishing over its lighter stripe bands), which only mattered
   once the chip actually became hoverable/readable.
+- **Setup order is now Mode, then Line, then Branch, then Direction — Mode moved above the
+  Line ribbon by explicit instruction (the second deliberate Setup-order change in this
+  repo's history, after Branch-before-Direction below; don't re-swap either without checking
+  first).** This required pulling the Line ribbon (`#lineSelectLabel`/`#lineSelectGroup`) out
+  of `<header>` entirely — `<header>` used to hold both `.header-row` (pure page chrome: the
+  title, theme/sound toggles) and the Line ribbon, an asymmetry that predates this change.
+  `<header>` now contains only `.header-row`; Mode, Line, Branch, and Direction are four
+  sequential sibling sections below it, all under the same `.setup-divider` that used to
+  separate the header from only three of them. No CSS was scoped to `header .line-select`,
+  so the move needed no other fix-up.
+- **The four Mode buttons (`#modeWarmupBtn`/`#modeQuizBtn`/`#modeMcBtn`/`#modeNetworkBtn`)
+  are round, icon-only circles, not the old rectangular button + `<small>`-subtitle row** —
+  the full label/description only shows in a floating `.mode-btn-callout` card on hover,
+  keyboard focus, or when actually selected, by explicit instruction. Icons are hand-authored
+  inline `<svg>` line-art (`viewBox="0 0 22 22"`, `stroke="currentColor"`, `stroke-width:1.6`,
+  round caps/joins, fill only on small solid accent dots/nodes) rather than Unicode glyphs —
+  `.theme-toggle`'s `☀`/`♪` work fine for two generic icons, but this codebase has already hit
+  Unicode's limits for a precise glyph once (the `.muted` sound-toggle's own combining-
+  character tofu-box problem, solved by drawing a CSS shape instead); four *semantically
+  distinct* mode concepts need the same "don't trust font-glyph roulette" treatment.
+  `stroke="currentColor"` means every icon inherits `.mode-btn`'s own `color` exactly the way
+  the theme-toggle's text glyphs already do — works across both themes and the active/inactive
+  state with no extra wiring. Warm-up = a bullseye (two concentric circles + a filled center
+  dot, literal to "a target station is shown"); Recall quiz = a filled node connected by a
+  dashed line and small arrowhead to an open node ("known stop → recall this one"); Multiple
+  choice = a 2×2 grid of four outlined squares, one holding a checkmark ("four options, one
+  chosen"); Network = three nodes joined by two *angled* segments with the middle
+  (interchange) node filled and the two ends open — deliberately not a straight two-node
+  line, so it reads distinctly from Recall quiz's icon at a glance.
+  `.mode-btn`'s diameter scales at the existing 900px/1300px breakpoints (48→54→60px, a flat
+  +6px per step — the same cadence `.line-select{ height:56px→62px→68px }` already uses)
+  rather than staying a fixed size like `.theme-toggle` does, since these are primary Setup
+  controls, not secondary utility icons.
+- **The hover/selected reveal is a floating callout card, not the Line ribbon's flex-grow
+  expansion.** `wireModeBtnHover()`/`collapseModeBtnsToActive()` are ported 1:1 from
+  `wireLineChipHover()`/`collapseChipsToActive()` (same one-expanded-at-a-time pattern:
+  mouseenter/focus previews, mouseleave/blur reverts to the actually-active button), but where
+  `.line-chip.expand` grows the chip itself via `flex-grow`, `.mode-btn.expand` instead fades
+  in a `.mode-btn-callout` child — a fixed 48-60px circle can't grow to reveal text the way a
+  flush, zero-gap flex ribbon chip can. The callout's visual style (rounded panel, border,
+  shadow, compact padding) is modeled on `.station-popup`, but its positioning deliberately is
+  not: `.station-popup` needs `getBoundingClientRect()`-measured, scroll/zoom-safe JS
+  placement because it anchors to an arbitrary, pannable station dot; the Mode row's geometry
+  is fixed and known ahead of time (always exactly 4 buttons in one static row), so the
+  callout is positioned with plain CSS. It opens **downward**, not upward — tried upward
+  first (open space above Mode, being the first Setup section now), but the "Mode" section
+  label and the banner above left too little clearance and the callout visibly cut across
+  that label's own text. Opening downward toward the Line ribbon had the same problem in
+  reverse, so `.mode-row`'s own `margin-bottom` is deliberately oversized (64px, vs. every
+  other Setup section's 16-18px gap) — real reserved clearance for the callout to fully open
+  without cutting across the Line ribbon beneath it, confirmed by screenshot after both
+  directions were tried and measured, not assumed. `:first-child`/`:last-child` overrides
+  anchor the two end buttons' callouts to their own outer edge instead of centering — the
+  same specificity-by-source-order trick `.line-chip:first-child`/`:last-child`'s own corner
+  rounding already relies on — so neither ever overflows `.wrap`'s edge. `setMode()` toggles
+  `.expand` in lockstep with `.active` on every real mode switch, mirroring `setLine()`'s own
+  paired `.active`/`.expand` toggle (not `collapseModeBtnsToActive()`'s hover-revert path,
+  reserved for the mouseleave/blur handlers only), so the selected mode's callout always stays
+  visible at rest with no hover required.
 - **Direction is an LED "next train" style destination board (`#directionBoard`/
   `.dest-board`), not two forward/reverse pill buttons — and Branch is a squared 2-column
   grid (`.branch-grid`/`.branch-chip`), not a wrapping pill row.** Setup order is Branch,

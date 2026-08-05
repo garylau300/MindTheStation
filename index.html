@@ -417,7 +417,12 @@
     text-transform:none; letter-spacing:normal; font-weight:400; font-size:11px;
     opacity:.75; margin-left:4px;
   }
-  .mode-row{ margin-bottom: 16px; }
+  /* Deliberately taller than the other Setup sections' own gaps (16-18px) —
+     the mode buttons' floating callout (see .mode-btn-callout) opens
+     downward into this exact space, and needs real clearance to clear the
+     Line ribbon immediately below it rather than visually cutting across
+     its label text (confirmed by screenshot on an earlier, tighter pass). */
+  .mode-row{ margin-bottom: 64px; }
   /* LED "next train" style destination board, mimicking a real platform
      departure indicator: a dark plate (--board-bg, still per-theme — see
      applyLineTheme() — pure near-black reads fine against the app's own
@@ -521,14 +526,60 @@
   .mc-context-node.empty{ border-style:dashed; opacity:.35; color: var(--ink-dim); }
   .mc-context-connector{ flex:0 0 10px; width:10px; height:2px; background: var(--line); }
 
-  .mode-select{ display:flex; gap:8px; margin-bottom: 0; flex-wrap:wrap; }
+  /* Four round, icon-only mode buttons, evenly spread across the row's full
+     width like every other full-bleed Setup section (Line ribbon, Branch
+     grid, Direction board) — justify-content:space-between rather than
+     gap-only clustering. */
+  .mode-select{ display:flex; justify-content:space-between; margin-bottom: 0; }
   .mode-btn{
-    flex:1; min-width: 0; text-align:center; font-family:var(--font-main); font-weight:400; font-size:13px;
-    padding: 11px 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel);
+    position:relative; flex:none; width:48px; height:48px; display:flex;
+    align-items:center; justify-content:center; padding:0;
+    border-radius:999px; border: 2px solid var(--line); background: var(--panel);
     color: var(--ink-dim); cursor:pointer;
   }
-  .mode-btn small{ display:block; font-family:var(--font-main); font-weight:400; font-size:11px; margin-top:2px; opacity:.9; }
   .mode-btn.active{ border-color: var(--line-accent); color: var(--accent-ink); background: color-mix(in srgb, var(--line-accent) 14%, transparent); }
+  /* stroke="currentColor" on every icon inherits this button's own color,
+     the same way .theme-toggle's ☀/♪ text glyphs already do via `color` —
+     works across light/dark theme and active/inactive state with no extra
+     wiring. */
+  .mode-btn-icon{ width:20px; height:20px; display:block; }
+
+  /* Label+description callout: a small floating card modeled on
+     .station-popup's own look (rounded panel, border, shadow, compact
+     padding) — but NOT its position:absolute + getBoundingClientRect()
+     JS-measured placement. .station-popup needs that because it anchors to
+     an arbitrary, pannable station dot that can be anywhere on the route
+     map; this row's geometry is fixed and known ahead of time (always
+     exactly 4 buttons, one static row), so plain CSS anchoring is enough.
+     Anchored below the button (not above — tried first, but the Mode row's
+     own "Mode" section label and the banner above it left too little
+     clearance and got cut across, confirmed by screenshot). .mode-row's own
+     margin-bottom is deliberately oversized to give this room to open
+     downward without overlapping the Line ribbon beneath it — see that
+     rule's own comment. No up/down flip logic needed either way, since the
+     Mode row's position relative to the rest of Setup is fixed. */
+  .mode-btn-callout{
+    position:absolute; left:50%; top:calc(100% + 10px); z-index:20;
+    transform: translateX(-50%) translateY(4px);
+    width:max-content; min-width:120px; max-width:min(190px, calc(100vw - 32px));
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding:9px 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+    text-align:left; pointer-events:none;
+    opacity:0; transition: opacity .18s ease, transform .18s ease;
+  }
+  .mode-btn.expand .mode-btn-callout{ opacity:1; transform:translateX(-50%) translateY(0); transition-delay:.08s; }
+  /* The first/last buttons sit flush against the row's own ends (see
+     justify-content:space-between above) — a centered callout under either
+     one would overflow .wrap's own left/right edge. Anchor those two
+     callouts to the button's own outer edge instead of centering, the same
+     :first-child/:last-child-beats-plain-class trick .line-chip's own
+     corner rounding already relies on, rather than a JS viewport-clamp. */
+  .mode-select .mode-btn:first-child .mode-btn-callout{ left:0; transform:translateX(0) translateY(4px); }
+  .mode-select .mode-btn:first-child.expand .mode-btn-callout{ transform:translateX(0) translateY(0); }
+  .mode-select .mode-btn:last-child .mode-btn-callout{ left:auto; right:0; transform:translateX(0) translateY(4px); }
+  .mode-select .mode-btn:last-child.expand .mode-btn-callout{ transform:translateX(0) translateY(0); }
+  .mode-btn-name{ display:block; font-size:13px; font-weight:700; line-height:1.2; color:var(--ink); }
+  .mode-btn-desc{ display:block; font-size:11px; font-weight:400; color:var(--ink-dim); margin-top:2px; }
 
   .stats{ display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--line); border-radius: var(--radius) var(--radius) 0 0; overflow:hidden; margin-bottom: 1px; border: 1px solid var(--line); border-bottom:none; }
   .stat{ background: var(--panel); padding: 12px 10px; text-align:center; }
@@ -943,8 +994,11 @@
     .branch-chip{ font-size:14px; }
     .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ font-size:17px; }
     .direction-label{ font-size:11.5px; }
-    .mode-btn{ font-size:15px; padding:13px 12px; }
-    .mode-btn small{ font-size:12px; }
+    .mode-btn{ width:54px; height:54px; }
+    .mode-btn-icon{ width:22px; height:22px; }
+    .mode-btn-name{ font-size:13.5px; }
+    .mode-btn-desc{ font-size:11.5px; }
+    .mode-btn-callout{ max-width:min(210px, calc(100vw - 32px)); }
     .stat b, .stat-row-time b{ font-size:27px; }
     .stat span{ font-size:12px; }
     .play-info-main{ font-size:23px; }
@@ -973,8 +1027,11 @@
     .branch-chip{ font-size:15.5px; }
     .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ font-size:18px; }
     .direction-label{ font-size:12px; }
-    .mode-btn{ font-size:16.5px; padding:15px 14px; }
-    .mode-btn small{ font-size:13px; }
+    .mode-btn{ width:60px; height:60px; }
+    .mode-btn-icon{ width:24px; height:24px; }
+    .mode-btn-name{ font-size:14px; }
+    .mode-btn-desc{ font-size:12px; }
+    .mode-btn-callout{ max-width:min(230px, calc(100vw - 32px)); }
     .stat b, .stat-row-time b{ font-size:31px; }
     .stat span{ font-size:13px; }
     .play-info-main{ font-size:25px; }
@@ -1013,20 +1070,6 @@
       <button type="button" id="themeToggle" class="theme-toggle" aria-label="Switch to dark theme">☀</button>
       <button type="button" id="soundToggle" class="theme-toggle" aria-label="Mute sound">♪</button>
     </div>
-    <span class="direction-label section-label line-select-label" id="lineSelectLabel">Line</span>
-    <div class="line-select" id="lineSelectGroup" role="group" aria-label="Choose a line">
-      <button type="button" class="line-chip active expand" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
-      <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineElizabethBtn" data-line-id="elizabeth"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">41 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">Hammersmith &amp; City</b><span class="chip-count">29 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
-    </div>
   </header>
 
   <div class="setup-divider"></div>
@@ -1034,11 +1077,59 @@
   <div class="mode-row">
     <span class="direction-label section-label">Mode</span>
     <div class="mode-select">
-      <button type="button" class="mode-btn active" id="modeWarmupBtn">Warm-up<small>Type what you see</small></button>
-      <button type="button" class="mode-btn" id="modeQuizBtn">Recall quiz<small>Type from memory</small></button>
-      <button type="button" class="mode-btn" id="modeMcBtn">Multiple choice<small>Pick from 4</small></button>
-      <button type="button" class="mode-btn" id="modeNetworkBtn">Network<small>Navigate a random journey</small></button>
+      <button type="button" class="mode-btn active" id="modeWarmupBtn" aria-label="Warm-up — Type what you see">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="11" r="8.2"></circle>
+          <circle cx="11" cy="11" r="4.6"></circle>
+          <circle cx="11" cy="11" r="1.15" fill="currentColor" stroke="none"></circle>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Warm-up</b><span class="mode-btn-desc">Type what you see</span></span>
+      </button>
+      <button type="button" class="mode-btn" id="modeQuizBtn" aria-label="Recall quiz — Type from memory">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="5" cy="17" r="2.3" fill="currentColor" stroke="none"></circle>
+          <circle cx="17" cy="5" r="2.3"></circle>
+          <line x1="7.6" y1="14.6" x2="12.8" y2="9.4" stroke-dasharray="2.2 2.2"></line>
+          <path d="M11.6 8.4 L14.2 7.2 L13.4 10"></path>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Recall quiz</b><span class="mode-btn-desc">Type from memory</span></span>
+      </button>
+      <button type="button" class="mode-btn" id="modeMcBtn" aria-label="Multiple choice — Pick from 4">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <rect x="2.5" y="2.5" width="7" height="7" rx="1.6"></rect>
+          <rect x="12.5" y="2.5" width="7" height="7" rx="1.6"></rect>
+          <rect x="2.5" y="12.5" width="7" height="7" rx="1.6"></rect>
+          <rect x="12.5" y="12.5" width="7" height="7" rx="1.6"></rect>
+          <path d="M14.7 16.2 L16 17.6 L18.3 14.8"></path>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Multiple choice</b><span class="mode-btn-desc">Pick from 4</span></span>
+      </button>
+      <button type="button" class="mode-btn" id="modeNetworkBtn" aria-label="Network — Navigate a random journey">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="4" cy="17.5" r="2.1"></circle>
+          <circle cx="11" cy="7" r="2.5" fill="currentColor" stroke="none"></circle>
+          <circle cx="18" cy="12.5" r="2.1"></circle>
+          <line x1="5.7" y1="15.9" x2="9.1" y2="9.3"></line>
+          <line x1="13" y1="8.1" x2="16.2" y2="10.9"></line>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Network</b><span class="mode-btn-desc">Navigate a random journey</span></span>
+      </button>
     </div>
+  </div>
+
+  <span class="direction-label section-label line-select-label" id="lineSelectLabel">Line</span>
+  <div class="line-select" id="lineSelectGroup" role="group" aria-label="Choose a line">
+    <button type="button" class="line-chip active expand" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
+    <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineElizabethBtn" data-line-id="elizabeth"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">41 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">Hammersmith &amp; City</b><span class="chip-count">29 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
   </div>
 
   <div class="direction-row hidden" id="branchRow">
@@ -3082,6 +3173,32 @@
     chip.addEventListener('blur', collapseChipsToActive);
   }
 
+  // Expand-on-hover/focus preview for the four round Mode buttons — ported
+  // from wireLineChipHover()/collapseChipsToActive() above (same
+  // one-expanded-at-a-time pattern: mouseenter/focus previews, mouseleave/
+  // blur reverts to whichever button is actually .active), but toggling a
+  // floating .mode-btn-callout card instead of a flex-grow ribbon chip — a
+  // fixed-diameter circle can't itself grow to reveal text the way
+  // .line-chip can. Purely a desktop/keyboard bonus: the active button's
+  // own callout stays visible at rest regardless (see setMode()), so a
+  // phone with no hover still always shows the current mode's name.
+  function collapseModeBtnsToActive(){
+    document.querySelectorAll('.mode-select .mode-btn').forEach(function(b){
+      b.classList.toggle('expand', b.classList.contains('active'));
+    });
+  }
+  function wireModeBtnHover(btn){
+    function preview(){
+      document.querySelectorAll('.mode-select .mode-btn').forEach(function(b){
+        b.classList.toggle('expand', b === btn);
+      });
+    }
+    btn.addEventListener('mouseenter', preview);
+    btn.addEventListener('focus', preview);
+    btn.addEventListener('mouseleave', collapseModeBtnsToActive);
+    btn.addEventListener('blur', collapseModeBtnsToActive);
+  }
+
   function terminusNames(){
     // the true start and end of a forward run through this line
     const start = LINE.stations[LINE.journeyIndices[0]];
@@ -3549,6 +3666,16 @@
     modeQuizBtnEl.classList.toggle('active', mode === 'quiz');
     modeMcBtnEl.classList.toggle('active', mode === 'mc');
     modeNetworkBtnEl.classList.toggle('active', mode === 'network');
+    // Keeps .expand in lockstep with .active on every real mode switch —
+    // mirrors setLine()'s own paired .active/.expand toggle, not
+    // collapseModeBtnsToActive()'s hover-revert path (that one's reserved
+    // for the mouseleave/blur handlers only) — so the newly selected
+    // mode's callout is visible at rest with no hover needed, overriding
+    // any other button's lingering hover-preview.
+    modeWarmupBtnEl.classList.toggle('expand', mode === 'warmup');
+    modeQuizBtnEl.classList.toggle('expand', mode === 'quiz');
+    modeMcBtnEl.classList.toggle('expand', mode === 'mc');
+    modeNetworkBtnEl.classList.toggle('expand', mode === 'network');
     $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Accuracy';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
     $('statAccLabel').textContent = mode === 'warmup' ? 'Accuracy' : 'Score';
@@ -4092,6 +4219,7 @@
   $('lineNorthernBtn').addEventListener('click', function(){ setLine('northern'); });
   $('lineElizabethBtn').addEventListener('click', function(){ setLine('elizabeth'); });
   document.querySelectorAll('.line-select .line-chip[data-line-id]').forEach(wireLineChipHover);
+  document.querySelectorAll('.mode-select .mode-btn').forEach(wireModeBtnHover);
 
   // ---- secret: "The Drain" ----
   // a nearly-invisible drain-cover dot hides in the footer; clicking it
