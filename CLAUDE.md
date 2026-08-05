@@ -568,18 +568,36 @@ catch.
   `filter: brightness(1.12)`, matching `.line-chip`/`.dest-board`'s own hover treatment,
   since a button now always has its own color to brighten rather than a neutral state to
   leave behind.
-- **A mode button's callout lingers for `MODE_BTN_COLLAPSE_DELAY_MS` (900ms) after the mouse
-  leaves before it collapses, rather than reverting instantly** — by explicit instruction, so
-  a quick or slightly-overshooting mouse movement off the button doesn't snap the popup away
-  before it's actually been read. `scheduleCollapseModeBtns()` is the delayed path
-  (`mouseleave` only); `collapseModeBtnsToActive()` itself is still instant and still used
-  directly everywhere else (`setMode()`, boot init, `blur` — keyboard focus-out stays
-  immediate, unlike mouse hover, since a delayed collapse has no equivalent benefit for
-  keyboard users). A single shared `modeBtnCollapseTimer` means moving straight from one
-  button to another still swaps instantly with no lag — `preview()` (on `mouseenter`/`focus`)
-  clears any pending collapse before showing the newly-hovered button's own callout, and
-  `collapseModeBtnsToActive()` itself clears the timer too, so a stray already-scheduled
-  collapse can never fire after a state change that already made it irrelevant.
+- **The mode-button callout only ever shows during an actual hover or keyboard focus — never
+  at rest, not even for the currently selected mode** — by explicit instruction (an earlier
+  version kept the selected mode's callout visible at rest, mirroring the Line ribbon's own
+  "active chip stays expanded" behavior; that's deliberately not the case here anymore).
+  `setMode()` no longer touches `.expand` at all — only `wireModeBtnHover()`'s own
+  `mouseenter`/`focus`/`mouseleave`/`blur` wiring does. Clicking a mode button still shows its
+  callout momentarily (a real click already hovers/focuses the button), it just no longer
+  persists once the pointer moves away and the button is merely `.active`.
+  `collapseModeBtns()` (renamed from `collapseModeBtnsToActive()` now that it no longer
+  special-cases the active button — it always fully clears `.expand` from every button) lingers
+  for `MODE_BTN_COLLAPSE_DELAY_MS` (900ms) after the mouse leaves before collapsing, rather
+  than reverting instantly like the Line ribbon does — by explicit instruction, so a quick or
+  slightly-overshooting mouse movement off the button doesn't snap the popup away before it's
+  actually been read. `scheduleCollapseModeBtns()` is the delayed path (`mouseleave` only);
+  `collapseModeBtns()` itself is still instant and used directly by the `blur` handler —
+  keyboard focus-out stays immediate, unlike mouse hover, since a delayed collapse has no
+  equivalent benefit for keyboard users. A single shared `modeBtnCollapseTimer` means moving
+  straight from one button to another still swaps instantly with no lag — `preview()` (on
+  `mouseenter`/`focus`) clears any pending collapse before showing the newly-hovered button's
+  own callout, and `collapseModeBtns()` itself clears the timer too, so a stray
+  already-scheduled collapse can never fire after a state change that already made it
+  irrelevant.
+- **The "Mode" section label above the mode buttons was removed by explicit instruction** —
+  unlike Line/Branch/Direction/Route map, the mode row has no `.section-label` text at all now;
+  the buttons' own icons plus the hover/selected callout (see above) are considered
+  self-explanatory enough without it. `.line-select` (the Line ribbon) gained its own
+  `margin-bottom:18px`, matching this page's standard section-gap cadence, so it no longer sits
+  flush against the "Branch" label directly below it — it previously relied entirely on
+  `.mode-row`'s own (much larger) margin for breathing room, which stopped being reliable once
+  that margin was tightened back down (see above).
 - **The Play page's live "which line's colour is this" heading — `#playInfoLine`, e.g.
   "Central" in Central red — stays plain neutral ink (`--ink`) for Network mode specifically,
   not the live-shifting accent colour every other element there uses.** In every other mode
@@ -593,7 +611,7 @@ catch.
   color back to the same `--ink` every other heading-adjacent text already defaults to,
   overriding `#playInfoLine`'s own default `--accent-ink`.
 - **The hover/selected reveal is a floating callout card, not the Line ribbon's flex-grow
-  expansion.** `wireModeBtnHover()`/`collapseModeBtnsToActive()` are ported 1:1 from
+  expansion.** `wireModeBtnHover()`/`collapseModeBtns()` are ported 1:1 from
   `wireLineChipHover()`/`collapseChipsToActive()` (same one-expanded-at-a-time pattern:
   mouseenter/focus previews, mouseleave/blur reverts to the actually-active button), but where
   `.line-chip.expand` grows the chip itself via `flex-grow`, `.mode-btn.expand` instead fades
@@ -609,18 +627,13 @@ catch.
   avoid overflowing `.wrap` when the row was spread edge-to-edge via
   `justify-content:space-between`), but that's no longer needed now that the buttons are a
   centered, gapped cluster with real margin on both sides — don't reintroduce it unless the
-  row layout goes back to a full-width spread. It opens **downward**, not upward — tried
-  upward first (open space above Mode, being the first Setup section now), but the "Mode"
-  section label and the banner above left too little clearance and the callout visibly cut
-  across that label's own text. Opening downward toward the Line ribbon had the same problem
-  in reverse, so `.mode-row`'s own `margin-bottom` is deliberately oversized (64px, vs. every
-  other Setup section's 16-18px gap) — real reserved clearance for the callout to fully open
-  without cutting across the Line ribbon beneath it, confirmed by screenshot after both
-  directions were tried and measured, not assumed. `setMode()` toggles `.expand` in lockstep
-  with `.active` on every real mode switch, mirroring `setLine()`'s own paired
-  `.active`/`.expand` toggle (not `collapseModeBtnsToActive()`'s hover-revert path, reserved
-  for the mouseleave/blur handlers only), so the selected mode's callout always stays visible
-  at rest with no hover required.
+  row layout goes back to a full-width spread. It opens **downward**, toward the Line ribbon.
+  `.mode-row`'s own `margin-bottom` was briefly oversized (64px, vs. every other Setup
+  section's 16-18px gap) to guarantee the callout never visually touched the Line ribbon
+  beneath it, but was tightened back down to the standard 18px by explicit instruction — the
+  callout no longer shows at rest for the selected mode (see the bullet above), only during an
+  actual hover, so a hover-triggered callout briefly overlapping the ribbon's own top edge is
+  an accepted tradeoff now, not the common case an always-visible callout would have made it.
 - **Direction is an LED "next train" style destination board (`#directionBoard`/
   `.dest-board`), not two forward/reverse pill buttons — and Branch is a squared 2-column
   grid (`.branch-grid`/`.branch-chip`), not a wrapping pill row.** Setup order is Branch,

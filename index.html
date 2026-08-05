@@ -374,7 +374,7 @@
      below). Chips sit flush against each other (no gap, no seam) so it
      reads as one continuous strip of colour, not a row of separate tiles. */
   .line-select{
-    display:flex; gap:0; margin-top:0; height:56px; overflow:visible;
+    display:flex; gap:0; margin-top:0; margin-bottom:18px; height:56px; overflow:visible;
   }
   .line-chip{
     flex: 1 1 0%; min-width:0; position:relative; border:none; border-radius:0; padding:0; margin:0;
@@ -425,12 +425,13 @@
     text-transform:none; letter-spacing:normal; font-weight:400; font-size:11px;
     opacity:.75; margin-left:4px;
   }
-  /* Deliberately taller than the other Setup sections' own gaps (16-18px) —
-     the mode buttons' floating callout (see .mode-btn-callout) opens
-     downward into this exact space, and needs real clearance to clear the
-     Line ribbon immediately below it rather than visually cutting across
-     its label text (confirmed by screenshot on an earlier, tighter pass). */
-  .mode-row{ margin-bottom: 64px; }
+  /* Tightened back down to the same cadence as this page's other section
+     gaps (16-18px) by explicit instruction — the callout no longer shows
+     at rest for the selected mode (see setMode()), only during an actual
+     hover/focus, so the large reserved clearance an always-visible callout
+     needed is no longer the common case; a hover-triggered callout briefly
+     overlapping the Line ribbon below is an accepted tradeoff now. */
+  .mode-row{ margin-bottom: 18px; }
   /* LED "next train" style destination board, mimicking a real platform
      departure indicator: a dark plate (--board-bg, still per-theme — see
      applyLineTheme() — pure near-black reads fine against the app's own
@@ -1082,7 +1083,6 @@
   </header>
 
   <div class="mode-row">
-    <span class="direction-label section-label">Mode</span>
     <div class="mode-select">
       <button type="button" class="mode-btn active" id="modeWarmupBtn" aria-label="Warm-up — Type what you see">
         <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -3180,35 +3180,36 @@
     chip.addEventListener('blur', collapseChipsToActive);
   }
 
-  // Expand-on-hover/focus preview for the four round Mode buttons — ported
-  // from wireLineChipHover()/collapseChipsToActive() above (same
-  // one-expanded-at-a-time pattern: mouseenter/focus previews, mouseleave/
-  // blur reverts to whichever button is actually .active), but toggling a
-  // floating .mode-btn-callout card instead of a flex-grow ribbon chip — a
-  // fixed-diameter circle can't itself grow to reveal text the way
-  // .line-chip can. Purely a desktop/keyboard bonus: the active button's
-  // own callout stays visible at rest regardless (see setMode()), so a
-  // phone with no hover still always shows the current mode's name.
+  // Expand-on-hover/focus preview for the four round Mode buttons — a
+  // cousin of wireLineChipHover()/collapseChipsToActive() above (same
+  // mouseenter/focus-previews, mouseleave/blur-reverts shape), but
+  // deliberately NOT the same "active stays expanded at rest" behavior —
+  // by explicit instruction, the callout only ever shows during actual
+  // hover/focus, even for the currently selected mode; nothing is expanded
+  // at rest, ever. Toggles a floating .mode-btn-callout card rather than
+  // growing the button itself, since a fixed-diameter circle can't grow to
+  // reveal text the way a flex-ribbon .line-chip can.
   //
   // Unlike the Line ribbon (which reverts instantly on mouseleave/blur),
-  // the callout here lingers for a short moment before collapsing — by
-  // explicit instruction, so a quick, slightly-overshooting mouse movement
-  // off the button doesn't snap the popup away before it's actually been
-  // read. collapseModeBtnsToActive() itself stays instant (still used
-  // directly by setMode() and boot init); only the hover/blur path is
+  // the callout here lingers for a short moment before collapsing on
+  // mouseleave — by explicit instruction, so a quick, slightly-overshooting
+  // mouse movement off the button doesn't snap the popup away before it's
+  // actually been read. collapseModeBtns() itself stays instant (used
+  // directly by the `blur` handler, where a delayed collapse has no
+  // equivalent benefit for keyboard users); only the mouseleave path is
   // delayed, via a single shared timer that a fresh preview() cancels, so
   // moving straight to another button still swaps instantly with no lag.
   const MODE_BTN_COLLAPSE_DELAY_MS = 900;
   let modeBtnCollapseTimer = null;
-  function collapseModeBtnsToActive(){
+  function collapseModeBtns(){
     clearTimeout(modeBtnCollapseTimer);
     document.querySelectorAll('.mode-select .mode-btn').forEach(function(b){
-      b.classList.toggle('expand', b.classList.contains('active'));
+      b.classList.remove('expand');
     });
   }
   function scheduleCollapseModeBtns(){
     clearTimeout(modeBtnCollapseTimer);
-    modeBtnCollapseTimer = setTimeout(collapseModeBtnsToActive, MODE_BTN_COLLAPSE_DELAY_MS);
+    modeBtnCollapseTimer = setTimeout(collapseModeBtns, MODE_BTN_COLLAPSE_DELAY_MS);
   }
   function wireModeBtnHover(btn){
     function preview(){
@@ -3220,7 +3221,7 @@
     btn.addEventListener('mouseenter', preview);
     btn.addEventListener('focus', preview);
     btn.addEventListener('mouseleave', scheduleCollapseModeBtns);
-    btn.addEventListener('blur', collapseModeBtnsToActive);
+    btn.addEventListener('blur', collapseModeBtns);
   }
 
   function terminusNames(){
@@ -3691,16 +3692,14 @@
     modeQuizBtnEl.classList.toggle('active', mode === 'quiz');
     modeMcBtnEl.classList.toggle('active', mode === 'mc');
     modeNetworkBtnEl.classList.toggle('active', mode === 'network');
-    // Keeps .expand in lockstep with .active on every real mode switch —
-    // mirrors setLine()'s own paired .active/.expand toggle, not
-    // collapseModeBtnsToActive()'s hover-revert path (that one's reserved
-    // for the mouseleave/blur handlers only) — so the newly selected
-    // mode's callout is visible at rest with no hover needed, overriding
-    // any other button's lingering hover-preview.
-    modeWarmupBtnEl.classList.toggle('expand', mode === 'warmup');
-    modeQuizBtnEl.classList.toggle('expand', mode === 'quiz');
-    modeMcBtnEl.classList.toggle('expand', mode === 'mc');
-    modeNetworkBtnEl.classList.toggle('expand', mode === 'network');
+    // .expand is deliberately NOT synced to .active here — by explicit
+    // instruction, the callout only ever shows on actual hover/focus, even
+    // for the currently selected mode, never persisting at rest just
+    // because a button is .active. The click that got us here already
+    // hovers/focuses the button in a real browser, so its callout still
+    // shows momentarily (then lingers per scheduleCollapseModeBtns()) —
+    // this only stops it from staying up indefinitely once the pointer
+    // moves away.
     $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Accuracy';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
     $('statAccLabel').textContent = mode === 'warmup' ? 'Accuracy' : 'Score';
