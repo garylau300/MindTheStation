@@ -425,12 +425,13 @@
     text-transform:none; letter-spacing:normal; font-weight:400; font-size:11px;
     opacity:.75; margin-left:4px;
   }
-  /* Tightened back down to the same cadence as this page's other section
-     gaps (16-18px) by explicit instruction — the callout no longer shows
-     at rest for the selected mode (see setMode()), only during an actual
-     hover/focus, so the large reserved clearance an always-visible callout
-     needed is no longer the common case; a hover-triggered callout briefly
-     overlapping the Line ribbon below is an accepted tradeoff now. */
+  /* Tightened to the same cadence as this page's other section gaps
+     (16-18px) by explicit instruction — the callout only shows on real
+     hover/focus now (not at rest), so a large reserved gap isn't needed.
+     A hover-triggered callout visually overlapping the Line ribbon below
+     it is an accepted tradeoff at this spacing — its own z-index (see
+     .mode-btn-callout) keeps it painting on top of the ribbon rather than
+     getting hidden behind it, which is the part that actually matters. */
   .mode-row{ margin-bottom: 18px; }
   /* LED "next train" style destination board, mimicking a real platform
      departure indicator: a dark plate (--board-bg, still per-theme — see
@@ -566,18 +567,11 @@
 
   /* Label+description callout: a small floating card modeled on
      .station-popup's own look (rounded panel, border, shadow, compact
-     padding) — but NOT its position:absolute + getBoundingClientRect()
-     JS-measured placement. .station-popup needs that because it anchors to
-     an arbitrary, pannable station dot that can be anywhere on the route
-     map; this row's geometry is fixed and known ahead of time (always
-     exactly 4 buttons, one static row), so plain CSS anchoring is enough.
-     Anchored below the button (not above — tried first, but the Mode row's
-     own "Mode" section label and the banner above it left too little
-     clearance and got cut across, confirmed by screenshot). .mode-row's own
-     margin-bottom is deliberately oversized to give this room to open
-     downward without overlapping the Line ribbon beneath it — see that
-     rule's own comment. No up/down flip logic needed either way, since the
-     Mode row's position relative to the rest of Setup is fixed. */
+     padding), always opening downward toward the Line ribbon. At this
+     page's tightened spacing (see .mode-row) it does visually overlap the
+     ribbon on hover — an accepted tradeoff, by explicit instruction — but
+     its own z-index keeps it painting on top of the ribbon rather than
+     getting hidden behind it, which is the part that actually matters. */
   .mode-btn-callout{
     position:absolute; left:50%; top:calc(100% + 10px); z-index:20;
     transform: translateX(-50%) translateY(4px);

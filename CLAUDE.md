@@ -634,6 +634,14 @@ catch.
   callout no longer shows at rest for the selected mode (see the bullet above), only during an
   actual hover, so a hover-triggered callout briefly overlapping the ribbon's own top edge is
   an accepted tradeoff now, not the common case an always-visible callout would have made it.
+  A JS up/down flip (measuring real clearance and opening upward when the ribbon was too
+  close, mirroring `.station-popup`'s own has-arrow-up/has-arrow-down logic) was tried and
+  reverted — flipping upward just as easily ran into the page title above instead, trading one
+  overlap for another with no net improvement. What actually matters is that the ribbon never
+  visually *hides* the callout, not that the two never touch — `.mode-btn-callout`'s own
+  `z-index:20` already guarantees it paints on top of the ribbon regardless of DOM order, so
+  the accepted overlap reads as a callout floating over the ribbon (like a normal tooltip),
+  never as the ribbon covering the callout.
 - **Direction is an LED "next train" style destination board (`#directionBoard`/
   `.dest-board`), not two forward/reverse pill buttons — and Branch is a squared 2-column
   grid (`.branch-grid`/`.branch-chip`), not a wrapping pill row.** Setup order is Branch,
