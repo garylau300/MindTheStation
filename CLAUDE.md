@@ -1188,6 +1188,26 @@ catch.
   `document`), clicking to mute never plays its own click tick (already muted by the time the
   delegated listener checks), while clicking to unmute does (already unmuted by then) — reads
   as a natural "you just turned sound back on" confirmation rather than an inconsistency.
+- **`toggleSound()` resumes a suspended `audioCtx` itself, synchronously, the moment sound is
+  turned back on** — reported as "after I turned back on from off, the sounds are still off."
+  Extensive static and dynamic (real-browser Playwright, with instrumented `AudioContext`
+  logging every `resume()`/`start()` call, including full gameplay runs and repeated
+  mute/unmute cycles) investigation found the toggle logic, gain nodes, and event wiring all
+  behave correctly in every reproduction attempted — but the fix addresses a real, documented
+  Web Audio gotcha regardless: some browsers only honor `AudioContext.resume()` when it's
+  called synchronously inside a genuine user gesture (a click), and silently drop it otherwise.
+  Before this fix, `getAudioCtx()` was the only place `resume()` got called (lazily, on
+  whichever sound happens to fire next) — fine when that next call is itself a click (e.g.
+  Submit), but several sounds fire from `setTimeout`/`setInterval` callbacks with no user
+  gesture of their own (the 3-2-1 countdown ticks, `advance()`'s delayed transitions) — if the
+  context had auto-suspended (backgrounded tab, long idle gap) and one of *those* ends up being
+  the first thing to call `getAudioCtx()` after unmuting, its `resume()` attempt isn't a user
+  gesture and can be silently ignored, leaving audio stuck suspended even though the toggle
+  itself already reads "on." `toggleSound()` now also resumes `audioCtx` directly (guarded on
+  `audioCtx && audioCtx.state === 'suspended'`, wrapped in the same "never block on it"
+  try/catch) right inside its own click handler, guaranteeing at least one resume attempt
+  happens within a real gesture on every unmute, rather than leaving it entirely to chance which
+  call needs the context next.
 - **`.mc-options` is a 2-column grid at every width, including narrow phones, by explicit
   instruction** — a long station name wrapping to two lines there is an accepted tradeoff,
   not a bug. The old `@media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; }

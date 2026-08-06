@@ -4372,6 +4372,19 @@
     soundTogglePlayEl.classList.toggle('muted', !soundEnabled);
     soundToggleEl.setAttribute('aria-label', label);
     soundTogglePlayEl.setAttribute('aria-label', label);
+    // Re-enabling sound resumes the AudioContext right here, inside this
+    // click's own user gesture, rather than leaving that to whatever sound
+    // call happens to run next. Some browsers only honor
+    // AudioContext.resume() when it's invoked synchronously from a real
+    // user gesture and silently ignore it otherwise — if the context had
+    // been auto-suspended (backgrounded tab, long idle gap) and the next
+    // thing to call getAudioCtx() after unmuting is a timer-driven sound
+    // (e.g. a countdown tick, not a click), that resume attempt isn't a
+    // user gesture and can be silently dropped, leaving audio stuck
+    // suspended even though the toggle itself already reads "on".
+    if(soundEnabled && audioCtx && audioCtx.state === 'suspended'){
+      try{ audioCtx.resume(); } catch(e){ /* audio is a nice-to-have, never block on it */ }
+    }
   }
   soundToggleEl.addEventListener('click', toggleSound);
   soundTogglePlayEl.addEventListener('click', toggleSound);
