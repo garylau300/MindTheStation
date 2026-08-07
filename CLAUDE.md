@@ -1440,8 +1440,29 @@ significant change, don't assume it stays clean.
   `test/security.test.js`'s CSP-origin-matching test has explicit skips for `rel="canonical"`
   and `property="og:url"` lines, alongside its existing CSP-meta-line and JSON-LD
   `"@context"` skips — the site's own domain named in metadata is never actually fetched by
-  the browser, so it's not a real CSP gap. `og:image`/`twitter:image` are still **not**
-  included — they need a real hosted 1200×630 image asset, which doesn't exist yet.
+  the browser, so it's not a real CSP gap.
+- **`og-image.png` (repo root, 1200×630) is a real static file, not a `data:` URI** — unlike
+  the favicon/title icons, which are embedded inline specifically so the single-file app
+  never needs an external asset for in-browser rendering, a social-preview image is fetched
+  by an external scraper (Reddit/Twitter/Discord/Slack's own link-unfurling bots), which
+  needs a real, independently-fetchable URL — an inline `data:` URI in `og:image`/
+  `twitter:image` isn't reliably honored by those scrapers the way it is by a browser's own
+  `<link rel="icon">`. Generated via the same "placeholder + Python script, never hand-paste
+  a big asset into an editor" discipline as `favicon.ico`/`apple-touch-icon` (Pillow,
+  scratch script, not committed). Design deliberately reuses the app's own dark-mode
+  palette, a roundel-silhouette mark (a red ring + navy bar — evoking without reproducing
+  the trademarked TfL roundel), and a bottom strip in the real `LINE_RAINBOW_ORDER` colors
+  echoing the Setup page's own line ribbon — chosen over a raw UI screenshot since feed
+  thumbnails render text too small for an actual screenshot's small type to stay legible.
+  Wired via `og:image`/`og:image:width`/`og:image:height`/`og:image:alt`/`twitter:image` in
+  `<head>`, plus a matching `"screenshot"` field in the JSON-LD `WebApplication` block, all
+  pointing at the same absolute `https://www.mindthestation.com/og-image.png` URL.
+  `twitter:card` changed from `summary` (small square thumbnail) to `summary_large_image`
+  (full-width card) — pointless to ship a real image and then have Twitter/X render it tiny.
+  `test/security.test.js`'s CSP-origin-matching test skips `property="og:image"`/
+  `name="twitter:image"`/`"screenshot"` lines alongside its existing canonical/`og:url`
+  skips, for the same reason: the site's own domain named in metadata that only an external
+  scraper fetches, never the browser itself.
 - **JSON-LD structured data** (`<script type="application/ld+json">`, `WebApplication`
   schema) needs no CSP allowance — it's inline and `script-src` already has
   `'unsafe-inline'`, and a JSON-LD payload never causes the browser to actually fetch
