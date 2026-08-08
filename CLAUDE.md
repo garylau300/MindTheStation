@@ -38,6 +38,17 @@ from the live domain.
   real site, and merging `production`'s copy into `main` would silently remove the
   protection. Neither should ever happen by accident (see the git-workflow instructions this
   session operates under for how commits are meant to reach each branch).
+- **`index.html`'s Network mode button (`#modeNetworkBtn`) also deliberately differs between
+  `main` and `production` — `production`'s copy carries an extra `hidden` class
+  (`class="mode-btn hidden"`) that `main`'s copy doesn't.** The Network mode feature itself
+  is fully shipped in the underlying code on both branches (same JS, same tests, same
+  graph/journey logic) — only the button that surfaces it in the UI is suppressed on the
+  live site, by explicit instruction, until it's ready to be publicly launched. This is the
+  same kind of deliberate, actively-maintained divergence as the `vercel.json` difference
+  above: a plain merge of `main` into `production` will silently re-show the button (the
+  `hidden` class isn't in `main`'s markup to carry over), so re-add it by hand as part of
+  any future promotion until the day Network mode is meant to go fully live, at which point
+  this bullet — and the `hidden` class itself — should be removed.
 
 ## What it does
 
