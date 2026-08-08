@@ -13,26 +13,39 @@ for the "why", this file for quick working rules.
 
 ## Branches and deployment
 
-A `production` branch exists (pushed once from `main`, no other history of its own yet),
-intended to become Vercel's **Production Branch** once a custom domain is bought and pointed
-at it — Vercel's Production Branch setting is a per-project dashboard toggle
-(Settings → Git → Production Branch), not something a coding session's tools can flip, so
-that step is still pending on the human side. **As of right now `main` is still Vercel's
-actual Production Branch** — nothing about the live deployment has changed yet; `production`
-existing on GitHub doesn't do anything on its own until that dashboard setting is switched.
+**Live now**: `production` is Vercel's actual Production Branch, bound to the real domain
+`mindthestation.com`. `main` stays the always-current dev branch — every regular change
+merges into `main` exactly as before, and `production` only moves forward when a change is
+explicitly meant to go live, i.e. a deliberate "ship this" step, never an automatic side
+effect of routine work. Don't merge into `production` unless asked to promote/ship a change.
 
-Once that switch happens, the intended workflow is: every regular change still merges into
-`main` exactly as before (so `main` stays the always-current dev/preview branch, each push
-getting its own Preview Deployment) — `production` only moves forward when a change is
-explicitly meant to go live on the real domain, i.e. a deliberate "ship this" step, not an
-automatic side effect of every commit. Don't merge into `production` as part of routine work
-unless asked to promote/ship a change.
+`mindthestation.vercel.app` (the project's own default domain, previously tracking
+Production automatically) is meant to be manually reassigned in the Vercel dashboard to
+track `main` instead, so it works as a stable preview URL for in-progress work, separate
+from the live domain.
+
+- **`vercel.json` deliberately differs between `main` and `production` — it is NOT meant to
+  be kept identical across the two.** `main`'s copy carries an extra response header,
+  `X-Robots-Tag: noindex, nofollow`, that `production`'s copy omits. This exists because of a
+  real gap confirmed against Vercel's own docs: Vercel normally adds that header
+  automatically to Preview Deployments to keep them out of search results, *but that
+  automatic protection stops applying the moment any domain — including the project's own
+  default `.vercel.app` one — is manually assigned to a non-Production branch*, which is
+  exactly what `mindthestation.vercel.app` now is. Without this explicit header, the
+  `main`-tracked URL would be just as indexable as the real site, defeating the entire point
+  of keeping it separate. When touching `vercel.json`, always check which branch you're
+  actually pushing to — merging `main`'s copy into `production` would silently noindex the
+  real site, and merging `production`'s copy into `main` would silently remove the
+  protection. Neither should ever happen by accident (see the git-workflow instructions this
+  session operates under for how commits are meant to reach each branch).
 
 ## What it does
 
 Pick a line (and branch/direction if applicable), then practice recalling station order:
 **Warm-up** (target shown, type it), **Recall quiz** (previous station shown, type the
-next), **Multiple choice** (4 options). A 3-2-1 countdown precedes each run.
+next), **Multiple choice** (4 options), or **Network** (two random stations anywhere in the
+system, type the real route between them — see its own section below). A 3-2-1 countdown
+precedes each run.
 
 Typed-answer matching (`normalize()`, warm-up/quiz only — MC is button-click, no typing)
 lowercases, strips diacritics, and drops all non-alphanumeric characters before comparing —
@@ -155,6 +168,119 @@ they reset on page refresh, not just on a new run. Within a session:
   not this API) or the "no client-side storage" rule (the OS clipboard isn't app-persisted
   state). Button text flips to "Copied!" (or "Copy failed" if the promise rejects) for
   1.6s, then reverts.
+
+### Network mode
+
+A 4th mode (`#modeNetworkBtn`, alongside Warm-up/Recall quiz/Multiple choice): the app picks
+two random stations anywhere in the whole system and the player types every real stop of the
+shortest route between them — a genuine "can you actually navigate the Tube" challenge,
+rather than one line's own fixed stop order. Reuses Recall quiz's exact "type the next
+station from memory" flow end to end (`render()`'s `mode === 'quiz' || mode === 'network'`
+branch, including withholding the very first station's name the same way quiz already does)
+rather than being a wholly separate UI — the two are functionally identical once a journey
+exists, they just differ in *where that journey's station list comes from*.
+
+- **The whole feature reduces to one graph-shortest-path problem, not a new UI paradigm.**
+  Every function downstream of the single global `LINE` runtime object (`seq()`, `origIndex()`,
+  `totalSteps()`, `submitAnswer()`, `advance()`, `terminusNames()`, `updateDirectionBoard()`)
+  only ever reads `LINE.stations`/`journeyNames`/`journeyIndices`/`JOURNEY_LEN` — none of them
+  check *where* that data came from. So Network mode never generalizes those functions; it
+  just builds a `LINE`-shaped object from a computed path
+  (`buildNetworkRuntimeFromPath()`/`generateNetworkJourney()`) and assigns it to the same
+  global, the same way `setLine()`/`setBranch()` already do for a real line. The only new
+  field is `edgeLines` (which real line each `path[i]→path[i+1]` edge belongs to, for the
+  live-theme/badge cue below) — `def.branches` is `null`, `def.layout` is the synthetic
+  `'network'`, and MC's `generateMcOptions()` is never even called in this mode (Network only
+  ever uses the typing mechanic), so it needed no changes to draw distractors correctly.
+- **`buildNetworkGraph()` (index.html) builds one whole-network adjacency graph from the
+  existing `LINES` data — no separate interchange dataset needed.** For every line (or every
+  branch, for a branching line), each consecutive station pair becomes a graph edge; two
+  stations with the exact same name across different lines automatically become the *same*
+  graph node. That structural coincidence — same name, same node — **is** the
+  interchange-hopping mechanic, entirely for free. Circle's real physical loop closure
+  (`def.loopClosure`) also becomes a real edge (`stations[N-1]` → `stations[loopClosure[0]]`),
+  not just a gameplay-journey artifact, so a random path can correctly route across the
+  spiral's own closing stretch too.
+- **`KNOWN_NAME_COLLISIONS` (index.html, promoted out of what was previously
+  `test/interchanges.test.js`-only exception data) is what stops the graph from merging a
+  same-name-but-different-station pair into a fake interchange** — Bakerloo's own "Edgware
+  Road" vs. the Circle/District/H&C one, Piccadilly's own "Heathrow Terminal 4" vs.
+  Elizabeth's. Without this, a random shortest path could silently "teleport" through a
+  connection that doesn't physically exist. `networkNodeId(name, lineId)` namespaces exactly
+  those excepted (name, line) pairs into their own graph node (`"Edgware Road::bakerloo"`,
+  distinct from the plain `"Edgware Road"` node every other line's own station still shares)
+  — `test/network.test.js` asserts the namespaced and plain nodes are never the same object
+  and are never direct graph neighbors of each other. `test/interchanges.test.js` now reads
+  this same shared constant via a `getKnownNameCollisions()` test hook rather than keeping its
+  own separately-maintained copy.
+- **Random pair, deterministic path**: `generateNetworkJourney()` re-rolls a random start/end
+  node pair (`pickRandomNetworkPath()`) until the BFS shortest-path length falls in a target
+  ~5–15 stop range (roughly matching an average existing line run) — the real network is fully
+  connected in practice, so this always resolves in a handful of attempts; a bounded retry
+  count falls back to the last rolled pair rather than looping forever on the off chance it
+  doesn't. `networkShortestPath()`'s BFS always expands neighbors in a fixed sorted order, so
+  the *path* for any given pair is always deterministic even though *which* pair gets picked
+  is random each time — this is what makes `test/network.test.js`'s hand-verified-length
+  assertions and its "repeated calls agree" check possible.
+- **Called fresh on every "Start playing" *and* every "Play again"** (`beginRun()`, guarded on
+  `mode === 'network'`) — "randomized each run" means literally that, not a route fixed once
+  per session. Both entry points already funnel through `beginRun()`, so this needed no
+  separate wiring for the restart path.
+- **Live "which real line am I on" cue, both a small badge and the app's own accent theme** —
+  `currentRealLineId()` is the one function everything else should read through instead of
+  `LINE.def.id` directly (interchange badges, the badge pill, the theme), since
+  `LINE.def.id` is the synthetic `'network'` in this mode; it resolves to
+  `LINE.edgeLines[idx-1]` (clamped, falling back to the very first edge at question 0, before
+  anything's actually been "walked" yet). `updateNetworkLineBadge()` only touches the DOM
+  (re-applies `applyLineTheme()` with the new line's real color, mutating `LINE.def.color` in
+  place first) on an actual leg change, not on every single question, via
+  `currentNetworkBadgeLineId` tracking the last-applied line — the same "don't re-trigger
+  unless something really changed" discipline the streak flame's own reignite-vs-bump
+  distinction already uses. The badge itself reuses `.interchange-chip`'s exact CSS rather
+  than introducing a new chip style.
+- **`renderInterchanges()`'s two `LINE.def.id`-keyed checks (the Bakerloo/Edgware Road
+  exception and the "don't badge your own current line" filter) both route through
+  `currentRealLineId()` too** — reading `LINE.def.id` directly would silently break both once
+  it's the synthetic `'network'` value; this fix applies to every mode, not just Network,
+  since `currentRealLineId()` is a no-op passthrough (`return LINE.def.id`) whenever
+  `LINE.def.layout !== 'network'`.
+- **No SVG diagram, no line/branch/direction Setup UI at all.** `setupGeometry()`/
+  `drawDiagram()`/`drawRoutePreview()` all guard on `LINE.def.layout === 'network'` and return
+  immediately — a path that can cross an arbitrary number of differently-shaped lines has no
+  single sane diagram to lay out (see the existing "station name labels on the route map...
+  tried repeatedly and abandoned" precedent above; this is the same kind of rabbit hole, not
+  attempted). Since Network mode ignores line selection entirely, `setMode('network')` also
+  hides the Line ribbon, Branch grid, Direction board, and both diagram cards (Setup's route
+  map and Play's "Line progress") outright, collapsing Setup to just Mode row → Start playing
+  — extending the same per-mode show/hide pattern MC's own direction-row hiding already
+  established, not a new mechanism. The Play page's LED "Calling at" board is the one
+  exception that *stays* — `terminusNames()`/`updateDirectionBoard()`/`viaText()` only read
+  `LINE.stations`/`journeyNames` and a null-guarded `LINE.def.branches`, all already correctly
+  populated by the network runtime object, so it needed no changes at all.
+- **Leaving Network mode restores the real line that was active before entering it** —
+  `preNetworkLine` (`{ id, branchId }`) is captured once, on entry (the Line ribbon is hidden
+  the entire time Network mode is active, so nothing can change this underneath it), and
+  `setMode()` rebuilds `LINE = buildLineRuntime(...)` from it on the way back out to any other
+  mode, re-running `renderBranchRow()`/`applyLineTheme()`/`updateDirectionBoard()`/
+  `setupGeometry()`/`drawRoutePreview()` to resync everything a real line's own Setup state
+  depends on. `reverseDirection` is force-reset to `false` on *entering* Network mode too —
+  `seq()` reads it regardless of mode, and a leftover reverse toggle from whatever real line
+  was active before would otherwise silently quiz the freshly-generated path backwards, out of
+  sync with its own forward-built `def.label` framing text (`"Warren Street → Stratford"`).
+- **`test/network.test.js`** splits into the same two tiers this repo's other suites use: an
+  exhaustive pure-function tier (graph-collision safety, BFS determinism, a handful of
+  hand-verified station pairs with known expected path lengths — including one, Bond
+  Street/Green Park, that's a trap for assuming the *obvious* interchange when a more direct
+  same-line adjacency actually exists) with no jsdom timers/clicks needed, plus a sampled
+  UI-regression tier that plays through 8 full real-randomness runs via "Play again" rather
+  than one fixed pair — the input space (any 2 of 400+ stations) is too large to exhaustively
+  cover, so this samples real end-to-end runs on the theory that a stitching bug would surface
+  in essentially any random run, not just a specific one. `test/geometry.test.js` adds one
+  guard test confirming Network mode never attempts diagram geometry and keeps both diagram
+  containers hidden. Hook-returned path arrays (`window.__TEST__.networkShortestPath()`, etc.)
+  are wrapped in `Array.from()` before any `assert.deepEqual` against a plain local array
+  literal — the same cross-realm jsdom gotcha this file's own "Running tests" section already
+  documents for other hook values, re-encountered here.
 
 ## Running tests
 
@@ -382,6 +508,162 @@ catch.
   diagonal-hatch pattern an earlier version used — the hatch made the expanded label
   half-illegible (white text vanishing over its lighter stripe bands), which only mattered
   once the chip actually became hoverable/readable.
+- **Setup order is now Mode, then Line, then Branch, then Direction — Mode moved above the
+  Line ribbon by explicit instruction (the second deliberate Setup-order change in this
+  repo's history, after Branch-before-Direction below; don't re-swap either without checking
+  first).** This required pulling the Line ribbon (`#lineSelectLabel`/`#lineSelectGroup`) out
+  of `<header>` entirely — `<header>` used to hold both `.header-row` (pure page chrome: the
+  title, theme/sound toggles) and the Line ribbon, an asymmetry that predates this change.
+  `<header>` now contains only `.header-row`; Mode, Line, Branch, and Direction are four
+  sequential sibling sections below it. The `.setup-divider` that used to sit between
+  `<header>` and Mode was removed by explicit instruction (Mode now follows the header
+  directly, with only the header's own `margin-bottom` as spacing) — the app's other
+  `.setup-divider` (between Direction and "Start playing") also moved, from *above* to
+  *below* "Start playing", so it now separates the actionable controls (Mode through the
+  Start button) from the read-only route-map preview beneath, rather than sitting
+  immediately above the button. No CSS was scoped to `header .line-select`, so the Line
+  ribbon's move needed no other fix-up.
+- **The four Mode buttons (`#modeWarmupBtn`/`#modeQuizBtn`/`#modeMcBtn`/`#modeNetworkBtn`)
+  are round, icon-only circles, not the old rectangular button + `<small>`-subtitle row** —
+  the full label/description only shows in a floating `.mode-btn-callout` card on hover,
+  keyboard focus, or when actually selected, by explicit instruction. Icons are hand-authored
+  inline `<svg>` line-art (`viewBox="0 0 22 22"`, `stroke="currentColor"`, `stroke-width:1.6`,
+  round caps/joins, fill only on small solid accent dots/nodes) rather than Unicode glyphs —
+  `.theme-toggle`'s `☀`/`♪` work fine for two generic icons, but this codebase has already hit
+  Unicode's limits for a precise glyph once (the `.muted` sound-toggle's own combining-
+  character tofu-box problem, solved by drawing a CSS shape instead); four *semantically
+  distinct* mode concepts need the same "don't trust font-glyph roulette" treatment.
+  `stroke="currentColor"` means every icon inherits `.mode-btn`'s own `color` exactly the way
+  the theme-toggle's text glyphs already do — works across both themes and the active/inactive
+  state with no extra wiring. Warm-up = a bullseye (two concentric circles + a filled center
+  dot, literal to "a target station is shown"); Recall quiz = a filled node connected by a
+  dashed line and small arrowhead to an open node ("known stop → recall this one"); Multiple
+  choice = a 2×2 grid of four outlined squares, one holding a checkmark ("four options, one
+  chosen"); Network = three nodes joined by two *angled* segments with the middle
+  (interchange) node filled and the two ends open — deliberately not a straight two-node
+  line, so it reads distinctly from Recall quiz's icon at a glance.
+  `.mode-btn`'s diameter scales at the existing 900px/1300px breakpoints (48→54→60px, a flat
+  +6px per step — the same cadence `.line-select{ height:56px→62px→68px }` already uses)
+  rather than staying a fixed size like `.theme-toggle` does, since these are primary Setup
+  controls, not secondary utility icons. The four sit close together as one clustered group
+  (`.mode-select{ justify-content:center; gap:20px }`), not spread edge-to-edge across the
+  full row width the way the Line ribbon/Branch grid/Direction board deliberately are — by
+  explicit instruction, since these buttons read as one cohesive control rather than a
+  full-bleed section.
+- **Each mode button has its own fixed identity color** (`--mode-color`, set per button via
+  an ID selector — `#modeWarmupBtn`/`#modeQuizBtn`/`#modeMcBtn`/`#modeNetworkBtn`), not
+  `--line-accent` — an earlier version colored whichever mode button was `.active` using the
+  *currently selected line's* accent color, so every mode read as "whatever color Central
+  (or whichever line) happens to be" instead of having its own distinct look, by explicit
+  instruction to fix. Warm-up = amber `#E4780C`, Recall quiz = blue `#2E75D6`, Multiple
+  choice = green `#2FA84F`, Network = purple `#9B3FC4` — picked to stay visually distinct
+  from every real TfL line color already in use elsewhere in this app (Bakerloo's brown,
+  Central's red, Circle's yellow, District's green, Piccadilly's blue, Elizabeth's purple,
+  etc.), so a mode button is never mistaken for a line swatch, verified by eye against the
+  full `LINE_BADGE_COLORS` list rather than assumed. The color applies always, not just when
+  selected (`border-color`/icon `color` both read `var(--mode-color)` unconditionally) —
+  `.active` only adds a `color-mix(in srgb, var(--mode-color) 16%, transparent)` background
+  tint on top, the same visual-weight pattern `--line-accent` used before. The hover rule
+  (`@media (hover: hover)`) switched from swapping to a neutral ink color to
+  `filter: brightness(1.12)`, matching `.line-chip`/`.dest-board`'s own hover treatment,
+  since a button now always has its own color to brighten rather than a neutral state to
+  leave behind.
+- **The mode-button callout only ever shows during an actual hover or keyboard focus — never
+  at rest, not even for the currently selected mode** — by explicit instruction (an earlier
+  version kept the selected mode's callout visible at rest, mirroring the Line ribbon's own
+  "active chip stays expanded" behavior; that's deliberately not the case here anymore).
+  `setMode()` no longer touches `.expand` at all — only `wireModeBtnHover()`'s own
+  `mouseenter`/`focus`/`mouseleave`/`blur` wiring does. Clicking a mode button still shows its
+  callout momentarily (a real click already hovers/focuses the button), it just no longer
+  persists once the pointer moves away and the button is merely `.active`.
+  `collapseModeBtns()` (renamed from `collapseModeBtnsToActive()` now that it no longer
+  special-cases the active button — it always fully clears `.expand` from every button) lingers
+  for `MODE_BTN_COLLAPSE_DELAY_MS` (900ms) after the mouse leaves before collapsing, rather
+  than reverting instantly like the Line ribbon does — by explicit instruction, so a quick or
+  slightly-overshooting mouse movement off the button doesn't snap the popup away before it's
+  actually been read. `scheduleCollapseModeBtns()` is the delayed path (`mouseleave` only);
+  `collapseModeBtns()` itself is still instant and used directly by the `blur` handler —
+  keyboard focus-out stays immediate, unlike mouse hover, since a delayed collapse has no
+  equivalent benefit for keyboard users. A single shared `modeBtnCollapseTimer` means moving
+  straight from one button to another still swaps instantly with no lag — `preview()` (on
+  `mouseenter`/`focus`) clears any pending collapse before showing the newly-hovered button's
+  own callout, and `collapseModeBtns()` itself clears the timer too, so a stray
+  already-scheduled collapse can never fire after a state change that already made it
+  irrelevant.
+- **The "Mode" section label above the mode buttons was removed by explicit instruction** —
+  unlike Line/Branch/Direction/Route map, the mode row has no `.section-label` text at all now;
+  the buttons' own icons plus the hover/selected callout (see above) are considered
+  self-explanatory enough without it. `.line-select` (the Line ribbon) gained its own
+  `margin-bottom:18px`, matching this page's standard section-gap cadence, so it no longer sits
+  flush against the "Branch" label directly below it — it previously relied entirely on
+  `.mode-row`'s own (much larger) margin for breathing room, which stopped being reliable once
+  that margin was tightened back down (see above).
+- **"Start playing" (`.start-playing-btn`) is a narrower, taller pill centered in the row, not
+  a full-width bar like every other Setup control** — by explicit instruction, across every
+  screen/mode. `width:max-content` (capped by `max-width:100%` for very narrow phones) plus
+  `margin: 6px auto 0` sizes it to its own content instead of stretching to `.wrap`'s full
+  width, and taller vertical padding (`20px`, up from `15px`) gives it a visibly bigger tap
+  target despite the narrower footprint. Reads as one deliberate, single action rather than
+  one more full-bleed section like the Line ribbon/Branch grid/Direction board above it.
+- **"Start playing" is fixed black/white for Network mode specifically, not the plain
+  `button{}` rule's `var(--line-accent)`/`var(--accent-fill-ink)`.** Same reasoning as
+  `#playInfoLine.network-heading` just below: Network mode has no single line of its own, so
+  the button picking up whatever real line was last active on Setup (or whichever leg a
+  Network run last badged) reads as an arbitrary, unrelated colour rather than a real
+  selection. `setMode()` toggles `.network-mode-btn` on `#startPlayingBtn` based on
+  `mode === 'network'`; the override is a literal `#000`/`#fff`, not `var(--ink)`/
+  `var(--accent-ink)`, since this is a deliberate flat colour choice independent of the
+  light/dark theme toggle, not a themed one.
+- **The Play page's live "which line's colour is this" heading — `#playInfoLine`, e.g.
+  "Central" in Central red — stays plain neutral ink (`--ink`) for Network mode specifically,
+  not the live-shifting accent colour every other element there uses.** In every other mode
+  `#playInfoLine` shows a real line's own name, so tinting it that line's own accent colour is
+  correct and intentional; in Network mode it shows the journey's "Start → End" framing (e.g.
+  "Regent's Park → Woodford"), which isn't any single line's own name — tinting it to
+  whichever real line the player currently happens to be walking (the same
+  `updateNetworkLineBadge()`-driven accent shift the badge/theme already use) would misleadingly
+  suggest the whole journey belongs to just that one line. `updatePlayContextLabel()` toggles
+  `#playInfoLine.network-heading` based on `LINE.def.layout === 'network'`, which resets the
+  color back to the same `--ink` every other heading-adjacent text already defaults to,
+  overriding `#playInfoLine`'s own default `--accent-ink`.
+- **The hover/selected reveal is a floating callout card, not the Line ribbon's flex-grow
+  expansion.** `wireModeBtnHover()`/`collapseModeBtns()` are ported 1:1 from
+  `wireLineChipHover()`/`collapseChipsToActive()` (same one-expanded-at-a-time pattern:
+  mouseenter/focus previews, mouseleave/blur reverts to the actually-active button), but where
+  `.line-chip.expand` grows the chip itself via `flex-grow`, `.mode-btn.expand` instead fades
+  in a `.mode-btn-callout` child — a fixed 48-60px circle can't grow to reveal text the way a
+  flush, zero-gap flex ribbon chip can. The callout's visual style (rounded panel, border,
+  shadow, compact padding) is modeled on `.station-popup`, but its positioning deliberately is
+  not: `.station-popup` needs `getBoundingClientRect()`-measured, scroll/zoom-safe JS
+  placement because it anchors to an arbitrary, pannable station dot; the Mode row's geometry
+  is fixed and known ahead of time (always exactly 4 buttons in one static row), so the
+  callout is positioned with plain CSS, always centered under its own button
+  (`left:50%; transform:translateX(-50%)`) — an earlier version special-cased the first/last
+  buttons to anchor their callout to the button's own outer edge instead of centering (to
+  avoid overflowing `.wrap` when the row was spread edge-to-edge via
+  `justify-content:space-between`), but that's no longer needed now that the buttons are a
+  centered, gapped cluster with real margin on both sides — don't reintroduce it unless the
+  row layout goes back to a full-width spread. It opens **downward**, toward the Line ribbon.
+  `.mode-row`'s own `margin-bottom` was briefly oversized (64px, vs. every other Setup
+  section's 16-18px gap) to guarantee the callout never visually touched the Line ribbon
+  beneath it, but was tightened back down to the standard 18px by explicit instruction — the
+  callout no longer shows at rest for the selected mode (see the bullet above), only during an
+  actual hover, so a hover-triggered callout briefly overlapping the ribbon's own top edge is
+  an accepted tradeoff now, not the common case an always-visible callout would have made it.
+  A JS up/down flip (measuring real clearance and opening upward when the ribbon was too
+  close, mirroring `.station-popup`'s own has-arrow-up/has-arrow-down logic) was tried and
+  reverted — flipping upward just as easily ran into the page title above instead, trading one
+  overlap for another with no net improvement. What actually matters is that the ribbon never
+  visually *hides* the callout, not that the two never touch — confirmed by screenshot that
+  `z-index` on the callout alone isn't reliably enough for this: `.mode-btn`, the callout's own
+  positioned ancestor, has `z-index:auto` and so doesn't itself establish a stacking context,
+  meaning the callout's `z-index:20` was only escaping as far as wherever the *next* real
+  stacking context landed — not reliably above the Line ribbon in every case. `.mode-row`
+  itself is now `position:relative` with an explicit `z-index:5`, promoting the *whole row*
+  (buttons and their callouts together) into one real stacking context compared directly
+  against the Line ribbon, rather than leaving that to a single leaf descendant's z-index to
+  sort out. With that in place the accepted overlap reads as a callout floating over the
+  ribbon (like a normal tooltip), never as the ribbon covering the callout.
 - **Direction is an LED "next train" style destination board (`#directionBoard`/
   `.dest-board`), not two forward/reverse pill buttons — and Branch is a squared 2-column
   grid (`.branch-grid`/`.branch-chip`), not a wrapping pill row.** Setup order is Branch,
@@ -915,6 +1197,26 @@ catch.
   `document`), clicking to mute never plays its own click tick (already muted by the time the
   delegated listener checks), while clicking to unmute does (already unmuted by then) — reads
   as a natural "you just turned sound back on" confirmation rather than an inconsistency.
+- **`toggleSound()` resumes a suspended `audioCtx` itself, synchronously, the moment sound is
+  turned back on** — reported as "after I turned back on from off, the sounds are still off."
+  Extensive static and dynamic (real-browser Playwright, with instrumented `AudioContext`
+  logging every `resume()`/`start()` call, including full gameplay runs and repeated
+  mute/unmute cycles) investigation found the toggle logic, gain nodes, and event wiring all
+  behave correctly in every reproduction attempted — but the fix addresses a real, documented
+  Web Audio gotcha regardless: some browsers only honor `AudioContext.resume()` when it's
+  called synchronously inside a genuine user gesture (a click), and silently drop it otherwise.
+  Before this fix, `getAudioCtx()` was the only place `resume()` got called (lazily, on
+  whichever sound happens to fire next) — fine when that next call is itself a click (e.g.
+  Submit), but several sounds fire from `setTimeout`/`setInterval` callbacks with no user
+  gesture of their own (the 3-2-1 countdown ticks, `advance()`'s delayed transitions) — if the
+  context had auto-suspended (backgrounded tab, long idle gap) and one of *those* ends up being
+  the first thing to call `getAudioCtx()` after unmuting, its `resume()` attempt isn't a user
+  gesture and can be silently ignored, leaving audio stuck suspended even though the toggle
+  itself already reads "on." `toggleSound()` now also resumes `audioCtx` directly (guarded on
+  `audioCtx && audioCtx.state === 'suspended'`, wrapped in the same "never block on it"
+  try/catch) right inside its own click handler, guaranteeing at least one resume attempt
+  happens within a real gesture on every unmute, rather than leaving it entirely to chance which
+  call needs the context next.
 - **`.mc-options` is a 2-column grid at every width, including narrow phones, by explicit
   instruction** — a long station name wrapping to two lines there is an accepted tradeoff,
   not a bug. The old `@media (max-width: 480px){ .mc-options{ grid-template-columns: 1fr; }
@@ -1147,8 +1449,29 @@ significant change, don't assume it stays clean.
   `test/security.test.js`'s CSP-origin-matching test has explicit skips for `rel="canonical"`
   and `property="og:url"` lines, alongside its existing CSP-meta-line and JSON-LD
   `"@context"` skips — the site's own domain named in metadata is never actually fetched by
-  the browser, so it's not a real CSP gap. `og:image`/`twitter:image` are still **not**
-  included — they need a real hosted 1200×630 image asset, which doesn't exist yet.
+  the browser, so it's not a real CSP gap.
+- **`og-image.png` (repo root, 1200×630) is a real static file, not a `data:` URI** — unlike
+  the favicon/title icons, which are embedded inline specifically so the single-file app
+  never needs an external asset for in-browser rendering, a social-preview image is fetched
+  by an external scraper (Reddit/Twitter/Discord/Slack's own link-unfurling bots), which
+  needs a real, independently-fetchable URL — an inline `data:` URI in `og:image`/
+  `twitter:image` isn't reliably honored by those scrapers the way it is by a browser's own
+  `<link rel="icon">`. Generated via the same "placeholder + Python script, never hand-paste
+  a big asset into an editor" discipline as `favicon.ico`/`apple-touch-icon` (Pillow,
+  scratch script, not committed). Design deliberately reuses the app's own dark-mode
+  palette, a roundel-silhouette mark (a red ring + navy bar — evoking without reproducing
+  the trademarked TfL roundel), and a bottom strip in the real `LINE_RAINBOW_ORDER` colors
+  echoing the Setup page's own line ribbon — chosen over a raw UI screenshot since feed
+  thumbnails render text too small for an actual screenshot's small type to stay legible.
+  Wired via `og:image`/`og:image:width`/`og:image:height`/`og:image:alt`/`twitter:image` in
+  `<head>`, plus a matching `"screenshot"` field in the JSON-LD `WebApplication` block, all
+  pointing at the same absolute `https://www.mindthestation.com/og-image.png` URL.
+  `twitter:card` changed from `summary` (small square thumbnail) to `summary_large_image`
+  (full-width card) — pointless to ship a real image and then have Twitter/X render it tiny.
+  `test/security.test.js`'s CSP-origin-matching test skips `property="og:image"`/
+  `name="twitter:image"`/`"screenshot"` lines alongside its existing canonical/`og:url`
+  skips, for the same reason: the site's own domain named in metadata that only an external
+  scraper fetches, never the browser itself.
 - **JSON-LD structured data** (`<script type="application/ld+json">`, `WebApplication`
   schema) needs no CSP allowance — it's inline and `script-src` already has
   `'unsafe-inline'`, and a JSON-LD payload never causes the browser to actually fetch

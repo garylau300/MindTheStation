@@ -11,6 +11,7 @@
     "test:geometry": "node --test test/geometry.test.js",
     "test:gameplay": "node --test test/gameplay.test.js",
     "test:interchanges": "node --test test/interchanges.test.js",
+    "test:network": "node --test test/network.test.js",
     "test:security": "node --test test/security.test.js",
     "test:e2e": "playwright test",
     "test:all": "npm test && npm run test:e2e"

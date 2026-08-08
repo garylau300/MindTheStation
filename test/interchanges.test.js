@@ -10,27 +10,20 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadPage, closePage } = require('./test-utils');
 
-// Same station *name*, genuinely different physical station — not a real
-// interchange, so it's correctly excluded from badge data. renderInterchanges()
-// has an explicit special case for this exact one (Bakerloo's Edgware Road is
-// not the Circle/District/H&C station of the same name nearby). Heathrow
-// Terminal 4 is the same situation between Piccadilly (the tube-only
-// building) and Elizabeth (the separate, adjacent mainline-tunnel building)
-// — but since neither building has any other real interchange of its own,
-// STATION_INTERCHANGES' shared empty [] for that name already produces the
-// correct "no badges" result for both without needing a renderInterchanges()
-// special case too.
-const KNOWN_NAME_COLLISIONS = {
-  'Edgware Road': new Set(['bakerloo']),
-  'Heathrow Terminal 4': new Set(['piccadilly', 'elizabeth'])
-};
-
 test('every station shared by two lines carries an interchange badge for both', () => {
   const page = loadPage();
   const { test: hooks } = page;
   try {
     const LINES = hooks.getLINES();
     const interchanges = hooks.getInterchanges();
+    // Same station *name*, genuinely different physical station — not a real
+    // interchange, so it's correctly excluded from badge data. Sourced from
+    // the app's own KNOWN_NAME_COLLISIONS (index.html) rather than a second,
+    // separately-maintained copy here — see that constant's own comment for
+    // the per-station reasoning (Bakerloo's Edgware Road vs. Circle/
+    // District/H&C's; Piccadilly's Heathrow Terminal 4 vs. Elizabeth's).
+    // Also consulted by Network mode's graph builder for the same reason.
+    const KNOWN_NAME_COLLISIONS = hooks.getKnownNameCollisions();
 
     // Build lineId -> Set(station names actually served by that line),
     // covering every branch for branch-tree lines so a station only on one

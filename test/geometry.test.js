@@ -151,3 +151,27 @@ test('district: hidden Kensington (Olympia) egg branch has no station collisions
   }
   assert.equal(collisions.length, 0, 'station collisions detected:\n' + collisions.join('\n'));
 });
+
+// A network run can cross an arbitrary number of differently-shaped lines,
+// so there's no diagram to draw for it — setupGeometry()/drawDiagram() both
+// guard on LINE.def.layout === 'network' and return immediately rather than
+// attempting to lay one out (see index.html). This is a guard test, not a
+// geometry-correctness one: it just confirms entering Network mode and
+// starting a real run never crashes either function, and the diagram
+// container stays hidden throughout.
+test('Network mode never attempts diagram geometry and keeps the diagram hidden', async (t) => {
+  const page = loadPage();
+  const { document: doc, test: hooks } = page;
+  t.after(() => closePage(page));
+
+  doc.getElementById('modeNetworkBtn').click();
+  assert.equal(hooks.getMode(), 'network');
+  assert.ok(doc.getElementById('routeMapCard').classList.contains('hidden'), 'Setup route map should be hidden in Network mode');
+
+  doc.getElementById('startPlayingBtn').click();
+  await new Promise(resolve => setTimeout(resolve, 50)); // let beginRun()/runCountdown() settle
+
+  const line = hooks.getLine();
+  assert.equal(line.def.layout, 'network');
+  assert.ok(doc.getElementById('playDiagramCard').classList.contains('hidden'), 'Play page diagram should stay hidden throughout a Network run');
+});

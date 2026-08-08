@@ -16,9 +16,14 @@
 <meta property="og:description" content="Learn every Tube station by heart — a free London Underground memory game. Elizabeth line is now out.">
 <meta property="og:url" content="https://www.mindthestation.com/">
 <meta property="og:locale" content="en_GB">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://www.mindthestation.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mind the Station — London Underground station trainer">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Mind the Station — London Underground Station Trainer">
 <meta name="twitter:description" content="Learn every Tube station by heart — a free London Underground memory game. Elizabeth line is now out.">
+<meta name="twitter:image" content="https://www.mindthestation.com/og-image.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -29,6 +34,7 @@
   "operatingSystem": "Any",
   "isAccessibleForFree": true,
   "inLanguage": "en-GB",
+  "screenshot": "https://www.mindthestation.com/og-image.png",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
   "creator": { "@type": "Organization", "name": "Studio Espero" },
   "publisher": { "@type": "Organization", "name": "Studio Espero" }
@@ -322,10 +328,22 @@
   .line-select-label{ margin-top:18px; }
   .route-map-label{ margin-top:18px; }
 
+  /* Deliberately not full-width like every other Setup control (Line
+     ribbon/Branch grid/Direction board) — by explicit instruction, a
+     narrower, taller pill reads as a single deliberate action rather than
+     one more full-bleed section, and centers itself in the row instead. */
   .start-playing-btn{
-    display:block; width:100%; margin-top: 6px; padding: 15px 20px; font-size:16px;
+    display:block; width:max-content; max-width:100%; margin: 6px auto 0;
+    padding: 20px 52px; font-size:16px;
     font-weight:400; border-radius: 12px;
   }
+  /* Network mode has no single line of its own, so the plain button{}
+     background (var(--line-accent), whatever real line was last active)
+     reads as an arbitrary, unrelated colour here rather than a real
+     selection — same reasoning as #playInfoLine.network-heading above.
+     Fixed black/white regardless of theme, not var(--ink)/var(--accent-ink),
+     since this is a deliberate flat colour choice, not a theme-following one. */
+  .start-playing-btn.network-mode-btn{ background:#000; color:#fff; }
   .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; }
 
   .play-topbar{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; min-height:70px; }
@@ -346,6 +364,14 @@
     font-family:var(--font-main); color: var(--ink);
   }
   #playInfoLine{ color: var(--accent-ink); }
+  /* Network mode's heading is "Start → End" (e.g. "Regent's Park →
+     Woodford"), not a real line's own name — tinting it to whichever real
+     line's color happens to be current (the live theme-shift accent) would
+     misleadingly suggest the whole journey belongs to just that one line,
+     so it stays plain neutral ink instead, unlike every other mode's
+     heading (which legitimately is a real line's own name in its own
+     color). */
+  #playInfoLine.network-heading{ color: var(--ink); }
   .play-info-dot{ width:11px; height:11px; border-radius:50%; background: var(--line-accent); flex:none; }
   .play-info-sub{
     margin-top:6px; font-size:14px; color: var(--ink-dim);
@@ -366,7 +392,7 @@
      below). Chips sit flush against each other (no gap, no seam) so it
      reads as one continuous strip of colour, not a row of separate tiles. */
   .line-select{
-    display:flex; gap:0; margin-top:0; height:56px; overflow:visible;
+    display:flex; gap:0; margin-top:0; margin-bottom:18px; height:56px; overflow:visible;
   }
   .line-chip{
     flex: 1 1 0%; min-width:0; position:relative; border:none; border-radius:0; padding:0; margin:0;
@@ -417,7 +443,20 @@
     text-transform:none; letter-spacing:normal; font-weight:400; font-size:11px;
     opacity:.75; margin-left:4px;
   }
-  .mode-row{ margin-bottom: 16px; }
+  /* Tightened to the same cadence as this page's other section gaps
+     (16-18px) by explicit instruction — the callout only shows on real
+     hover/focus now (not at rest), so a large reserved gap isn't needed.
+     A hover-triggered callout visually overlapping the Line ribbon below
+     it is an accepted tradeoff at this spacing, but the ribbon must never
+     paint over/hide the callout — confirmed by screenshot that a z-index
+     on the callout alone wasn't reliably enough (`.mode-btn`, its own
+     positioned ancestor, has z-index:auto and so doesn't itself establish
+     a stacking context, meaning the callout's z-index only reliably
+     escapes to win against later DOM siblings — the Line ribbon here —
+     once the whole row it lives in is explicitly promoted into its own
+     stacking context). `.mode-row` itself is `position:relative` with a
+     real z-index for exactly that reason, not just the leaf callout. */
+  .mode-row{ margin-bottom: 18px; position:relative; z-index: 5; }
   /* LED "next train" style destination board, mimicking a real platform
      departure indicator: a dark plate (--board-bg, still per-theme — see
      applyLineTheme() — pure near-black reads fine against the app's own
@@ -521,14 +560,54 @@
   .mc-context-node.empty{ border-style:dashed; opacity:.35; color: var(--ink-dim); }
   .mc-context-connector{ flex:0 0 10px; width:10px; height:2px; background: var(--line); }
 
-  .mode-select{ display:flex; gap:8px; margin-bottom: 0; flex-wrap:wrap; }
+  /* Four round, icon-only mode buttons, clustered together as one compact
+     group (gap-based, not spread edge-to-edge like the Line ribbon/Branch
+     grid/Direction board) — centered in the row by explicit instruction. */
+  .mode-select{ display:flex; justify-content:center; gap:20px; margin-bottom: 0; }
+  /* Each mode gets its own fixed identity color — deliberately its own
+     `--mode-color`, not `--line-accent` (which used to color whichever
+     button was active, so every mode read as "whatever color the
+     currently-selected line happens to be" instead of having its own
+     look). Picked to stay visually distinct from every real TfL line color
+     already in use elsewhere in this app (bakerloo brown, central red,
+     circle yellow, district green, piccadilly blue, elizabeth purple,
+     etc.) so a mode button is never mistaken for a line swatch. */
+  #modeWarmupBtn{ --mode-color: #E4780C; }
+  #modeQuizBtn{ --mode-color: #2E75D6; }
+  #modeMcBtn{ --mode-color: #2FA84F; }
+  #modeNetworkBtn{ --mode-color: #9B3FC4; }
   .mode-btn{
-    flex:1; min-width: 0; text-align:center; font-family:var(--font-main); font-weight:400; font-size:13px;
-    padding: 11px 10px; border-radius: 10px; border: 2px solid var(--line); background: var(--panel);
-    color: var(--ink-dim); cursor:pointer;
+    position:relative; flex:none; width:48px; height:48px; display:flex;
+    align-items:center; justify-content:center; padding:0;
+    border-radius:999px; border: 2px solid var(--mode-color); background: var(--panel);
+    color: var(--mode-color); cursor:pointer;
   }
-  .mode-btn small{ display:block; font-family:var(--font-main); font-weight:400; font-size:11px; margin-top:2px; opacity:.9; }
-  .mode-btn.active{ border-color: var(--line-accent); color: var(--accent-ink); background: color-mix(in srgb, var(--line-accent) 14%, transparent); }
+  .mode-btn.active{ background: color-mix(in srgb, var(--mode-color) 16%, transparent); }
+  /* stroke="currentColor" on every icon inherits this button's own color,
+     the same way .theme-toggle's ☀/♪ text glyphs already do via `color` —
+     works across light/dark theme and active/inactive state with no extra
+     wiring. */
+  .mode-btn-icon{ width:20px; height:20px; display:block; }
+
+  /* Label+description callout: a small floating card modeled on
+     .station-popup's own look (rounded panel, border, shadow, compact
+     padding), always opening downward toward the Line ribbon. At this
+     page's tightened spacing (see .mode-row) it does visually overlap the
+     ribbon on hover — an accepted tradeoff, by explicit instruction — but
+     its own z-index keeps it painting on top of the ribbon rather than
+     getting hidden behind it, which is the part that actually matters. */
+  .mode-btn-callout{
+    position:absolute; left:50%; top:calc(100% + 10px); z-index:20;
+    transform: translateX(-50%) translateY(4px);
+    width:max-content; min-width:120px; max-width:min(190px, calc(100vw - 32px));
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding:9px 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+    text-align:left; pointer-events:none;
+    opacity:0; transition: opacity .18s ease, transform .18s ease;
+  }
+  .mode-btn.expand .mode-btn-callout{ opacity:1; transform:translateX(-50%) translateY(0); transition-delay:.08s; }
+  .mode-btn-name{ display:block; font-size:13px; font-weight:700; line-height:1.2; color:var(--ink); }
+  .mode-btn-desc{ display:block; font-size:11px; font-weight:400; color:var(--ink-dim); margin-top:2px; }
 
   .stats{ display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--line); border-radius: var(--radius) var(--radius) 0 0; overflow:hidden; margin-bottom: 1px; border: 1px solid var(--line); border-bottom:none; }
   .stat{ background: var(--panel); padding: 12px 10px; text-align:center; }
@@ -666,6 +745,11 @@
     display:inline-flex; align-items:center; padding:5px 11px; border-radius:999px;
     font-size:11px; font-family:var(--font-main); font-weight:400;
   }
+
+  /* Network mode's "which real line are you on right now" cue — its own
+     chip reuses .interchange-chip's exact look rather than new CSS, filled
+     in by renderNetworkLineBadge() with the current edge's real line color. */
+  .network-line-badge{ display:flex; margin: -4px 0 14px; }
 
   .input-row{ display:flex; gap:10px; }
   input[type=text]{
@@ -893,7 +977,7 @@
 
   @media (hover: hover) and (pointer: fine){
     .line-chip:hover{ filter: brightness(1.12); }
-    .mode-btn:not(.active):hover{ border-color: var(--ink-dim); color: var(--ink); }
+    .mode-btn:hover{ filter: brightness(1.12); }
     .branch-chip:not(.active):hover{ filter: brightness(1.08); }
     .dest-board:hover{ filter: brightness(1.15); }
     .link-btn:hover{ border-color: var(--ink-dim); color: var(--ink); }
@@ -938,8 +1022,11 @@
     .branch-chip{ font-size:14px; }
     .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ font-size:17px; }
     .direction-label{ font-size:11.5px; }
-    .mode-btn{ font-size:15px; padding:13px 12px; }
-    .mode-btn small{ font-size:12px; }
+    .mode-btn{ width:54px; height:54px; }
+    .mode-btn-icon{ width:22px; height:22px; }
+    .mode-btn-name{ font-size:13.5px; }
+    .mode-btn-desc{ font-size:11.5px; }
+    .mode-btn-callout{ max-width:min(210px, calc(100vw - 32px)); }
     .stat b, .stat-row-time b{ font-size:27px; }
     .stat span{ font-size:12px; }
     .play-info-main{ font-size:23px; }
@@ -968,8 +1055,11 @@
     .branch-chip{ font-size:15.5px; }
     .led-num, .led-dest, .led-via, .led-right, .led-calling-scroll{ font-size:18px; }
     .direction-label{ font-size:12px; }
-    .mode-btn{ font-size:16.5px; padding:15px 14px; }
-    .mode-btn small{ font-size:13px; }
+    .mode-btn{ width:60px; height:60px; }
+    .mode-btn-icon{ width:24px; height:24px; }
+    .mode-btn-name{ font-size:14px; }
+    .mode-btn-desc{ font-size:12px; }
+    .mode-btn-callout{ max-width:min(230px, calc(100vw - 32px)); }
     .stat b, .stat-row-time b{ font-size:31px; }
     .stat span{ font-size:13px; }
     .play-info-main{ font-size:25px; }
@@ -1008,31 +1098,63 @@
       <button type="button" id="themeToggle" class="theme-toggle" aria-label="Switch to dark theme">☀</button>
       <button type="button" id="soundToggle" class="theme-toggle" aria-label="Mute sound">♪</button>
     </div>
-    <span class="direction-label section-label line-select-label">Line</span>
-    <div class="line-select" role="group" aria-label="Choose a line">
-      <button type="button" class="line-chip active expand" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
-      <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineElizabethBtn" data-line-id="elizabeth"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">41 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">Hammersmith &amp; City</b><span class="chip-count">29 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
-      <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
-    </div>
   </header>
 
-  <div class="setup-divider"></div>
-
   <div class="mode-row">
-    <span class="direction-label section-label">Mode</span>
     <div class="mode-select">
-      <button type="button" class="mode-btn active" id="modeWarmupBtn">Warm-up<small>Type what you see</small></button>
-      <button type="button" class="mode-btn" id="modeQuizBtn">Recall quiz<small>Type from memory</small></button>
-      <button type="button" class="mode-btn" id="modeMcBtn">Multiple choice<small>Pick from 4</small></button>
+      <button type="button" class="mode-btn active" id="modeWarmupBtn" aria-label="Warm-up — Type what you see">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="11" cy="11" r="8.2"></circle>
+          <circle cx="11" cy="11" r="4.6"></circle>
+          <circle cx="11" cy="11" r="1.15" fill="currentColor" stroke="none"></circle>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Warm-up</b><span class="mode-btn-desc">Type what you see</span></span>
+      </button>
+      <button type="button" class="mode-btn" id="modeQuizBtn" aria-label="Recall quiz — Type from memory">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="5" cy="17" r="2.3" fill="currentColor" stroke="none"></circle>
+          <circle cx="17" cy="5" r="2.3"></circle>
+          <line x1="7.6" y1="14.6" x2="12.8" y2="9.4" stroke-dasharray="2.2 2.2"></line>
+          <path d="M11.6 8.4 L14.2 7.2 L13.4 10"></path>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Recall quiz</b><span class="mode-btn-desc">Type from memory</span></span>
+      </button>
+      <button type="button" class="mode-btn" id="modeMcBtn" aria-label="Multiple choice — Pick from 4">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <rect x="2.5" y="2.5" width="7" height="7" rx="1.6"></rect>
+          <rect x="12.5" y="2.5" width="7" height="7" rx="1.6"></rect>
+          <rect x="2.5" y="12.5" width="7" height="7" rx="1.6"></rect>
+          <rect x="12.5" y="12.5" width="7" height="7" rx="1.6"></rect>
+          <path d="M14.7 16.2 L16 17.6 L18.3 14.8"></path>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Multiple choice</b><span class="mode-btn-desc">Pick from 4</span></span>
+      </button>
+      <button type="button" class="mode-btn hidden" id="modeNetworkBtn" aria-label="Network — Navigate a random journey">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="4" cy="17.5" r="2.1"></circle>
+          <circle cx="11" cy="7" r="2.5" fill="currentColor" stroke="none"></circle>
+          <circle cx="18" cy="12.5" r="2.1"></circle>
+          <line x1="5.7" y1="15.9" x2="9.1" y2="9.3"></line>
+          <line x1="13" y1="8.1" x2="16.2" y2="10.9"></line>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Network</b><span class="mode-btn-desc">Navigate a random journey</span></span>
+      </button>
     </div>
+  </div>
+
+  <span class="direction-label section-label line-select-label" id="lineSelectLabel">Line</span>
+  <div class="line-select" id="lineSelectGroup" role="group" aria-label="Choose a line">
+    <button type="button" class="line-chip active expand" id="lineCentralBtn" data-line-id="central"><span class="chip-label"><b class="chip-name">Central</b><span class="chip-count">43 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineBakerlooBtn" data-line-id="bakerloo"><span class="chip-label"><b class="chip-name">Bakerloo</b><span class="chip-count">25 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineCircleBtn" data-line-id="circle"><span class="chip-label"><b class="chip-name">Circle</b><span class="chip-count">35 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineDistrictBtn" data-line-id="district"><span class="chip-label"><b class="chip-name">District</b><span class="chip-count">59 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineVictoriaBtn" data-line-id="victoria"><span class="chip-label"><b class="chip-name">Victoria</b><span class="chip-count">16 stations</span></span></button>
+    <button type="button" class="line-chip" id="linePiccadillyBtn" data-line-id="piccadilly"><span class="chip-label"><b class="chip-name">Piccadilly</b><span class="chip-count">52 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineElizabethBtn" data-line-id="elizabeth"><span class="chip-label"><b class="chip-name">Elizabeth</b><span class="chip-count">41 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineMetropolitanBtn" data-line-id="metropolitan"><span class="chip-label"><b class="chip-name">Metropolitan</b><span class="chip-count">34 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineHcBtn" data-line-id="hammersmithcity"><span class="chip-label"><b class="chip-name">Hammersmith &amp; City</b><span class="chip-count">29 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineJubileeBtn" data-line-id="jubilee"><span class="chip-label"><b class="chip-name">Jubilee</b><span class="chip-count">27 stations</span></span></button>
+    <button type="button" class="line-chip" id="lineNorthernBtn" data-line-id="northern"><span class="chip-label"><b class="chip-name">Northern</b><span class="chip-count">52 stations</span></span></button>
   </div>
 
   <div class="direction-row hidden" id="branchRow">
@@ -1062,12 +1184,12 @@
     </button>
   </div>
 
-  <div class="setup-divider"></div>
-
   <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
 
-  <span class="direction-label section-label route-map-label">Route map</span>
-  <div class="diagram-card">
+  <div class="setup-divider"></div>
+
+  <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
+  <div class="diagram-card" id="routeMapCard">
     <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
   </div>
   <div class="station-popup hidden" id="stationPopup">
@@ -1151,6 +1273,7 @@
         <div class="countdown-overlay hidden" id="countdownOverlay">
           <div class="countdown-number" id="countdownNumber">3</div>
         </div>
+        <div class="qc network-line-badge hidden" id="networkLineBadge"></div>
         <div class="context qc" id="contextLine"></div>
         <div class="prompt qc hidden" id="promptLine"></div>
         <div class="target-word qc hidden" id="targetWord"></div>
@@ -1170,7 +1293,7 @@
         <div class="feedback"><span class="feedback-toast" id="feedback"></span></div>
       </div>
 
-      <div class="diagram-card">
+      <div class="diagram-card" id="playDiagramCard">
         <h3>Line progress</h3>
         <svg id="lineSvg" viewBox="0 0 400 260"></svg>
       </div>
@@ -1602,6 +1725,21 @@
     // same "same name, not an interchange" situation as this line's own Heathrow Terminal 4
     "Woolwich": [],
     "Abbey Wood": [badge('nationalrail','National Rail')]
+  };
+
+  // A handful of station names are shared by two genuinely different
+  // physical stations, not a real interchange — Bakerloo's own "Edgware
+  // Road" vs. the Circle/District/H&C one nearby, and Piccadilly's own
+  // "Heathrow Terminal 4" vs. Elizabeth's separate, adjacent building (see
+  // the STATION_INTERCHANGES comments above for the per-station reasoning).
+  // Originally only test/interchanges.test.js's own exception list — promoted
+  // here so Network mode's graph builder (buildNetworkGraph()) can consult
+  // the same, single source of truth: without this, treating these as one
+  // shared graph node would let a random journey "teleport" through a
+  // connection that doesn't physically exist.
+  const KNOWN_NAME_COLLISIONS = {
+    'Edgware Road': new Set(['bakerloo']),
+    'Heathrow Terminal 4': new Set(['piccadilly', 'elizabeth'])
   };
 
   const LINES = {
@@ -2145,6 +2283,163 @@
     };
   }
 
+  // ---- Network mode: a randomly-picked start/end station anywhere in the
+  // whole system, with the player recalling every real stop of the shortest
+  // route between them. The whole thing reduces to one graph-shortest-path
+  // problem: build a single undirected graph from every line's own station/
+  // branch arrays (two same-named stations across different lines become
+  // the same node automatically — that IS the interchange-hopping
+  // mechanic, for free, with no separate interchange dataset needed), then
+  // BFS between a random pair of nodes. See KNOWN_NAME_COLLISIONS above for
+  // the handful of same-name-but-different-station exceptions this must
+  // never merge, or a "shortest route" could silently route the player
+  // through a walk that doesn't physically exist.
+  function networkNodeId(stationName, lineId){
+    const collision = KNOWN_NAME_COLLISIONS[stationName];
+    return (collision && collision.has(lineId)) ? (stationName + '::' + lineId) : stationName;
+  }
+  function networkNodeDisplayName(nodeId){
+    const sep = nodeId.indexOf('::');
+    return sep === -1 ? nodeId : nodeId.slice(0, sep);
+  }
+
+  let networkGraphCache = null;
+  function buildNetworkGraph(){
+    if(networkGraphCache) return networkGraphCache;
+    // nodeId -> { name, edges: Map(neighborNodeId -> Set(lineId)) } — a Set,
+    // not a single lineId, since a shared corridor (e.g. Circle/District's
+    // long overlap) really is served by more than one line at once.
+    const graph = new Map();
+    function ensureNode(nodeId, name){
+      if(!graph.has(nodeId)) graph.set(nodeId, { name, edges: new Map() });
+      return graph.get(nodeId);
+    }
+    function addEdge(idA, nameA, idB, nameB, lineId){
+      const nodeA = ensureNode(idA, nameA), nodeB = ensureNode(idB, nameB);
+      if(!nodeA.edges.has(idB)) nodeA.edges.set(idB, new Set());
+      nodeA.edges.get(idB).add(lineId);
+      if(!nodeB.edges.has(idA)) nodeB.edges.set(idA, new Set());
+      nodeB.edges.get(idA).add(lineId);
+    }
+    function addPath(stations, lineId, loopClosure){
+      for(let i = 0; i < stations.length - 1; i++){
+        const a = stations[i], b = stations[i+1];
+        addEdge(networkNodeId(a, lineId), a, networkNodeId(b, lineId), b, lineId);
+      }
+      // A real physical loop (only Circle today) closes back through the
+      // station(s) named in loopClosure rather than ending at a true
+      // terminus — stations[N-1]'s real next stop is stations[loopClosure[0]].
+      if(loopClosure && loopClosure.length){
+        const a = stations[stations.length - 1], b = stations[loopClosure[0]];
+        addEdge(networkNodeId(a, lineId), a, networkNodeId(b, lineId), b, lineId);
+      }
+    }
+    Object.values(LINES).forEach(def => {
+      if(def.branches){
+        Object.values(def.branches).forEach(branch => addPath(branch.stations, def.id, def.loopClosure));
+      } else {
+        addPath(def.stations, def.id, def.loopClosure);
+      }
+    });
+    networkGraphCache = graph;
+    return graph;
+  }
+
+  // Deterministic BFS — neighbors are always expanded in a fixed sorted
+  // order, so the same start/end node always yields the same path, even
+  // though which start/end gets picked each run is random (needed for
+  // reproducible tests).
+  function networkShortestPath(graph, startId, endId){
+    if(startId === endId) return [startId];
+    if(!graph.has(startId) || !graph.has(endId)) return null;
+    const visited = new Set([startId]);
+    const parent = new Map();
+    const queue = [startId];
+    for(let qi = 0; qi < queue.length; qi++){
+      const current = queue[qi];
+      const neighbors = Array.from(graph.get(current).edges.keys()).sort();
+      for(const next of neighbors){
+        if(visited.has(next)) continue;
+        visited.add(next);
+        parent.set(next, current);
+        if(next === endId){
+          const path = [endId];
+          let cur = endId;
+          while(cur !== startId){ cur = parent.get(cur); path.push(cur); }
+          return path.reverse();
+        }
+        queue.push(next);
+      }
+    }
+    return null; // the real network is fully connected in practice; this
+                 // should never trigger, but a random pair must never crash
+  }
+
+  // Builds the LINE-shaped runtime object from a resolved node-id path —
+  // shared by the real randomized entry point below and a test-only
+  // fixed-pair entry point, so both go through identical stitching logic.
+  function buildNetworkRuntimeFromPath(graph, nodeIdPath){
+    const stations = nodeIdPath.map(networkNodeDisplayName);
+    const N = stations.length;
+    const edgeLines = [];
+    let prevLineId = null;
+    for(let i = 0; i < nodeIdPath.length - 1; i++){
+      const lineIdSet = graph.get(nodeIdPath[i]).edges.get(nodeIdPath[i+1]);
+      // Prefer continuing the previous edge's line where possible, so a run
+      // that never actually needed to change lines doesn't flicker the
+      // accent theme just because a shared corridor's edge happened to be
+      // recorded under a different line id than the edge before it.
+      const lineId = (prevLineId && lineIdSet.has(prevLineId)) ? prevLineId : Array.from(lineIdSet).sort()[0];
+      edgeLines.push(lineId);
+      prevLineId = lineId;
+    }
+    const journeyIndices = [...Array(N).keys()];
+    const reversedJourneyIndices = journeyIndices.slice().reverse();
+    return {
+      def: {
+        id: 'network', label: stations[0] + ' → ' + stations[N-1],
+        color: LINES[edgeLines[0]].color, layout: 'network', branches: null, loopClosure: []
+      },
+      stations, N, branchId: null,
+      journeyIndices, reversedJourneyIndices,
+      journeyNames: stations, reversedJourneyNames: stations.slice().reverse(),
+      JOURNEY_LEN: N,
+      edgeLines
+    };
+  }
+
+  const NETWORK_MIN_STOPS = 5, NETWORK_MAX_STOPS = 15, NETWORK_MAX_ROLLS = 200;
+  let networkRandomFn = Math.random;
+  // Random start/end pick, re-rolled until the shortest path falls in a
+  // target length range roughly matching an average existing line run — the
+  // network is fully connected in practice, so this always resolves
+  // quickly; falls back to whatever the very last rolled pair produced if
+  // the roll budget is ever exhausted, rather than looping forever.
+  function pickRandomNetworkPath(graph, randomFn){
+    const nodeIds = Array.from(graph.keys());
+    let lastPath = null;
+    for(let attempt = 0; attempt < NETWORK_MAX_ROLLS; attempt++){
+      const a = nodeIds[Math.floor(randomFn() * nodeIds.length)];
+      const b = nodeIds[Math.floor(randomFn() * nodeIds.length)];
+      if(a === b) continue;
+      const path = networkShortestPath(graph, a, b);
+      if(!path) continue;
+      lastPath = path;
+      const stops = path.length - 1;
+      if(stops >= NETWORK_MIN_STOPS && stops <= NETWORK_MAX_STOPS) return path;
+    }
+    return lastPath;
+  }
+
+  // Called fresh on every "Start playing"/"Play again" in Network mode
+  // (see beginRun()) — "randomized each run" means literally that, not a
+  // route fixed once for the whole session.
+  function generateNetworkJourney(){
+    const graph = buildNetworkGraph();
+    const path = pickRandomNetworkPath(graph, networkRandomFn);
+    return buildNetworkRuntimeFromPath(graph, path);
+  }
+
   // ---- Small color utility: derive a readable "ink" (text) variant
   // of a line's brand color for light mode, since a color bright
   // enough to read on a dark background (like Circle's yellow) is
@@ -2276,6 +2571,13 @@
   const modeWarmupBtnEl = $('modeWarmupBtn');
   const modeQuizBtnEl = $('modeQuizBtn');
   const modeMcBtnEl = $('modeMcBtn');
+  const modeNetworkBtnEl = $('modeNetworkBtn');
+  const networkLineBadgeEl = $('networkLineBadge');
+  const lineSelectLabelEl = $('lineSelectLabel');
+  const lineSelectGroupEl = $('lineSelectGroup');
+  const routeMapLabelEl = $('routeMapLabel');
+  const routeMapCardEl = $('routeMapCard');
+  const playDiagramCardEl = $('playDiagramCard');
   const directionBoardEl = $('directionBoard');
   const ledDestEl = $('ledDest');
   const ledViaEl = $('ledVia');
@@ -2285,9 +2587,13 @@
   const ledCallingScrollEl = $('ledCallingScroll');
 
   let isLight = true;
-  let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc'
+  let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc' | 'network'
   let reverseDirection = false; // only applies to warmup / quiz
   let idx = 0;
+  // tracks which real line's color/badge is currently applied during a
+  // Network run, so render() only re-touches the DOM on an actual leg
+  // change instead of on every single question
+  let currentNetworkBadgeLineId = null;
   let streak = 0, bestStreak = 0, correctCount = 0, attempts = 0;
   let misses = [];
   let startTime = null, charsTyped = 0, bestWpm = 0, lastRunWpm = 0;
@@ -2724,10 +3030,52 @@
     return origIndex(idx);
   }
 
+  // For every ordinary line, "the current line" is simply LINE.def.id — but
+  // Network mode's LINE.def.id is the synthetic 'network', since a network
+  // run can cross several real lines. Anything that needs to know "which
+  // real line is this station/edge actually on" (interchange badges, the
+  // live accent theme, the per-question line pill) should go through this
+  // rather than reading LINE.def.id directly. LINE.edgeLines[i] holds the
+  // real lineId for the path[i]→path[i+1] edge; the edge relevant to the
+  // question currently on screen is the one just walked to get here, i.e.
+  // edgeLines[idx-1] — except at idx 0, where nothing's been walked yet, so
+  // it falls back to the very first edge (the line the journey starts on).
+  function currentRealLineId(){
+    if(LINE.def.layout !== 'network') return LINE.def.id;
+    const edgeIdx = Math.min(Math.max(idx - 1, 0), LINE.edgeLines.length - 1);
+    return LINE.edgeLines[edgeIdx];
+  }
+
+  // Network mode's "which real line are you on right now" cue — a small
+  // pill (reusing .interchange-chip's own look) plus the whole app's accent
+  // theme, both driven by currentRealLineId(). Only actually touches the
+  // DOM on a genuine leg change (currentNetworkBadgeLineId tracks the last
+  // one applied), not on every single question, the same "don't re-trigger
+  // unless something really changed" discipline the streak flame's own
+  // reignite-vs-bump distinction already uses.
+  function updateNetworkLineBadge(){
+    const realLineId = currentRealLineId();
+    const def = LINES[realLineId];
+    networkLineBadgeEl.innerHTML = '';
+    const chip = document.createElement('span');
+    chip.className = 'interchange-chip';
+    chip.style.background = def.color;
+    chip.style.color = readableTextOn(def.color);
+    chip.textContent = def.label + ' line';
+    networkLineBadgeEl.appendChild(chip);
+    networkLineBadgeEl.classList.remove('hidden');
+    if(realLineId !== currentNetworkBadgeLineId){
+      currentNetworkBadgeLineId = realLineId;
+      LINE.def.color = def.color;
+      applyLineTheme();
+    }
+  }
+
   function resetState(){
     idx = 0; streak = 0; correctCount = 0; attempts = 0; misses = [];
     startTime = null; charsTyped = 0; results = {};
     score = 0; questionStartTime = null; hintUsedThisQuestion = false;
+    currentNetworkBadgeLineId = null;
     resetStreakFlame();
     hideFeedback();
     if(mode === 'mc') mcOrder = shuffle([...Array(LINE.N).keys()]);
@@ -2848,6 +3196,50 @@
     chip.addEventListener('focus', preview);
     chip.addEventListener('mouseleave', collapseChipsToActive);
     chip.addEventListener('blur', collapseChipsToActive);
+  }
+
+  // Expand-on-hover/focus preview for the four round Mode buttons — a
+  // cousin of wireLineChipHover()/collapseChipsToActive() above (same
+  // mouseenter/focus-previews, mouseleave/blur-reverts shape), but
+  // deliberately NOT the same "active stays expanded at rest" behavior —
+  // by explicit instruction, the callout only ever shows during actual
+  // hover/focus, even for the currently selected mode; nothing is expanded
+  // at rest, ever. Toggles a floating .mode-btn-callout card rather than
+  // growing the button itself, since a fixed-diameter circle can't grow to
+  // reveal text the way a flex-ribbon .line-chip can.
+  //
+  // Unlike the Line ribbon (which reverts instantly on mouseleave/blur),
+  // the callout here lingers for a short moment before collapsing on
+  // mouseleave — by explicit instruction, so a quick, slightly-overshooting
+  // mouse movement off the button doesn't snap the popup away before it's
+  // actually been read. collapseModeBtns() itself stays instant (used
+  // directly by the `blur` handler, where a delayed collapse has no
+  // equivalent benefit for keyboard users); only the mouseleave path is
+  // delayed, via a single shared timer that a fresh preview() cancels, so
+  // moving straight to another button still swaps instantly with no lag.
+  const MODE_BTN_COLLAPSE_DELAY_MS = 900;
+  let modeBtnCollapseTimer = null;
+  function collapseModeBtns(){
+    clearTimeout(modeBtnCollapseTimer);
+    document.querySelectorAll('.mode-select .mode-btn').forEach(function(b){
+      b.classList.remove('expand');
+    });
+  }
+  function scheduleCollapseModeBtns(){
+    clearTimeout(modeBtnCollapseTimer);
+    modeBtnCollapseTimer = setTimeout(collapseModeBtns, MODE_BTN_COLLAPSE_DELAY_MS);
+  }
+  function wireModeBtnHover(btn){
+    function preview(){
+      clearTimeout(modeBtnCollapseTimer);
+      document.querySelectorAll('.mode-select .mode-btn').forEach(function(b){
+        b.classList.toggle('expand', b === btn);
+      });
+    }
+    btn.addEventListener('mouseenter', preview);
+    btn.addEventListener('focus', preview);
+    btn.addEventListener('mouseleave', scheduleCollapseModeBtns);
+    btn.addEventListener('blur', collapseModeBtns);
   }
 
   function terminusNames(){
@@ -3252,6 +3644,14 @@
     // relying solely on the ResizeObserver in alignPageTitleLines() below
     // to catch the hidden-to-visible transition on its own.
     alignPageTitleLines();
+    // A fresh random journey every "Start playing"/"Play again" — this is
+    // what "randomized each run" means literally, not a route fixed once
+    // for the whole session. Both entry points call beginRun() directly.
+    if(mode === 'network'){
+      LINE = generateNetworkJourney();
+      applyLineTheme();
+      updatePlayContextLabel();
+    }
     resetState();
     render();
     runCountdown(function(){
@@ -3264,8 +3664,9 @@
   $('backToSetupBtn2').addEventListener('click', function(){ showPage('setup'); });
 
   function updatePlayContextLabel(){
-    const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice' };
+    const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice', network: 'Network' };
     $('playInfoLine').textContent = LINE.def.label;
+    $('playInfoLine').classList.toggle('network-heading', LINE.def.layout === 'network');
     $('playInfoMode').textContent = modeLabels[mode];
     $('playInfoDot').style.background = LINE.def.color;
 
@@ -3281,22 +3682,77 @@
     $('playInfoSub').textContent = subParts.join(' · ');
   }
 
+  // The real single line/branch active just before entering Network mode —
+  // the Line ribbon is hidden throughout Network mode (nothing can change
+  // this selection while it's active), so it only ever needs capturing once,
+  // on entry, and restoring once, on exit.
+  let preNetworkLine = null;
   function setMode(newMode){
+    if(newMode === 'network' && mode !== 'network'){
+      preNetworkLine = { id: LINE.def.id, branchId: LINE.branchId };
+      reverseDirection = false; // seq() must always read forward for a
+                                 // network run — its def.label framing
+                                 // ("Warren Street → Stratford") is always
+                                 // built forward too, and a leftover reverse
+                                 // toggle from a prior real-line run would
+                                 // otherwise silently quiz the path backwards
+    } else if(newMode !== 'network' && mode === 'network' && preNetworkLine){
+      LINE = buildLineRuntime(preNetworkLine.id, preNetworkLine.branchId);
+      reverseDirection = false;
+      renderBranchRow();
+      applyLineTheme();
+      updateDirectionBoard();
+      setupGeometry();
+      drawRoutePreview();
+    }
     mode = newMode;
     modeWarmupBtnEl.classList.toggle('active', mode === 'warmup');
     modeQuizBtnEl.classList.toggle('active', mode === 'quiz');
     modeMcBtnEl.classList.toggle('active', mode === 'mc');
+    modeNetworkBtnEl.classList.toggle('active', mode === 'network');
+    // .expand is deliberately NOT synced to .active here — by explicit
+    // instruction, the callout only ever shows on actual hover/focus, even
+    // for the currently selected mode, never persisting at rest just
+    // because a button is .active. The click that got us here already
+    // hovers/focuses the button in a real browser, so its callout still
+    // shows momentarily (then lingers per scheduleCollapseModeBtns()) —
+    // this only stops it from staying up indefinitely once the pointer
+    // moves away.
     $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Accuracy';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
     $('statAccLabel').textContent = mode === 'warmup' ? 'Accuracy' : 'Score';
-    promptLine.classList.toggle('hidden', mode !== 'quiz');
+    // Network mode reuses Recall quiz's own "type the next station from
+    // memory" flow end to end (see render()) rather than warmup's
+    // show-and-type or MC's option grid, so it shares quiz's UI toggles too.
+    const quizLike = mode === 'quiz' || mode === 'network';
+    promptLine.classList.toggle('hidden', !quizLike);
     targetWord.classList.toggle('hidden', mode !== 'warmup');
     inputRow.classList.toggle('hidden', mode === 'mc');
     mcOptionsEl.classList.toggle('hidden', mode !== 'mc');
     mcContextCard.classList.toggle('hidden', mode !== 'mc');
-    $('directionRow').classList.toggle('hidden', mode === 'mc');
+    $('directionRow').classList.toggle('hidden', mode === 'mc' || mode === 'network');
     hintBtnEl.classList.toggle('hidden', mode === 'warmup');
     $('rowActions').classList.toggle('single', mode === 'warmup');
+    $('startPlayingBtn').classList.toggle('network-mode-btn', mode === 'network');
+    // Network mode ignores line/branch/direction/route-map entirely — a
+    // random journey can span any number of differently-shaped lines, so
+    // there's no single line to pick or diagram to draw (see drawDiagram()/
+    // setupGeometry()'s own 'network' layout guard).
+    lineSelectLabelEl.classList.toggle('hidden', mode === 'network');
+    lineSelectGroupEl.classList.toggle('hidden', mode === 'network');
+    routeMapLabelEl.classList.toggle('hidden', mode === 'network');
+    routeMapCardEl.classList.toggle('hidden', mode === 'network');
+    playDiagramCardEl.classList.toggle('hidden', mode === 'network');
+    // #branchRow's visibility the rest of the time is renderBranchRow()'s
+    // own job (hidden only for a line with no branches) — only ever force
+    // it here on the way *into* Network mode; the restore branch above
+    // already calls renderBranchRow() on the way back out, which correctly
+    // re-shows or re-hides it for whichever real line is being returned to.
+    if(mode === 'network') $('branchRow').classList.add('hidden');
+    if(mode !== 'network'){
+      networkLineBadgeEl.classList.add('hidden');
+      currentNetworkBadgeLineId = null;
+    }
     updatePlayContextLabel();
     resetState();
     render();
@@ -3346,17 +3802,21 @@
   }
 
   function renderInterchanges(stationName){
-    // Bakerloo's "Edgware Road" is a separate physical station from the
-    // Circle/District/H&C one nearby — same name, not an in-station
-    // interchange, so it must never inherit that station's badges here
-    if(stationName === 'Edgware Road' && LINE.def.id === 'bakerloo'){
+    const realLineId = currentRealLineId();
+    // Same-name-but-different-station exceptions (Bakerloo's own "Edgware
+    // Road", Piccadilly/Elizabeth's own "Heathrow Terminal 4") — see
+    // KNOWN_NAME_COLLISIONS. Reading through currentRealLineId() rather
+    // than LINE.def.id directly means this keeps working correctly in
+    // Network mode too, where LINE.def.id is the synthetic 'network'.
+    const collision = KNOWN_NAME_COLLISIONS[stationName];
+    if(collision && collision.has(realLineId)){
       interchangeRow.innerHTML = '';
       interchangeRow.classList.add('hidden');
       return;
     }
     const full = STATION_INTERCHANGES[stationName] || [];
     // don't show the line you're currently studying as its own "interchange"
-    const list = full.filter(b => b.id !== LINE.def.id);
+    const list = full.filter(b => b.id !== realLineId);
     interchangeRow.innerHTML = '';
     if(list.length === 0){
       interchangeRow.classList.add('hidden');
@@ -3502,7 +3962,12 @@
       targetWord.textContent = list[idx];
       answerInput.placeholder = 'Type it exactly…';
       renderInterchanges(list[idx]);
-    } else if(mode === 'quiz'){
+    } else if(mode === 'quiz' || mode === 'network'){
+      // Network mode reuses this exact flow (including withholding the
+      // very first station's name — the persistent "Warren Street →
+      // Stratford" framing line above the card is where that's discoverable,
+      // same as a real line's own chosen direction already is for quiz)
+      // rather than a separate branch, since the two are otherwise identical.
       interchangeRow.classList.add('hidden');
       if(idx === 0){
         // no station name shown here — naming it would give away the
@@ -3528,6 +3993,7 @@
       questionStartTime = Date.now();
       hintUsedThisQuestion = false;
     }
+    if(LINE.def.layout === 'network') updateNetworkLineBadge();
     updateStats();
     drawDiagram();
     // only pull focus (and pop the mobile keyboard) when continuing an
@@ -3600,6 +4066,10 @@
       summaryTitleEl.textContent = misses.length === 0 ? 'Full journey, zero mistakes' : 'Quiz complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
       perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
+    } else if(mode === 'network'){
+      summaryTitleEl.textContent = misses.length === 0 ? 'Journey complete, zero mistakes' : 'Journey complete';
+      summarySubEl.textContent = LINE.def.label + ' · you got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
+      perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     } else {
       summaryTitleEl.textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
@@ -3659,7 +4129,7 @@
       bestStreak = Math.max(bestStreak, streak);
       charsTyped += list[idx].length + 1;
       results[trueIdx] = 'ok';
-      if(mode === 'quiz') popCard();
+      if(mode === 'quiz' || mode === 'network') popCard();
       answerInput.className = 'right';
       let msg = '✓ Correct';
       if(mode !== 'warmup'){
@@ -3753,6 +4223,11 @@
       line = LINE.def.label + ' line · Warm-up · ' + lastRunWpm + ' WPM · ' + acc + '% accuracy';
     } else if(mode === 'quiz'){
       line = LINE.def.label + ' line · Recall quiz · ' + correctCount + '/' + LINE.JOURNEY_LEN + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
+    } else if(mode === 'network'){
+      // no trailing "line" — LINE.def.label is already "Start → End" here,
+      // not a real line's own name, so appending "line" after it would
+      // read wrong the way it does for the other three modes
+      line = 'Network · ' + LINE.def.label + ' · ' + correctCount + '/' + LINE.JOURNEY_LEN + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
     } else {
       line = LINE.def.label + ' line · Multiple choice · ' + correctCount + '/' + LINE.N + ' · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score;
     }
@@ -3771,6 +4246,7 @@
   modeWarmupBtnEl.addEventListener('click', function(){ setMode('warmup'); });
   modeQuizBtnEl.addEventListener('click', function(){ setMode('quiz'); });
   modeMcBtnEl.addEventListener('click', function(){ setMode('mc'); });
+  modeNetworkBtnEl.addEventListener('click', function(){ setMode('network'); });
 
   directionBoardEl.addEventListener('click', function(){ setDirection(!reverseDirection); });
 
@@ -3786,6 +4262,7 @@
   $('lineNorthernBtn').addEventListener('click', function(){ setLine('northern'); });
   $('lineElizabethBtn').addEventListener('click', function(){ setLine('elizabeth'); });
   document.querySelectorAll('.line-select .line-chip[data-line-id]').forEach(wireLineChipHover);
+  document.querySelectorAll('.mode-select .mode-btn').forEach(wireModeBtnHover);
 
   // ---- secret: "The Drain" ----
   // a nearly-invisible drain-cover dot hides in the footer; clicking it
@@ -3909,6 +4386,19 @@
     soundTogglePlayEl.classList.toggle('muted', !soundEnabled);
     soundToggleEl.setAttribute('aria-label', label);
     soundTogglePlayEl.setAttribute('aria-label', label);
+    // Re-enabling sound resumes the AudioContext right here, inside this
+    // click's own user gesture, rather than leaving that to whatever sound
+    // call happens to run next. Some browsers only honor
+    // AudioContext.resume() when it's invoked synchronously from a real
+    // user gesture and silently ignore it otherwise — if the context had
+    // been auto-suspended (backgrounded tab, long idle gap) and the next
+    // thing to call getAudioCtx() after unmuting is a timer-driven sound
+    // (e.g. a countdown tick, not a click), that resume attempt isn't a
+    // user gesture and can be silently dropped, leaving audio stuck
+    // suspended even though the toggle itself already reads "on".
+    if(soundEnabled && audioCtx && audioCtx.state === 'suspended'){
+      try{ audioCtx.resume(); } catch(e){ /* audio is a nice-to-have, never block on it */ }
+    }
   }
   soundToggleEl.addEventListener('click', toggleSound);
   soundTogglePlayEl.addEventListener('click', toggleSound);
@@ -3950,6 +4440,12 @@
 
   function setupGeometry(){
     const layout = LINE.def.layout;
+    // A network run can cross an arbitrary number of differently-shaped
+    // lines — there's no sane single diagram to lay out for that (see
+    // CLAUDE.md's own "station name labels on the route map... tried
+    // repeatedly and abandoned" precedent for why this isn't attempted).
+    // drawDiagram()/drawRoutePreview() carry the matching guard.
+    if(layout === 'network') return;
 
     if(layout === 'spur-loop'){
       const cx = 270, cy = 130, r = 160;
@@ -4181,6 +4677,7 @@
   }
 
   function drawRoutePreview(){
+    if(LINE.def.layout === 'network') return; // see setupGeometry()'s own guard
     const svg = routePreviewSvgEl;
     svg.innerHTML = ''; // wipes out whatever dot activeStationDot was pointing at
     activeStationDot = null;
@@ -4389,6 +4886,7 @@
   }
 
   function drawDiagram(){
+    if(LINE.def.layout === 'network') return; // see setupGeometry()'s own guard
     svg.innerHTML = '';
     const ns = 'http://www.w3.org/2000/svg';
     const N = LINE.N;

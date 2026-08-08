@@ -39,6 +39,7 @@ test('CSP origin allowances exactly match actual resource usage (no gaps, nothin
     if(line.includes('Content-Security-Policy')) continue; // the policy itself lists origins; not a "usage"
     if(line.includes('"@context"')) continue; // JSON-LD's schema.org URI is a data identifier, never fetched by the browser
     if(line.includes('rel="canonical"') || line.includes('property="og:url"')) continue; // the site's own domain, referenced as metadata, never fetched by the browser
+    if(line.includes('property="og:image"') || line.includes('name="twitter:image"') || line.includes('"screenshot"')) continue; // the site's own og-image.png, referenced as metadata for link-preview scrapers — never fetched by the browser itself
     let m;
     while((m = directOriginPattern.exec(line))) directOrigins.add(m[1]);
   }
