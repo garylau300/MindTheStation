@@ -337,6 +337,13 @@
     padding: 20px 52px; font-size:16px;
     font-weight:400; border-radius: 12px;
   }
+  /* Network mode has no single line of its own, so the plain button{}
+     background (var(--line-accent), whatever real line was last active)
+     reads as an arbitrary, unrelated colour here rather than a real
+     selection — same reasoning as #playInfoLine.network-heading above.
+     Fixed black/white regardless of theme, not var(--ink)/var(--accent-ink),
+     since this is a deliberate flat colour choice, not a theme-following one. */
+  .start-playing-btn.network-mode-btn{ background:#000; color:#fff; }
   .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; }
 
   .play-topbar{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; min-height:70px; }
@@ -3726,6 +3733,7 @@
     $('directionRow').classList.toggle('hidden', mode === 'mc' || mode === 'network');
     hintBtnEl.classList.toggle('hidden', mode === 'warmup');
     $('rowActions').classList.toggle('single', mode === 'warmup');
+    $('startPlayingBtn').classList.toggle('network-mode-btn', mode === 'network');
     // Network mode ignores line/branch/direction/route-map entirely — a
     // random journey can span any number of differently-shaped lines, so
     // there's no single line to pick or diagram to draw (see drawDiagram()/

@@ -605,6 +605,15 @@ catch.
   width, and taller vertical padding (`20px`, up from `15px`) gives it a visibly bigger tap
   target despite the narrower footprint. Reads as one deliberate, single action rather than
   one more full-bleed section like the Line ribbon/Branch grid/Direction board above it.
+- **"Start playing" is fixed black/white for Network mode specifically, not the plain
+  `button{}` rule's `var(--line-accent)`/`var(--accent-fill-ink)`.** Same reasoning as
+  `#playInfoLine.network-heading` just below: Network mode has no single line of its own, so
+  the button picking up whatever real line was last active on Setup (or whichever leg a
+  Network run last badged) reads as an arbitrary, unrelated colour rather than a real
+  selection. `setMode()` toggles `.network-mode-btn` on `#startPlayingBtn` based on
+  `mode === 'network'`; the override is a literal `#000`/`#fff`, not `var(--ink)`/
+  `var(--accent-ink)`, since this is a deliberate flat colour choice independent of the
+  light/dark theme toggle, not a themed one.
 - **The Play page's live "which line's colour is this" heading — `#playInfoLine`, e.g.
   "Central" in Central red — stays plain neutral ink (`--ink`) for Network mode specifically,
   not the live-shifting accent colour every other element there uses.** In every other mode
