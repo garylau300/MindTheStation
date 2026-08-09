@@ -175,3 +175,30 @@ test('Network mode never attempts diagram geometry and keeps the diagram hidden'
   assert.equal(line.def.layout, 'network');
   assert.ok(doc.getElementById('playDiagramCard').classList.contains('hidden'), 'Play page diagram should stay hidden throughout a Network run');
 });
+
+// Unlike Network mode, Learning mode keeps the ordinary LINE runtime and
+// the normal route map/diagram the whole time — the only new geometry-
+// adjacent code is the persistent level marker drawn on top of the route
+// map (drawLevelMarker(), see index.html's drawRoutePreview()). This is a
+// guard test confirming that marker never crashes drawRoutePreview() and
+// that the route map/diagram stay visible (the opposite of Network mode).
+test('Learning mode keeps the route map/diagram visible and draws the level marker without error', async (t) => {
+  const page = loadPage();
+  const { document: doc, test: hooks } = page;
+  t.after(() => closePage(page));
+
+  doc.getElementById('modeLearningBtn').click();
+  assert.equal(hooks.getMode(), 'learning');
+  assert.ok(!doc.getElementById('routeMapCard').classList.contains('hidden'), 'Setup route map should stay visible in Learning mode');
+  assert.ok(!doc.getElementById('learningLevelInfo').classList.contains('hidden'), 'the picked-level readout should be visible');
+
+  hooks.selectLearningLevelByName(hooks.getLearningBaseSeq()[4]);
+  assert.equal(hooks.getLearningStartIndex(), 4);
+
+  doc.getElementById('startPlayingBtn').click();
+  await new Promise(resolve => setTimeout(resolve, 50)); // let beginRun()/runCountdown() settle
+
+  const line = hooks.getLine();
+  assert.notEqual(line.def.layout, 'network');
+  assert.ok(!doc.getElementById('playDiagramCard').classList.contains('hidden'), 'Play page diagram should stay visible throughout a Learning run');
+});

@@ -327,6 +327,50 @@
   .section-label{ display:block; margin-bottom:8px; }
   .line-select-label{ margin-top:18px; }
   .route-map-label{ margin-top:18px; }
+  /* Learning mode's picked-level readout, between the "Route map" label and
+     the map itself — shown only in Learning mode (see updateLearningLevelInfo()). */
+  /* Learning mode's picked-start readout, redesigned as a proper card
+     rather than a single small caption line, since it's now the primary
+     piece of Setup UI in that mode (promoted above "Start playing" — see
+     .setup-tail above). Tinted with Learning's own --mode-color teal so it
+     visually ties back to the mode's identity, the same way other
+     mode-specific UI elsewhere already does. */
+  .learning-level-card{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    gap: 4px 14px; padding: 14px 16px; margin: 2px 0 14px;
+    border-radius: var(--radius); border: 1px solid #0E9488;
+    background: color-mix(in srgb, #0E9488 12%, var(--panel));
+  }
+  .learning-level-main{ display:flex; flex-direction:column; gap:2px; }
+  .learning-level-caption{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color: var(--ink-dim); }
+  /* "Starting from <pick>" alone read as if recitation began *at* the
+     pick — every rung actually recites from the direction's true first
+     station onward, and the pick just marks how far the first rung
+     already reaches. So the headline shows both, "<true first station> →
+     <pick>" (a slightly smaller size than a single-name headline would
+     use, to leave room for two names), and the mode's own "X → Y" arrow
+     convention carries the "level" framing without needing extra words. */
+  .learning-level-name{ font-size:19px; font-weight:700; color: var(--ink); line-height:1.25; }
+  /* The true end of the ladder (always the current direction's terminus,
+     beyond the pick, never the pick itself) shown as a muted, smaller
+     sub-line right under the headline — continuing the same "X → Y"
+     convention, so the whole card reads as one journey split by visual
+     weight: true-start → pick (bold, primary) → true-end (muted,
+     secondary context). */
+  .learning-level-end{ font-size:13px; font-weight:500; color: var(--ink-dim); }
+  /* margin-left:auto (not just the card's own justify-content:space-between)
+     is what actually keeps this right-aligned once the card wraps to two
+     rows on a narrow phone — space-between only distributes items *within
+     a flex line*, so once .learning-level-stat drops to a line of its own
+     (nothing left to space it against), it was landing flush left instead
+     of right. auto margins push it to the far edge of whichever line it's
+     actually on, wrapped or not. */
+  .learning-level-stat{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; margin-left:auto; }
+  .learning-level-stat-value{ font-size:20px; font-weight:700; color:#0E9488; line-height:1.15; }
+  .learning-level-stat-label{ font-size:11px; color: var(--ink-dim); text-align:right; }
+  /* Full-width so it always drops to its own line below the name/stat row,
+     rather than being crammed onto the same line as either. */
+  .learning-level-hint{ flex-basis:100%; font-size:12px; color: var(--ink-dim); }
 
   /* Deliberately not full-width like every other Setup control (Line
      ribbon/Branch grid/Direction board) — by explicit instruction, a
@@ -344,7 +388,19 @@
      Fixed black/white regardless of theme, not var(--ink)/var(--accent-ink),
      since this is a deliberate flat colour choice, not a theme-following one. */
   .start-playing-btn.network-mode-btn{ background:#000; color:#fff; }
-  .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; }
+  .setup-divider{ border-top:1px solid var(--line); margin: 22px 0 12px; order:1; }
+  /* Learning mode's route map is functionally a level/start picker, so it
+     sits above "Start playing" instead of below it — every other mode
+     keeps the original order. A plain flex column + `order` swap (toggled
+     via .reorder-for-learning in setMode()) achieves this with no DOM node
+     moves: the single divider stays fixed in the middle (order:1, set
+     above) while the two content blocks trade which one is order:0 vs
+     order:2 around it. */
+  .setup-tail{ display:flex; flex-direction:column; }
+  #startPlayingWrap{ order:0; }
+  #routeMapGroup{ order:2; }
+  .setup-tail.reorder-for-learning #startPlayingWrap{ order:2; }
+  .setup-tail.reorder-for-learning #routeMapGroup{ order:0; }
 
   .play-topbar{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 16px; min-height:70px; }
   /* Groups the theme/sound toggles as one flex child so .play-topbar's own
@@ -378,7 +434,12 @@
     font-family:var(--font-main); line-height:1.5;
   }
 
-  .summary-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  /* Moved above #missList (by explicit instruction, across every mode) so
+     "Play again"/"Copy result"/"Change settings" are reachable right after
+     the summary stats without scrolling past a long results list first —
+     margin-bottom fills the gap .miss-list's own margin-bottom used to
+     provide when these buttons came after it instead. */
+  .summary-actions{ display:flex; gap:10px; flex-wrap:wrap; margin: 0 0 18px; }
   .summary-actions button{ flex:1; min-width:140px; padding: 12px 20px; }
   .ghost-btn{
     background: var(--panel-2); color: var(--ink); border:1px solid var(--line);
@@ -560,7 +621,7 @@
   .mc-context-node.empty{ border-style:dashed; opacity:.35; color: var(--ink-dim); }
   .mc-context-connector{ flex:0 0 10px; width:10px; height:2px; background: var(--line); }
 
-  /* Four round, icon-only mode buttons, clustered together as one compact
+  /* Five round, icon-only mode buttons, clustered together as one compact
      group (gap-based, not spread edge-to-edge like the Line ribbon/Branch
      grid/Direction board) — centered in the row by explicit instruction. */
   .mode-select{ display:flex; justify-content:center; gap:20px; margin-bottom: 0; }
@@ -571,8 +632,12 @@
      look). Picked to stay visually distinct from every real TfL line color
      already in use elsewhere in this app (bakerloo brown, central red,
      circle yellow, district green, piccadilly blue, elizabeth purple,
-     etc.) so a mode button is never mistaken for a line swatch. */
+     etc.) so a mode button is never mistaken for a line swatch. Learning's
+     teal was checked specifically against Victoria's cyan and Waterloo &
+     City's pale mint (the two closest real hues in the Line ribbon) and
+     against the other four mode colors — distinct from both. */
   #modeWarmupBtn{ --mode-color: #E4780C; }
+  #modeLearningBtn{ --mode-color: #0E9488; }
   #modeQuizBtn{ --mode-color: #2E75D6; }
   #modeMcBtn{ --mode-color: #2FA84F; }
   #modeNetworkBtn{ --mode-color: #9B3FC4; }
@@ -606,6 +671,22 @@
     opacity:0; transition: opacity .18s ease, transform .18s ease;
   }
   .mode-btn.expand .mode-btn-callout{ opacity:1; transform:translateX(-50%) translateY(0); transition-delay:.08s; }
+  /* At 5 buttons (after Learning was added), the centered-under-its-button
+     callout can push the outermost two past a narrow phone's viewport edge
+     — confirmed: Network's own callout, centered under its now-more-
+     rightward button position (5 buttons vs. the previous 4 shifts every
+     button outward from center), no longer fit under 375px, causing real
+     horizontal page overflow even though the callout itself is invisible
+     at rest (opacity:0 still contributes to layout/scrollWidth). The first
+     and last buttons anchor their callout to their own outer edge instead
+     of centering — the same fix `.line-chip:first-child`/`:last-child`
+     already uses for the Line ribbon's own corners — so neither can ever
+     extend past `.wrap`'s own edges regardless of row width. Higher
+     specificity than the base rules above wins outright, no reordering needed. */
+  .mode-btn:first-child .mode-btn-callout{ left:0; transform: translateY(4px); }
+  .mode-btn:first-child.expand .mode-btn-callout{ transform: translateY(0); }
+  .mode-btn:last-child .mode-btn-callout{ left:auto; right:0; transform: translateY(4px); }
+  .mode-btn:last-child.expand .mode-btn-callout{ transform: translateY(0); }
   .mode-btn-name{ display:block; font-size:13px; font-weight:700; line-height:1.2; color:var(--ink); }
   .mode-btn-desc{ display:block; font-size:11px; font-weight:400; color:var(--ink-dim); margin-top:2px; }
 
@@ -1046,6 +1127,8 @@
     .station-popup{ max-width: min(270px, calc(100vw - 24px)); }
     .station-popup-name{ font-size:16px; }
     .station-popup .interchange-chip{ font-size:11.5px; padding:5px 11px; }
+    .learning-level-name{ font-size:20px; }
+    .learning-level-stat-value{ font-size:22px; }
   }
   @media (min-width: 1300px){
     .page-title{ font-size:40px; }
@@ -1079,6 +1162,8 @@
     .station-popup{ max-width: min(300px, calc(100vw - 24px)); }
     .station-popup-name{ font-size:17px; }
     .station-popup .interchange-chip{ font-size:12.5px; padding:6px 12px; }
+    .learning-level-name{ font-size:21px; }
+    .learning-level-stat-value{ font-size:24px; }
   }
 </style>
 <script>
@@ -1109,6 +1194,17 @@
           <circle cx="11" cy="11" r="1.15" fill="currentColor" stroke="none"></circle>
         </svg>
         <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Warm-up</b><span class="mode-btn-desc">Type what you see</span></span>
+      </button>
+      <button type="button" class="mode-btn" id="modeLearningBtn" aria-label="Learning — Climb the route step by step">
+        <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <line x1="6" y1="3" x2="6" y2="19"></line>
+          <line x1="16" y1="3" x2="16" y2="19"></line>
+          <line x1="6" y1="7" x2="16" y2="7"></line>
+          <line x1="6" y1="12" x2="16" y2="12"></line>
+          <line x1="6" y1="17" x2="16" y2="17"></line>
+          <circle cx="11" cy="7" r="1.4" fill="currentColor" stroke="none"></circle>
+        </svg>
+        <span class="mode-btn-callout" aria-hidden="true"><b class="mode-btn-name">Learning</b><span class="mode-btn-desc">Climb the route step by step</span></span>
       </button>
       <button type="button" class="mode-btn" id="modeQuizBtn" aria-label="Recall quiz — Type from memory">
         <svg class="mode-btn-icon" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -1184,13 +1280,29 @@
     </button>
   </div>
 
-  <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
-
-  <div class="setup-divider"></div>
-
-  <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
-  <div class="diagram-card" id="routeMapCard">
-    <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
+  <div class="setup-tail" id="setupTail">
+    <div class="setup-tail-item" id="startPlayingWrap">
+      <button type="button" id="startPlayingBtn" class="start-playing-btn">Start playing</button>
+    </div>
+    <div class="setup-divider"></div>
+    <div class="setup-tail-item" id="routeMapGroup">
+      <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
+      <div class="learning-level-card hidden" id="learningLevelInfo">
+        <div class="learning-level-main">
+          <span class="learning-level-caption">Level</span>
+          <span class="learning-level-name" id="learningLevelName"></span>
+          <span class="learning-level-end" id="learningLevelEnd"></span>
+        </div>
+        <div class="learning-level-stat">
+          <span class="learning-level-stat-value" id="learningLevelRecalls"></span>
+          <span class="learning-level-stat-label">recalls to the end</span>
+        </div>
+        <span class="learning-level-hint">Tap a station on the map to change it</span>
+      </div>
+      <div class="diagram-card" id="routeMapCard">
+        <svg id="routePreviewSvg" viewBox="0 0 400 260"></svg>
+      </div>
+    </div>
   </div>
   <div class="station-popup hidden" id="stationPopup">
     <div class="station-popup-name" id="stationPopupName"></div>
@@ -1310,12 +1422,12 @@
         <span class="summary-time-label">Time</span>
         <span class="summary-time-value" id="summaryTimeValue">0:00</span>
       </div>
-      <ul class="miss-list" id="missList"></ul>
       <div class="summary-actions">
         <button type="button" id="restartBtn">Play again</button>
         <button type="button" id="copyResultBtn" class="ghost-btn">Copy result</button>
         <button type="button" id="backToSetupBtn2" class="ghost-btn">Change settings</button>
       </div>
+      <ul class="miss-list" id="missList"></ul>
     </div>
   </main>
 
@@ -2569,13 +2681,19 @@
   const announcementBannerEl = $('announcementBanner');
   const announcementBannerCloseEl = $('announcementBannerClose');
   const modeWarmupBtnEl = $('modeWarmupBtn');
+  const modeLearningBtnEl = $('modeLearningBtn');
   const modeQuizBtnEl = $('modeQuizBtn');
   const modeMcBtnEl = $('modeMcBtn');
   const modeNetworkBtnEl = $('modeNetworkBtn');
   const networkLineBadgeEl = $('networkLineBadge');
   const lineSelectLabelEl = $('lineSelectLabel');
   const lineSelectGroupEl = $('lineSelectGroup');
+  const setupTailEl = $('setupTail');
   const routeMapLabelEl = $('routeMapLabel');
+  const learningLevelInfoEl = $('learningLevelInfo');
+  const learningLevelNameEl = $('learningLevelName');
+  const learningLevelEndEl = $('learningLevelEnd');
+  const learningLevelRecallsEl = $('learningLevelRecalls');
   const routeMapCardEl = $('routeMapCard');
   const playDiagramCardEl = $('playDiagramCard');
   const directionBoardEl = $('directionBoard');
@@ -2587,13 +2705,26 @@
   const ledCallingScrollEl = $('ledCallingScroll');
 
   let isLight = true;
-  let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc' | 'network'
+  let mode = 'warmup'; // 'warmup' | 'quiz' | 'mc' | 'network' | 'learning'
   let reverseDirection = false; // only applies to warmup / quiz
   let idx = 0;
   // tracks which real line's color/badge is currently applied during a
   // Network run, so render() only re-touches the DOM on an actual leg
   // change instead of on every single question
   let currentNetworkBadgeLineId = null;
+  // Learning mode's "ladder" state: learningStartIndex is a Setup-time
+  // choice (which station along LINE.journeyNames the ladder BEGINS at —
+  // picked on the route map, see drawRoutePreview()/drawLevelMarker()), set
+  // once per Setup session and left alone by resetState(). The ladder's
+  // first rung already covers every station from the true start through
+  // this pick, then keeps growing one station at a time — always all the
+  // way to the current direction's true end, never stopping at the pick
+  // itself. learningRung/learningPhase are per-run progress through the
+  // ladder and ARE reset every run, in resetState(). See learningSeq()/
+  // seq() for how these drive the current leg's typed sequence.
+  let learningStartIndex = 1; // defaults to the 2nd station — the smallest valid first rung
+  let learningRung = 2; // resetState() actually seeds this from learningStartIndex + 1
+  let learningPhase = 'forward'; // 'forward' | 'backward'
   let streak = 0, bestStreak = 0, correctCount = 0, attempts = 0;
   let misses = [];
   let startTime = null, charsTyped = 0, bestWpm = 0, lastRunWpm = 0;
@@ -2681,6 +2812,11 @@
   // the correct-answer message. Skipped on short journeys where "halfway"
   // and "3 to go" wouldn't mean much.
   function milestoneNote(completedCount, total){
+    // Learning mode's "total" is one rung's leg length, not the whole run —
+    // "Halfway there"/"Final stretch" would fire once per rung (noise, not
+    // encouragement) rather than meaning anything about the overall ladder,
+    // so it's suppressed entirely here rather than fed synthetic numbers.
+    if(mode === 'learning') return '';
     if(total < 6) return '';
     const remaining = total - completedCount;
     if(remaining <= 0) return ''; // the summary screen covers the finish itself
@@ -3006,21 +3142,65 @@
     return arr;
   }
 
+  // Learning mode's current leg: stations 0..learningRung-1 of whichever
+  // direction is currently selected (reverseDirection still applies here
+  // exactly like every other mode — Direction picks which terminus counts
+  // as "the start" the ladder climbs from), forward or backward depending
+  // on learningPhase. learningBaseSeq()/learningBaseIndices() are the
+  // direction-aware "whole walk"; learningSeq()/learningOrigIndices() slice
+  // and optionally reverse that down to the current leg.
+  function learningBaseSeq(){
+    return reverseDirection ? LINE.reversedJourneyNames : LINE.journeyNames;
+  }
+  function learningBaseIndices(){
+    return reverseDirection ? LINE.reversedJourneyIndices : LINE.journeyIndices;
+  }
+  function learningSeq(){
+    const slice = learningBaseSeq().slice(0, learningRung);
+    return learningPhase === 'forward' ? slice : slice.slice().reverse();
+  }
+  function learningOrigIndices(){
+    const slice = learningBaseIndices().slice(0, learningRung);
+    return learningPhase === 'forward' ? slice : slice.slice().reverse();
+  }
+
+  // The whole run's total recall count — not any one leg's, which is all
+  // totalSteps() gives for Learning mode (see its own comment). Shared by
+  // updateLearningLevelInfo() (the Setup-time estimate) and updateStats()
+  // (the live "Stations" count on the Play page), so the two can never
+  // drift apart. Formula (verified by hand-simulating a small line
+  // end-to-end): for a walk of length N starting at position s, the first
+  // rung (size s+1) costs 2s+1 recalls (forward is s+1 questions with no
+  // skip, since nothing precedes it; backward is s questions, skipping the
+  // just-typed turn-around station — see advanceLearning()). Every later
+  // rung of size k costs 2*(k-1) (both legs skip their own just-typed
+  // duplicate). Summed from the first rung through the final rung (size
+  // N), this comes out to N*(N-1) - s*(s-1) + 1 total recalls.
+  function learningTotalRecalls(){
+    const n = learningBaseSeq().length, s = learningStartIndex;
+    return n * (n - 1) - s * (s - 1) + 1;
+  }
+
   // active ordered list for the current mode/direction — multiple choice
   // uses its own randomized order (see mcOrder) rather than this
   function seq(){
+    if(mode === 'learning') return learningSeq();
     return (mode !== 'mc' && reverseDirection) ? LINE.reversedJourneyNames : LINE.journeyNames;
   }
 
   // maps a position in seq() back to its true geographic index, for the diagram
   function origIndex(i){
+    if(mode === 'learning') return learningOrigIndices()[i];
     return (mode !== 'mc' && reverseDirection) ? LINE.reversedJourneyIndices[i] : LINE.journeyIndices[i];
   }
 
   // the mode-aware run length: the full journey for warm-up/quiz
-  // (which may include repeat stops), or one question per unique
-  // station for MC
+  // (which may include repeat stops), one question per unique station for
+  // MC, or the current leg's length for Learning mode (a ladder's "total"
+  // isn't one fixed number — see renderProgressRail()'s own Learning branch
+  // for the overall-ladder-progress version of this)
   function totalSteps(){
+    if(mode === 'learning') return learningRung;
     return mode === 'mc' ? LINE.N : LINE.JOURNEY_LEN;
   }
 
@@ -3076,6 +3256,11 @@
     startTime = null; charsTyped = 0; results = {};
     score = 0; questionStartTime = null; hintUsedThisQuestion = false;
     currentNetworkBadgeLineId = null;
+    // learningStartIndex is a Setup-time choice (the picked starting level),
+    // not per-run progress — only rung/phase reset here, same as every
+    // other mode's per-run counters above. The first rung already covers
+    // every station from the true start through the pick.
+    learningRung = learningStartIndex + 1; learningPhase = 'forward';
     resetStreakFlame();
     hideFeedback();
     if(mode === 'mc') mcOrder = shuffle([...Array(LINE.N).keys()]);
@@ -3513,16 +3698,37 @@
     if(branchId === LINE.branchId) return;
     LINE = buildLineRuntime(LINE.def.id, branchId);
     reverseDirection = false;
+    // A different branch has a different station order/length entirely —
+    // a stale learningStartIndex from the old branch could point at a
+    // different station or not even exist on the new one, so it resets to
+    // the same "2nd station" default setMode('learning') itself uses on
+    // entry. drawRoutePreview() (below) is what actually redraws the
+    // marker at its new position.
+    if(mode === 'learning') learningStartIndex = 1;
     renderBranchRow();
     updateDirectionBoard();
     setupGeometry();
     updatePlayContextLabel();
     drawRoutePreview();
+    updateLearningLevelInfo();
     stationPopupEl.classList.add('hidden');
     resetState();
     render();
   }
 
+  // Switching lines used to force setMode('warmup') unconditionally — a
+  // real, reported annoyance once Learning mode's route map started
+  // inviting people to browse lines mid-setup, since it silently threw
+  // away whichever mode (and, for Learning, whichever picked level) was
+  // active. By explicit instruction this now preserves the current mode
+  // in every mode, not just Learning: only the parts of setMode()'s own
+  // work that are still needed when `mode` itself isn't changing run here
+  // (updatePlayContextLabel()/resetState()/render() — resetState() already
+  // regenerates mcOrder for the new station count when mode === 'mc') —
+  // no mode-button reclassing or mode-dependent visibility toggling, since
+  // none of that actually changed. Network mode can never reach this path
+  // at all (its own UI hides the Line ribbon entirely), so it needs no
+  // special case here.
   function setLine(id){
     if(!LINES[id] || id === LINE.def.id){
       // still allow re-selecting the same line to just reset it
@@ -3539,17 +3745,29 @@
     applyLineTheme();
     updateDirectionBoard();
     setupGeometry();
+    // A different line invalidates a Learning-mode level pick the same way
+    // a different branch/direction already does (see setBranch()/setDirection()).
+    if(mode === 'learning') learningStartIndex = 1;
     drawRoutePreview();
+    updateLearningLevelInfo();
     stationPopupEl.classList.add('hidden');
-    setMode('warmup');
+    updatePlayContextLabel();
+    resetState();
+    render();
   }
 
   function setDirection(rev){
     if(mode === 'mc') return;
     reverseDirection = rev;
+    // learningStartIndex is a position within "the current direction's walk"
+    // (see learningBaseSeq()) — flipping direction makes every position
+    // point at a different station, so it resets to the same default a
+    // fresh entry into Learning mode uses, same reasoning as setBranch().
+    if(mode === 'learning') learningStartIndex = 1;
     updateDirectionBoard();
     updatePlayContextLabel();
     drawRoutePreview();
+    updateLearningLevelInfo();
     resetState();
     render();
   }
@@ -3664,7 +3882,7 @@
   $('backToSetupBtn2').addEventListener('click', function(){ showPage('setup'); });
 
   function updatePlayContextLabel(){
-    const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice', network: 'Network' };
+    const modeLabels = { warmup: 'Warm-up', quiz: 'Recall quiz', mc: 'Multiple choice', network: 'Network', learning: 'Learning' };
     $('playInfoLine').textContent = LINE.def.label;
     $('playInfoLine').classList.toggle('network-heading', LINE.def.layout === 'network');
     $('playInfoMode').textContent = modeLabels[mode];
@@ -3705,11 +3923,22 @@
       setupGeometry();
       drawRoutePreview();
     }
+    // Learning mode always defaults to the 2nd station (the smallest valid
+    // ladder) on entry — unlike Network mode, nothing else about
+    // Line/Branch/Direction/the route map changes, so there's no restore
+    // branch needed on the way back out. drawRoutePreview() is re-run
+    // below (after `mode` itself updates) so the level marker actually
+    // appears/disappears with the mode switch instead of lagging a frame.
+    if(newMode === 'learning' && mode !== 'learning') learningStartIndex = 1;
+    const enteringOrLeavingLearning = (newMode === 'learning') !== (mode === 'learning');
     mode = newMode;
     modeWarmupBtnEl.classList.toggle('active', mode === 'warmup');
+    modeLearningBtnEl.classList.toggle('active', mode === 'learning');
     modeQuizBtnEl.classList.toggle('active', mode === 'quiz');
     modeMcBtnEl.classList.toggle('active', mode === 'mc');
     modeNetworkBtnEl.classList.toggle('active', mode === 'network');
+    if(enteringOrLeavingLearning) drawRoutePreview();
+    updateLearningLevelInfo();
     // .expand is deliberately NOT synced to .active here — by explicit
     // instruction, the callout only ever shows on actual hover/focus, even
     // for the currently selected mode, never persisting at rest just
@@ -3721,10 +3950,11 @@
     $('statMidLabel').textContent = mode === 'warmup' ? 'WPM' : 'Accuracy';
     $('statBestLabel').textContent = mode === 'warmup' ? 'Best WPM' : 'Best streak';
     $('statAccLabel').textContent = mode === 'warmup' ? 'Accuracy' : 'Score';
-    // Network mode reuses Recall quiz's own "type the next station from
-    // memory" flow end to end (see render()) rather than warmup's
-    // show-and-type or MC's option grid, so it shares quiz's UI toggles too.
-    const quizLike = mode === 'quiz' || mode === 'network';
+    // Network and Learning modes both reuse Recall quiz's own "type the
+    // next station from memory" flow end to end (see render()) rather than
+    // warmup's show-and-type or MC's option grid, so they share quiz's UI
+    // toggles too.
+    const quizLike = mode === 'quiz' || mode === 'network' || mode === 'learning';
     promptLine.classList.toggle('hidden', !quizLike);
     targetWord.classList.toggle('hidden', mode !== 'warmup');
     inputRow.classList.toggle('hidden', mode === 'mc');
@@ -3743,6 +3973,12 @@
     routeMapLabelEl.classList.toggle('hidden', mode === 'network');
     routeMapCardEl.classList.toggle('hidden', mode === 'network');
     playDiagramCardEl.classList.toggle('hidden', mode === 'network');
+    // Learning mode's route map is functionally a level/start picker, not a
+    // reference preview — it sits above "Start playing" instead of below it
+    // (see #setupTail's CSS `order`) and is labeled accordingly. Every other
+    // mode keeps today's layout/label untouched.
+    setupTailEl.classList.toggle('reorder-for-learning', mode === 'learning');
+    routeMapLabelEl.textContent = mode === 'learning' ? 'Level Picker' : 'Route map';
     // #branchRow's visibility the rest of the time is renderBranchRow()'s
     // own job (hidden only for a line with no branches) — only ever force
     // it here on the way *into* Network mode; the restore branch above
@@ -3774,7 +4010,17 @@
   }
 
   function updateStats(){
-    statProgressEl.textContent = idx + '/' + totalSteps();
+    // Learning mode's totalSteps() is deliberately just the *current leg's*
+    // length (see its own comment) — showing idx/totalSteps() here would
+    // reset to something like "1/2" at every single rung/phase transition
+    // instead of ever reflecting the whole run, defeating the point of a
+    // "Stations" counter. attempts already counts every recall answered so
+    // far across every leg of every rung, so it — against the same total
+    // learningTotalRecalls() shown on Setup — is what actually tracks
+    // progress through the whole ladder.
+    statProgressEl.textContent = mode === 'learning'
+      ? attempts + '/' + learningTotalRecalls()
+      : idx + '/' + totalSteps();
     if(mode === 'warmup'){
       statAccEl.textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
       statMidEl.textContent = currentWpm();
@@ -3793,8 +4039,26 @@
   }
 
   function renderProgressRail(){
-    const total = totalSteps();
-    const frac = total > 0 ? Math.min(1, Math.max(0, idx / total)) : 0;
+    let frac;
+    if(mode === 'learning'){
+      // idx/totalSteps() here is just "progress through the current leg" —
+      // a plain idx/total fraction would visibly oscillate backward every
+      // time a rung flips from forward to backward, reading as regression
+      // rather than progress. Overall ladder progress instead: fully
+      // completed rungs, plus half a rung for the current leg's own
+      // progress (forward = first half, backward = second half) — so the
+      // rail still moves monotonically forward across the whole run.
+      // rungs run from size learningStartIndex+1 (the first rung) up to the
+      // full length of the current direction's walk
+      const totalRungs = learningBaseSeq().length - learningStartIndex;
+      const rungsDone = learningRung - (learningStartIndex + 1);
+      const legFrac = learningRung > 0 ? Math.min(1, Math.max(0, idx / learningRung)) : 0;
+      const withinRung = learningPhase === 'forward' ? legFrac * 0.5 : 0.5 + legFrac * 0.5;
+      frac = totalRungs > 0 ? Math.min(1, (rungsDone + withinRung) / totalRungs) : 0;
+    } else {
+      const total = totalSteps();
+      frac = total > 0 ? Math.min(1, Math.max(0, idx / total)) : 0;
+    }
     const trackX1 = 44, trackX2 = 360;
     const trainX = trackX1 + frac * (trackX2 - trackX1);
     trainGroupEl.setAttribute('transform', 'translate(' + trainX + ',0)');
@@ -3982,6 +4246,29 @@
         promptLine.innerHTML = 'What\'s the <em>next</em> station?';
       }
       answerInput.placeholder = 'Type a station name…';
+    } else if(mode === 'learning'){
+      // Same "type the next station from memory" mechanic as quiz, plus a
+      // rung/phase indicator (this run's own progress isn't a single
+      // idx/total the way every other mode's is — see totalSteps()'s own
+      // comment). idx is only ever 0 at the true first question of the
+      // whole run — every other leg transition (forward→backward, and
+      // growing to a new rung) starts idx at 1 instead of 0, skipping
+      // straight past the station the previous leg just finished on (see
+      // advanceLearning()'s own comment), so no phase-aware idx===0
+      // special case is needed here: idx===0 always means "the branch's
+      // true first station, nothing typed yet".
+      interchangeRow.classList.add('hidden');
+      const rungLabel = 'Rung ' + learningRung + ' of ' + learningBaseSeq().length + ' · ' + learningPhase;
+      if(idx === 0){
+        contextLine.innerHTML = rungLabel;
+        promptLine.innerHTML = 'Type the <em>first</em> station:';
+      } else {
+        contextLine.innerHTML = rungLabel + ' · Previous: <b>' + list[idx-1] + '</b>';
+        promptLine.innerHTML = learningPhase === 'forward'
+          ? 'What\'s the <em>next</em> station?'
+          : 'What\'s the <em>previous</em> station?';
+      }
+      answerInput.placeholder = 'Type a station name…';
     } else if(mode === 'mc'){
       interchangeRow.classList.add('hidden');
       const targetIdx = mcOrder[idx];
@@ -4070,6 +4357,21 @@
       summaryTitleEl.textContent = misses.length === 0 ? 'Journey complete, zero mistakes' : 'Journey complete';
       summarySubEl.textContent = LINE.def.label + ' · you got ' + correctCount + ' of ' + LINE.JOURNEY_LEN + ' stops right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
       perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
+    } else if(mode === 'learning'){
+      // "of N" elsewhere in this function means "true unique stations" —
+      // Learning mode's own natural equivalent is total rungs climbed and
+      // total recalls (attempts across every leg of every rung), not a
+      // station count, since the same stations get typed over and over as
+      // the ladder climbs. The ladder always runs to the current
+      // direction's true end, so that (not the picked start) is what's
+      // reported as where it finished.
+      const walk = learningBaseSeq();
+      const startName = walk[learningStartIndex];
+      const endName = walk[walk.length - 1];
+      const totalRungs = walk.length - learningStartIndex;
+      summaryTitleEl.textContent = misses.length === 0 ? 'Ladder complete, zero mistakes' : 'Ladder complete';
+      summarySubEl.textContent = 'Started from ' + startName + ', climbed the full route to ' + endName + ' — ' + totalRungs + ' rung' + (totalRungs === 1 ? '' : 's') + ', ' + attempts.toLocaleString() + ' total recalls · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
+      perfectBadgeEl.classList.toggle('hidden', misses.length !== 0);
     } else {
       summaryTitleEl.textContent = misses.length === 0 ? 'Perfect round' : 'Multiple choice complete';
       summarySubEl.textContent = 'You got ' + correctCount + ' of ' + LINE.N + ' right first-try · ' + acc + '% accuracy · best streak ' + bestStreak + ' · score ' + score + '.';
@@ -4108,7 +4410,39 @@
     drawDiagram();
   }
 
+  // Learning mode's "done" condition is rung-and-phase-aware, not a single
+  // fixed number, so it gets its own branch instead of the generic
+  // idx>=totalSteps() check below (totalSteps() there is deliberately just
+  // the current leg's length — see its own comment).
+  //
+  // Every leg transition immediately repeats the station the *previous*
+  // leg just finished on: forward's last answer is the same station as
+  // backward's first question (the newly-added turn-around station), and
+  // backward's last answer (the true first station) is the same station
+  // as the *next* rung's forward first question. Starting the new leg's
+  // idx at 1 instead of 0 skips re-asking that already-just-typed station
+  // — render()'s existing idx>0 branch already frames it as known
+  // "Previous: X" context for the very next question, so no other change
+  // is needed to avoid the duplicate. The one true exception is the very
+  // first question of the whole run (the first rung's first forward
+  // question), which has no prior leg to borrow context from — that's
+  // exactly what resetState()'s ordinary idx=0 already gives it, so
+  // nothing here needs to special-case it.
+  function advanceLearning(){
+    idx++;
+    if(idx < learningRung) { render(true); return; } // leg not done yet
+    if(learningPhase === 'forward'){ // forward leg just finished -> walk it back
+      learningPhase = 'backward'; idx = 1; render(true); return;
+    }
+    // backward leg just finished -> this rung is complete. The ladder
+    // always climbs all the way to the current direction's true end,
+    // never stopping early at the picked start.
+    if(learningRung >= learningBaseSeq().length){ finishRun(); return; }
+    learningRung++; learningPhase = 'forward'; idx = 1; render(true);
+  }
+
   function advance(){
+    if(mode === 'learning'){ advanceLearning(); return; }
     idx++;
     if(idx >= totalSteps()){ finishRun(); } else { render(true); }
   }
@@ -4129,7 +4463,7 @@
       bestStreak = Math.max(bestStreak, streak);
       charsTyped += list[idx].length + 1;
       results[trueIdx] = 'ok';
-      if(mode === 'quiz' || mode === 'network') popCard();
+      if(mode === 'quiz' || mode === 'network' || mode === 'learning') popCard();
       answerInput.className = 'right';
       let msg = '✓ Correct';
       if(mode !== 'warmup'){
@@ -4244,6 +4578,7 @@
   });
 
   modeWarmupBtnEl.addEventListener('click', function(){ setMode('warmup'); });
+  modeLearningBtnEl.addEventListener('click', function(){ setMode('learning'); });
   modeQuizBtnEl.addEventListener('click', function(){ setMode('quiz'); });
   modeMcBtnEl.addEventListener('click', function(){ setMode('mc'); });
   modeNetworkBtnEl.addEventListener('click', function(){ setMode('network'); });
@@ -4762,6 +5097,12 @@
       }
     }
 
+    // Learning mode's picked starting level, resolved to a station *name*
+    // once per redraw rather than looked up per-dot — see
+    // selectLearningStart()/learningBaseSeq() for how learningStartIndex
+    // (a position, not a name) gets set by clicking a dot below.
+    const currentLevelName = mode === 'learning' ? learningBaseSeq()[learningStartIndex] : null;
+
     stations.forEach(({name, x, y}) => {
       const on = routeSet.has(name);
       const dot = document.createElementNS(ns,'circle');
@@ -4770,6 +5111,13 @@
       dot.setAttribute('fill', color);
       dot.setAttribute('opacity', on ? 1 : DIM);
       svg.appendChild(dot);
+      // Learning mode's persistent "this is the picked level" marker —
+      // unlike the hover ring below (markStationDotActive(), cleared on
+      // mouseleave), this one has to survive the pointer moving away, so
+      // it's drawn straight into the fresh SVG on every redraw based on
+      // live state, not toggled via a CSS class on an element that gets
+      // wiped by svg.innerHTML='' at the top of this function anyway.
+      if(mode === 'learning' && name === currentLevelName) drawLevelMarker(svg, ns, dot);
 
       // A visible dot this small (well under 10px across once rendered)
       // is a real pain to hit on a phone — a separate invisible circle,
@@ -4789,10 +5137,75 @@
       // popup on the first tap, not just some of the time.
       hit.addEventListener('mouseenter', function(){ markStationDotActive(dot); showStationPopup(name, dot); });
       hit.addEventListener('mouseleave', function(){ clearStationDotActive(dot); stationPopupEl.classList.add('hidden'); });
-      hit.addEventListener('click', function(e){ e.stopPropagation(); markStationDotActive(dot); showStationPopup(name, dot); });
+      hit.addEventListener('click', function(e){
+        e.stopPropagation();
+        markStationDotActive(dot);
+        showStationPopup(name, dot);
+        // The info popup shows in every mode, unchanged — Learning mode
+        // just additionally treats the same click as "start the ladder
+        // here", see selectLearningStart().
+        if(mode === 'learning') selectLearningStart(name);
+      });
       svg.appendChild(hit);
     });
 
+  }
+
+  // Learning mode's persistent start marker: a filled ring in the mode's
+  // own identity color (--mode-color for #modeLearningBtn — ties the
+  // marker visually back to "this is a Learning-mode selection" rather
+  // than reusing the hover ring's navy/yellow, which means something
+  // different — active/hovered, not selected) around the true visible dot.
+  // Deliberately not stateful (no "clear the old one" bookkeeping needed):
+  // drawRoutePreview() wipes and rebuilds the whole SVG every call, so this
+  // is just drawn fresh wherever learningStartIndex currently points.
+  const LEARNING_LEVEL_MARKER_COLOR = '#0E9488';
+  function drawLevelMarker(svg, ns, dot){
+    const ring = document.createElementNS(ns, 'circle');
+    ring.setAttribute('cx', dot.getAttribute('cx'));
+    ring.setAttribute('cy', dot.getAttribute('cy'));
+    ring.setAttribute('r', parseFloat(dot.getAttribute('r')) + STATION_RING_GAP);
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', LEARNING_LEVEL_MARKER_COLOR);
+    ring.setAttribute('stroke-width', STATION_RING_WIDTH + 0.8);
+    svg.appendChild(ring);
+  }
+
+  // Sets learningStartIndex from a route-map click. The true first station
+  // of the current direction (position 0) can't be the start — the first
+  // rung needs at least 2 stations to recite forward *and* backward — so
+  // clicking it is a no-op for selection (the info popup above still shows
+  // as normal either way). Uses the *first* matching position for a
+  // repeated name (a loop-closure station visited twice) — picking "first
+  // arrival" is the simplest sane default and not worth extra branching
+  // for a rare edge case.
+  function selectLearningStart(name){
+    const posIndex = learningBaseSeq().indexOf(name);
+    if(posIndex <= 0 || posIndex === learningStartIndex) return;
+    learningStartIndex = posIndex;
+    drawRoutePreview();
+    updateLearningLevelInfo();
+  }
+
+  // The picked-start readout above the route map (see #learningLevelInfo /
+  // the .learning-level-card markup in index.html) — the picked station,
+  // the true end it climbs to (shown explicitly, not just implied by the
+  // recall count), and the estimated total recall count for climbing from
+  // one to the other (learningTotalRecalls()). Hidden outside Learning mode.
+  function updateLearningLevelInfo(){
+    if(mode !== 'learning'){ learningLevelInfoEl.classList.add('hidden'); return; }
+    const walk = learningBaseSeq();
+    const n = walk.length, s = learningStartIndex;
+    const trueStartName = walk[0], pickedName = walk[s], endName = walk[n - 1];
+    // "Starting from <pick>" read as if recitation began *at* the pick,
+    // when every rung actually recites from the direction's true first
+    // station onward — showing both makes clear the pick is a level of
+    // complexity (how far the first rung already reaches), not a literal
+    // starting point.
+    learningLevelNameEl.textContent = trueStartName + ' → ' + pickedName;
+    learningLevelEndEl.textContent = '→ ' + endName;
+    learningLevelRecallsEl.textContent = learningTotalRecalls().toLocaleString();
+    learningLevelInfoEl.classList.remove('hidden');
   }
 
   // Blue hover/selected ring around a route-map station dot: a separate
