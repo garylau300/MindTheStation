@@ -193,7 +193,7 @@ test('Learning mode keeps the route map/diagram visible and draws the level mark
   assert.ok(!doc.getElementById('learningLevelInfo').classList.contains('hidden'), 'the picked-level readout should be visible');
 
   hooks.selectLearningLevelByName(hooks.getLearningBaseSeq()[4]);
-  assert.equal(hooks.getLearningEndIndex(), 4);
+  assert.equal(hooks.getLearningStartIndex(), 4);
 
   doc.getElementById('startPlayingBtn').click();
   await new Promise(resolve => setTimeout(resolve, 50)); // let beginRun()/runCountdown() settle

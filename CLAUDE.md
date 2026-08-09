@@ -53,8 +53,9 @@ from the live domain.
 ## What it does
 
 Pick a line (and branch/direction if applicable), then practice recalling station order:
-**Warm-up** (target shown, type it), **Learning** (a growing/reversing "ladder" drill up to
-a station you pick — see its own section below), **Recall quiz** (previous station shown,
+**Warm-up** (target shown, type it), **Learning** (a growing/reversing "ladder" drill
+starting from a station you pick and always climbing to the line's true end — see its own
+section below), **Recall quiz** (previous station shown,
 type the next), **Multiple choice** (4 options), or **Network** (two random stations
 anywhere in the system, type the real route between them — see its own section below). A
 3-2-1 countdown precedes each run.
@@ -188,11 +189,22 @@ explicit instruction, not appended after Network like every mode before it was):
 "chain-building" memorization drill, the classic technique for learning an ordered list by
 heart (recite item 1-2, forward then backward; add item 3, recite the whole chain again
 forward then backward; add item 4; repeat). The player picks a station anywhere along the
-current line/branch/direction as their **level** (the ladder's final target — not
-necessarily the branch's true terminus), and the run climbs a ladder of growing **rungs**
-from the true start of the current direction up to that station, reciting the whole
-chain-so-far forward then backward at every rung.
+current line/branch/direction as their **starting level** — the ladder's *first* rung, not
+its target — and the run climbs a ladder of growing **rungs** from there, always all the way
+to the current direction's true end, reciting the whole chain-so-far forward then backward
+at every rung.
 
+- **The picked station is where the ladder begins, not where it stops.** The first rung
+  already covers every station from the true start of the current direction through the
+  pick (e.g. picking Vauxhall on Victoria's Brixton→Walthamstow Central direction makes the
+  first rung Brixton–Stockwell–Vauxhall, recited forward then backward), and the ladder keeps
+  growing one station at a time *past* the pick, always continuing to the direction's true
+  terminus regardless of where it started — never stopping early at the pick. This was
+  originally built backwards (picked station as the climb-up *target*, ladder stopping
+  there) and corrected by explicit instruction. The accepted tradeoff: starting near the
+  beginning of a long line can mean a long run — the recall-count estimate shown before
+  starting (see the level-picker bullet below) is what keeps that an informed choice, not a
+  silent surprise, rather than curating the pickable stations down to a bounded list.
 - **This doesn't fit the "swap in a new `LINE` object" pattern Network mode established.**
   Network mode's whole trick was building a `LINE`-shaped object once per run and letting
   every existing function (`seq()`, `origIndex()`, `totalSteps()`, `render()`,
@@ -201,79 +213,108 @@ chain-so-far forward then backward at every rung.
   itself changes shape *during* a single run** — it grows by one station and flips direction
   at every rung, not once at the start. So `LINE` stays the normal, unchanged branch runtime
   (`buildLineRuntime()`) for the *whole* run — it's never rebuilt or reassigned mid-run —
-  and three new module-level variables carry the rest: `learningEndIndex` (the picked
-  level's position along the current direction's walk — a Setup-time choice, untouched by
-  `resetState()`), `learningRung` (current rung size, reset to `2` every run) and
-  `learningPhase` (`'forward'`/`'backward'`, also reset every run). `learningBaseSeq()`/
-  `learningBaseIndices()` are the direction-aware "whole walk" (`reverseDirection` still
-  applies here exactly like every other mode — Direction still picks which terminus counts
-  as "the start"); `learningSeq()`/`learningOrigIndices()` slice that down to `0..learningRung-1`
-  and reverse it when `learningPhase === 'backward'`. `seq()`/`origIndex()` each get one new
-  `mode === 'learning'` branch delegating to these; every other function they feed
-  (`results{}` lookups, the diagram, streak/score) needed no changes at all, since they only
-  ever consume `seq()`/`origIndex()`'s output, never the shape of `LINE` itself.
-- **A leg (forward or backward) is typed exactly like a quiz run of `learningRung` stations**
-  — `render()`'s existing `idx === 0` ("type the first station, no clue") vs. `else`
-  ("previous: X, what's next") branching is its own `mode === 'learning'` branch (not folded
-  into quiz/network's, since it also needs a rung/phase indicator and phase-aware wording —
-  backward's own `idx === 0` isn't really "the first station" the way forward's literally
-  is, so it gets its own prompt: "Now recite it backwards — what's the last station
-  reached?"). `advance()` gets its own branch too, since "done" here is rung-and-phase-aware,
-  not a single fixed number the way `totalSteps()` (deliberately just the *current leg's*
-  length in Learning mode — see its own comment) can express alone: leg not finished →
-  advance `idx`; forward leg just finished → flip to backward, reset `idx`; backward leg
-  just finished and the rung hasn't reached the level yet → grow `learningRung`, flip back
-  to forward, reset `idx`; backward leg just finished *and* the rung has reached the level →
-  `finishRun()`.
-- **The turn-around station (the newest one added this rung) gets typed twice in a row** —
-  once as the last forward answer, once as the first backward answer. This is intentional,
-  not a bug to special-case around: it's the natural reinforcement point of the real
-  chain-memorization technique this mode models, and skipping it would need extra branching
-  for no real benefit.
+  and three new module-level variables carry the rest: `learningStartIndex` (the picked
+  starting level's position along the current direction's walk — a Setup-time choice,
+  untouched by `resetState()`), `learningRung` (current rung size, seeded from
+  `learningStartIndex + 1` every run) and `learningPhase` (`'forward'`/`'backward'`, reset to
+  `'forward'` every run). `learningBaseSeq()`/`learningBaseIndices()` are the direction-aware
+  "whole walk" (`reverseDirection` still applies here exactly like every other mode —
+  Direction still picks which terminus counts as "the start"); `learningSeq()`/
+  `learningOrigIndices()` slice that down to `0..learningRung-1` and reverse it when
+  `learningPhase === 'backward'`. `seq()`/`origIndex()` each get one new `mode === 'learning'`
+  branch delegating to these; every other function they feed (`results{}` lookups, the
+  diagram, streak/score) needed no changes at all, since they only ever consume
+  `seq()`/`origIndex()`'s output, never the shape of `LINE` itself.
+- **No station is ever typed twice in an immediate row** — every leg transition
+  (`advanceLearning()`) starts the new leg's `idx` at `1`, not `0`, skipping straight past
+  the station the *previous* leg just finished on: forward's last answer is always the same
+  station as what would otherwise be backward's first question (the newly-added turn-around
+  station), and backward's last answer (the true first station) is always the same station
+  as what would otherwise be the *next* rung's forward first question. `render()`'s existing
+  `idx > 0` branch already frames that skipped station as known "Previous: X" context for the
+  very next question, so no other change was needed to eliminate the duplicate — this was
+  originally a deliberate design choice (the repeat as "reinforcement") and removed by
+  explicit instruction once it turned out not to read that way in practice. The one true
+  exception is the very first question of the whole run (the first rung's first forward
+  question), which has no prior leg to borrow context from — that's exactly what
+  `resetState()`'s ordinary `idx = 0` already gives it, so `advanceLearning()` needs no
+  special-casing for it. Because `idx` can now only ever be `0` at that one true first
+  question, `render()`'s Learning branch has no phase-aware `idx === 0` case either — backward
+  legs always have `idx > 0` and fall through the same "Previous: X, what's the previous
+  station?" framing as any other mid-leg question.
+- **`advanceLearning()`'s stop condition is "the rung already covers the whole current
+  direction's walk"** (`learningRung >= learningBaseSeq().length`), not "reached the picked
+  start" — `advance()` gets its own branch since Learning's own "done" isn't a single fixed
+  number the way `totalSteps()` (deliberately just the *current leg's* length in Learning
+  mode — see its own comment) can express alone: leg not finished → advance `idx`; forward
+  leg just finished → flip to backward, `idx = 1`; backward leg just finished and the rung
+  doesn't yet cover the whole walk → grow `learningRung`, flip back to forward, `idx = 1`;
+  backward leg just finished *and* the rung already covers the whole walk → `finishRun()`.
 - **The level picker reuses the Setup route map, not a new list** — by explicit instruction.
   The route map's station dots already have a real click handler
   (`showStationPopup()`/`markStationDotActive()`, purely an info popup with no selection
   semantics in every other mode). In Learning mode, that same click *additionally* calls
-  `selectLearningLevel(name)`, which sets `learningEndIndex` to that station's position in
+  `selectLearningStart(name)`, which sets `learningStartIndex` to that station's position in
   `learningBaseSeq()` — the info popup itself is completely unchanged, in every mode
   including Learning. Clicking the true first station (position 0) is a no-op for selection
-  (the ladder needs at least 2 stations) — the popup still shows, it just doesn't move the
-  level. A persistent marker (`drawLevelMarker()`, a ring in the mode's own `--mode-color`
-  teal, `#0E9488`) is drawn on the picked station on every `drawRoutePreview()` call while
-  `mode === 'learning'` — unlike the hover ring (`markStationDotActive()`, cleared on
-  `mouseleave`), this one has no separate clear/redraw bookkeeping: `drawRoutePreview()`
-  already wipes and rebuilds the whole SVG on every call, so the marker is just drawn fresh
-  wherever `learningEndIndex` currently points. A small readout next to the map
-  (`#learningLevelInfo`, `updateLearningLevelInfo()`) shows the picked station's name and
-  the estimated total recall count for it.
-- **Default level = the 2nd station** (`learningEndIndex = 1`, the smallest valid ladder),
-  set whenever Learning mode is entered (`setMode()`) and whenever line/branch/direction
-  changes while already in Learning mode (`setLine()` already forces `setMode('warmup')` on
-  any line switch, so it needs no special case; `setBranch()`/`setDirection()` reset it
-  directly, since a stale position from a different branch/direction could point at a
-  completely different station, or not exist at all). Every line/branch has at least 2
-  stations, so this default always exists — **"Start playing" never needs a disabled/guarded
-  state**, unlike a picker that could start with nothing selected.
-- **Run length is bounded by the level you pick, not curated/capped** — a rung of size `k`
-  costs `2*(k-1)` recalls (forward + backward), so climbing to level position `learningEndIndex`
-  (rung size `k = learningEndIndex + 1`) costs `k*(k+1) - 2` total recalls, summed over every
-  rung from size 2 up to `k`. This is genuinely `O(N²)` in the picked position — shown to the
-  player up front in `#learningLevelInfo` precisely so a distant pick is an informed choice,
-  not a silent surprise, rather than curating the pickable stations down to a fixed list.
+  (the first rung needs at least 2 stations to recite forward *and* backward) — the popup
+  still shows, it just doesn't move the start. A persistent marker (`drawLevelMarker()`, a
+  ring in the mode's own `--mode-color` teal, `#0E9488`) is drawn on the picked station on
+  every `drawRoutePreview()` call while `mode === 'learning'` — unlike the hover ring
+  (`markStationDotActive()`, cleared on `mouseleave`), this one has no separate
+  clear/redraw bookkeeping: `drawRoutePreview()` already wipes and rebuilds the whole SVG on
+  every call, so the marker is just drawn fresh wherever `learningStartIndex` currently
+  points. For Learning mode specifically, the route map (relabeled "Level Picker" — see the
+  Setup-layout bullet below) sits above "Start playing" rather than below it, since it's
+  functionally the primary control in this mode, not a passive reference preview.
+- **The picked-start readout is a redesigned card** (`.learning-level-card`,
+  `#learningLevelInfo`), not the single small caption line it started as — promoted to
+  primary Setup real estate once the map itself moved above "Start playing", it needed to
+  read as more than a footnote. A muted "Starting from" caption sits above the station name
+  (large, bold — `.learning-level-name`), with the estimated total recall count shown as a
+  distinct stat on the right (`.learning-level-stat-value`, in the mode's own teal), and the
+  "tap a station on the map to change it" hint drops to its own small line below via
+  `flex-basis:100%` rather than being crammed onto the same line as the stat. The whole card
+  is tinted with `color-mix(in srgb, #0E9488 12%, var(--panel))` and a matching teal border,
+  tying it back to the mode's own identity color the same way other mode-specific UI already
+  does elsewhere in this app. `updateLearningLevelInfo()` sets the name/stat sub-elements
+  individually rather than one `textContent` assignment.
+- **Setup layout: the route map/"Level Picker" swaps position with "Start playing" in
+  Learning mode only, via CSS `order`, not a DOM move.** The existing `.setup-divider` /
+  `#startPlayingBtn` / route-map block is wrapped in a `display:flex; flex-direction:column`
+  container (`#setupTail`, containing `#startPlayingWrap`, the divider, and
+  `#routeMapGroup`), with the divider fixed at `order:1` (always in the middle) and the two
+  content blocks at `order:0`/`order:2` by default — `.setup-tail.reorder-for-learning`
+  (toggled in `setMode()` alongside the mode buttons) swaps just those two `order` values.
+  `routeMapLabelEl.textContent` toggles between `'Route map'` (every other mode) and `'Level
+  Picker'` (Learning mode) in the same place. No DOM nodes move, so nothing about the
+  station-dot click handlers or existing element references needed to change.
+- **Run length formula** (verified by hand-simulating a small line end-to-end): for a walk of
+  length `N` starting at position `s` (`s = learningStartIndex`), the first rung (size `s+1`)
+  costs `2s+1` recalls (forward is `s+1` questions with no skip, since nothing precedes it;
+  backward is `s` questions, skipping the just-typed turn-around station). Every later rung
+  of size `k` costs `2*(k-1)` (both legs skip their own just-typed duplicate). Summed from
+  the first rung through the final rung (size `N`), total recalls = `N*(N-1) - s*(s-1) + 1` —
+  shown to the player up front (comma-formatted via `toLocaleString()`, since starting near
+  the beginning of a long line can now legitimately reach four digits) in the level card
+  precisely so a distant-from-the-end start is an informed choice, not a silent surprise.
 - **`renderProgressRail()` and `milestoneNote()` both needed Learning-specific handling** —
   neither's existing logic assumes anything but one monotonic `idx`/`total` walk.
   `milestoneNote()`'s "Halfway there"/"Final stretch" would otherwise fire once *per rung*
   (noise, not encouragement), so it's suppressed outright for `mode === 'learning'`, no
   synthetic numbers fed in. `renderProgressRail()` gets its own fraction instead: fully
-  completed rungs, plus half a rung for the current leg's own within-leg progress (forward =
-  first half, backward = second half) — so the little train icon still moves monotonically
-  forward across the *whole* run instead of visibly snapping backward every time a rung
-  flips from forward to backward.
+  completed rungs (out of `learningBaseSeq().length - learningStartIndex` total rungs), plus
+  half a rung for the current leg's own within-leg progress (forward = first half, backward =
+  second half) — so the little train icon still moves monotonically forward across the
+  *whole* run instead of visibly snapping backward every time a rung flips from forward to
+  backward.
 - **`finishRun()`'s summary branch** (`mode === 'learning'`, alongside every other mode's own
-  branch there) reports the picked level's station name, total rungs climbed
-  (`learningEndIndex`, not a station count — the same stations get typed over and over as
-  the ladder grows, so "of N stations" the way quiz/network phrase it wouldn't mean the same
-  thing here), and total recalls (`attempts`), alongside the usual accuracy/best-streak/score.
+  branch there) reports the picked starting station, the true terminus actually reached
+  (since the ladder always finishes there, not at the pick), total rungs climbed
+  (`learningBaseSeq().length - learningStartIndex`, not a station count — the same stations
+  get typed over and over as the ladder grows, so "of N stations" the way quiz/network phrase
+  it wouldn't mean the same thing here), and total recalls (`attempts`), alongside the usual
+  accuracy/best-streak/score.
 - **Mode-button color**: `#modeLearningBtn{ --mode-color: #0E9488 }`, a teal — checked
   specifically against Victoria's cyan and Waterloo & City's pale mint (the two closest real
   hues already in the Line ribbon) and against the other four mode colors (amber/blue/green/
@@ -502,6 +543,17 @@ catch.
 ## Hard rules (violating these previously shipped real bugs — see PROJECT_HISTORY.md for each)
 
 - **Never use `element.style.display` for show/hide.** Always `classList.toggle('hidden', bool)`.
+- **`setLine()` preserves whichever mode is currently active — it must never call
+  `setMode()`.** It used to end with `setMode('warmup')` unconditionally, silently discarding
+  whichever mode (and, for Learning, whichever picked start) was active the moment someone
+  switched lines — a real, reported annoyance once Learning mode's route map started inviting
+  people to browse lines mid-setup. Fixed by explicit instruction, and deliberately for every
+  mode, not just Learning: `setLine()` now only re-runs the parts of `setMode()`'s own work
+  that are still needed when `mode` itself isn't changing (`updatePlayContextLabel()`,
+  `resetState()` — which already regenerates `mcOrder` for the new station count when
+  `mode === 'mc'` — and `render()`), plus resetting `learningStartIndex` back to its default
+  when currently in Learning mode. Don't reintroduce a `setMode()` call at the end of
+  `setLine()` without checking this first.
 - **`showPage()`'s Setup<->Play transition is a timed two-stage sequence, not an instant
   swap — anything that depends on the target page actually being visible must wait for
   that, not for the click alone.** The outgoing page gets `.page-leaving` (fade + slide out,
