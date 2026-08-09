@@ -343,8 +343,29 @@
   }
   .learning-level-main{ display:flex; flex-direction:column; gap:2px; }
   .learning-level-caption{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color: var(--ink-dim); }
-  .learning-level-name{ font-size:22px; font-weight:700; color: var(--ink); line-height:1.15; }
-  .learning-level-stat{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  /* "Starting from <pick>" alone read as if recitation began *at* the
+     pick — every rung actually recites from the direction's true first
+     station onward, and the pick just marks how far the first rung
+     already reaches. So the headline shows both, "<true first station> →
+     <pick>" (a slightly smaller size than a single-name headline would
+     use, to leave room for two names), and the mode's own "X → Y" arrow
+     convention carries the "level" framing without needing extra words. */
+  .learning-level-name{ font-size:19px; font-weight:700; color: var(--ink); line-height:1.25; }
+  /* The true end of the ladder (always the current direction's terminus,
+     beyond the pick, never the pick itself) shown as a muted, smaller
+     sub-line right under the headline — continuing the same "X → Y"
+     convention, so the whole card reads as one journey split by visual
+     weight: true-start → pick (bold, primary) → true-end (muted,
+     secondary context). */
+  .learning-level-end{ font-size:13px; font-weight:500; color: var(--ink-dim); }
+  /* margin-left:auto (not just the card's own justify-content:space-between)
+     is what actually keeps this right-aligned once the card wraps to two
+     rows on a narrow phone — space-between only distributes items *within
+     a flex line*, so once .learning-level-stat drops to a line of its own
+     (nothing left to space it against), it was landing flush left instead
+     of right. auto margins push it to the far edge of whichever line it's
+     actually on, wrapped or not. */
+  .learning-level-stat{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; margin-left:auto; }
   .learning-level-stat-value{ font-size:20px; font-weight:700; color:#0E9488; line-height:1.15; }
   .learning-level-stat-label{ font-size:11px; color: var(--ink-dim); text-align:right; }
   /* Full-width so it always drops to its own line below the name/stat row,
@@ -1101,7 +1122,7 @@
     .station-popup{ max-width: min(270px, calc(100vw - 24px)); }
     .station-popup-name{ font-size:16px; }
     .station-popup .interchange-chip{ font-size:11.5px; padding:5px 11px; }
-    .learning-level-name{ font-size:24px; }
+    .learning-level-name{ font-size:20px; }
     .learning-level-stat-value{ font-size:22px; }
   }
   @media (min-width: 1300px){
@@ -1136,7 +1157,7 @@
     .station-popup{ max-width: min(300px, calc(100vw - 24px)); }
     .station-popup-name{ font-size:17px; }
     .station-popup .interchange-chip{ font-size:12.5px; padding:6px 12px; }
-    .learning-level-name{ font-size:26px; }
+    .learning-level-name{ font-size:21px; }
     .learning-level-stat-value{ font-size:24px; }
   }
 </style>
@@ -1263,8 +1284,9 @@
       <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
       <div class="learning-level-card hidden" id="learningLevelInfo">
         <div class="learning-level-main">
-          <span class="learning-level-caption">Starting from</span>
+          <span class="learning-level-caption">Level</span>
           <span class="learning-level-name" id="learningLevelName"></span>
+          <span class="learning-level-end" id="learningLevelEnd"></span>
         </div>
         <div class="learning-level-stat">
           <span class="learning-level-stat-value" id="learningLevelRecalls"></span>
@@ -2665,6 +2687,7 @@
   const routeMapLabelEl = $('routeMapLabel');
   const learningLevelInfoEl = $('learningLevelInfo');
   const learningLevelNameEl = $('learningLevelName');
+  const learningLevelEndEl = $('learningLevelEnd');
   const learningLevelRecallsEl = $('learningLevelRecalls');
   const routeMapCardEl = $('routeMapCard');
   const playDiagramCardEl = $('playDiagramCard');
@@ -5133,9 +5156,10 @@
   }
 
   // The picked-start readout above the route map (see #learningLevelInfo /
-  // the .learning-level-card markup in index.html) — station name plus the
-  // estimated total recall count for climbing from it all the way to the
-  // current direction's true end. Hidden outside Learning mode.
+  // the .learning-level-card markup in index.html) — the picked station,
+  // the true end it climbs to (shown explicitly, not just implied by the
+  // recall count), and the estimated total recall count for climbing from
+  // one to the other. Hidden outside Learning mode.
   //
   // Formula (verified by hand-simulating a small line end-to-end): for a
   // walk of length N starting at position s, the first rung (size s+1)
@@ -5149,9 +5173,15 @@
     if(mode !== 'learning'){ learningLevelInfoEl.classList.add('hidden'); return; }
     const walk = learningBaseSeq();
     const n = walk.length, s = learningStartIndex;
-    const name = walk[s];
+    const trueStartName = walk[0], pickedName = walk[s], endName = walk[n - 1];
     const recalls = n * (n - 1) - s * (s - 1) + 1;
-    learningLevelNameEl.textContent = name;
+    // "Starting from <pick>" read as if recitation began *at* the pick,
+    // when every rung actually recites from the direction's true first
+    // station onward — showing both makes clear the pick is a level of
+    // complexity (how far the first rung already reaches), not a literal
+    // starting point.
+    learningLevelNameEl.textContent = trueStartName + ' → ' + pickedName;
+    learningLevelEndEl.textContent = '→ ' + endName;
     learningLevelRecallsEl.textContent = recalls.toLocaleString();
     learningLevelInfoEl.classList.remove('hidden');
   }

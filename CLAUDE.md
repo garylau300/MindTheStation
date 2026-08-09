@@ -270,15 +270,37 @@ at every rung.
 - **The picked-start readout is a redesigned card** (`.learning-level-card`,
   `#learningLevelInfo`), not the single small caption line it started as — promoted to
   primary Setup real estate once the map itself moved above "Start playing", it needed to
-  read as more than a footnote. A muted "Starting from" caption sits above the station name
-  (large, bold — `.learning-level-name`), with the estimated total recall count shown as a
-  distinct stat on the right (`.learning-level-stat-value`, in the mode's own teal), and the
-  "tap a station on the map to change it" hint drops to its own small line below via
-  `flex-basis:100%` rather than being crammed onto the same line as the stat. The whole card
-  is tinted with `color-mix(in srgb, #0E9488 12%, var(--panel))` and a matching teal border,
-  tying it back to the mode's own identity color the same way other mode-specific UI already
-  does elsewhere in this app. `updateLearningLevelInfo()` sets the name/stat sub-elements
+  read as more than a footnote. A muted "Level" caption sits above the headline, with the
+  estimated total recall count shown as a distinct stat on the right
+  (`.learning-level-stat-value`, in the mode's own teal), and the "tap a station on the map
+  to change it" hint drops to its own small line below via `flex-basis:100%` rather than
+  being crammed onto the same line as the stat. The whole card is tinted with
+  `color-mix(in srgb, #0E9488 12%, var(--panel))` and a matching teal border, tying it back
+  to the mode's own identity color the same way other mode-specific UI already does
+  elsewhere in this app. `updateLearningLevelInfo()` sets the name/stat sub-elements
   individually rather than one `textContent` assignment.
+- **The headline shows the true first station *and* the pick, not the pick alone** — a plain
+  "Starting from \<pick\>" line was tried first and reads as if recitation begins *at* the
+  pick, when every rung actually recites from the direction's true first station onward and
+  the pick just marks how far the first rung already reaches. Fixed by explicit instruction:
+  `.learning-level-name` now reads `"<true first station> → <pick>"` (a smaller size than a
+  single-name headline used, to leave room for two names — checked against the longest
+  realistic pairing, e.g. District's "Ealing Broadway → Ealing Common", which still fits one
+  line even at a 375px phone width). The true end the ladder climbs to beyond the pick is
+  shown too, as its own smaller muted "→ \<terminus\>" sub-line right underneath
+  (`.learning-level-end`/`#learningLevelEnd`) — together the two lines read as one journey
+  split by visual weight (true-start → pick, bold and primary; → true-end, muted and
+  secondary), reusing this app's existing "X → Y" arrow convention (`#playInfoLine`'s own
+  framing, `terminusNames()`) throughout rather than inventing new phrasing.
+- **`.learning-level-stat` needs `margin-left:auto`, not just the card's own
+  `justify-content:space-between`, to stay right-aligned once the card wraps to two rows on
+  a narrow phone.** `justify-content` only distributes items *within a given flex line* — once
+  the headline/end-station text is long enough to push the stat onto a wrapped line of its
+  own, there's nothing left on that line to space it against, so it was landing flush left
+  instead of right (a real, reported visual bug once the two-station headline above made
+  wrapping on narrow phones more common). An `auto` margin pushes an item to the far edge of
+  whichever line it's actually on regardless of wrapping, which `justify-content` alone
+  cannot do once a wrap happens.
 - **Setup layout: the route map/"Level Picker" swaps position with "Start playing" in
   Learning mode only, via CSS `order`, not a DOM move.** The existing `.setup-divider` /
   `#startPlayingBtn` / route-map block is wrapped in a `display:flex; flex-direction:column`
