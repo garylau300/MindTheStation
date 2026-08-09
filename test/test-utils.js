@@ -37,7 +37,13 @@ const HOOK_INJECTION = "  setMode('warmup');\n" +
   "      const graph = buildNetworkGraph();\n" +
   "      const path = networkShortestPath(graph, a, b);\n" +
   "      return path && buildNetworkRuntimeFromPath(graph, path);\n" +
-  "    }\n" +
+  "    },\n" +
+  "    getLearningEndIndex: () => learningEndIndex,\n" +
+  "    getLearningRung: () => learningRung,\n" +
+  "    getLearningPhase: () => learningPhase,\n" +
+  "    getLearningBaseSeq: () => learningBaseSeq(),\n" +
+  "    setLearningEndIndex: (i) => { learningEndIndex = i; },\n" +
+  "    selectLearningLevelByName: (name) => selectLearningLevel(name)\n" +
   "  };\n" +
   "})();\n</script>";
 

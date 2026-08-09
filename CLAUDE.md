@@ -53,10 +53,11 @@ from the live domain.
 ## What it does
 
 Pick a line (and branch/direction if applicable), then practice recalling station order:
-**Warm-up** (target shown, type it), **Recall quiz** (previous station shown, type the
-next), **Multiple choice** (4 options), or **Network** (two random stations anywhere in the
-system, type the real route between them — see its own section below). A 3-2-1 countdown
-precedes each run.
+**Warm-up** (target shown, type it), **Learning** (a growing/reversing "ladder" drill up to
+a station you pick — see its own section below), **Recall quiz** (previous station shown,
+type the next), **Multiple choice** (4 options), or **Network** (two random stations
+anywhere in the system, type the real route between them — see its own section below). A
+3-2-1 countdown precedes each run.
 
 Typed-answer matching (`normalize()`, warm-up/quiz only — MC is button-click, no typing)
 lowercases, strips diacritics, and drops all non-alphanumeric characters before comparing —
@@ -180,9 +181,111 @@ they reset on page refresh, not just on a new run. Within a session:
   state). Button text flips to "Copied!" (or "Copy failed" if the promise rejects) for
   1.6s, then reverts.
 
+### Learning mode
+
+A 2nd mode button (`#modeLearningBtn`, positioned between Warm-up and Recall quiz — by
+explicit instruction, not appended after Network like every mode before it was): a
+"chain-building" memorization drill, the classic technique for learning an ordered list by
+heart (recite item 1-2, forward then backward; add item 3, recite the whole chain again
+forward then backward; add item 4; repeat). The player picks a station anywhere along the
+current line/branch/direction as their **level** (the ladder's final target — not
+necessarily the branch's true terminus), and the run climbs a ladder of growing **rungs**
+from the true start of the current direction up to that station, reciting the whole
+chain-so-far forward then backward at every rung.
+
+- **This doesn't fit the "swap in a new `LINE` object" pattern Network mode established.**
+  Network mode's whole trick was building a `LINE`-shaped object once per run and letting
+  every existing function (`seq()`, `origIndex()`, `totalSteps()`, `render()`,
+  `submitAnswer()`, `advance()`) work unmodified, since they only ever read from
+  `LINE`/`idx`/`mode`. Learning mode can't reuse that as cleanly because **the sequence
+  itself changes shape *during* a single run** — it grows by one station and flips direction
+  at every rung, not once at the start. So `LINE` stays the normal, unchanged branch runtime
+  (`buildLineRuntime()`) for the *whole* run — it's never rebuilt or reassigned mid-run —
+  and three new module-level variables carry the rest: `learningEndIndex` (the picked
+  level's position along the current direction's walk — a Setup-time choice, untouched by
+  `resetState()`), `learningRung` (current rung size, reset to `2` every run) and
+  `learningPhase` (`'forward'`/`'backward'`, also reset every run). `learningBaseSeq()`/
+  `learningBaseIndices()` are the direction-aware "whole walk" (`reverseDirection` still
+  applies here exactly like every other mode — Direction still picks which terminus counts
+  as "the start"); `learningSeq()`/`learningOrigIndices()` slice that down to `0..learningRung-1`
+  and reverse it when `learningPhase === 'backward'`. `seq()`/`origIndex()` each get one new
+  `mode === 'learning'` branch delegating to these; every other function they feed
+  (`results{}` lookups, the diagram, streak/score) needed no changes at all, since they only
+  ever consume `seq()`/`origIndex()`'s output, never the shape of `LINE` itself.
+- **A leg (forward or backward) is typed exactly like a quiz run of `learningRung` stations**
+  — `render()`'s existing `idx === 0` ("type the first station, no clue") vs. `else`
+  ("previous: X, what's next") branching is its own `mode === 'learning'` branch (not folded
+  into quiz/network's, since it also needs a rung/phase indicator and phase-aware wording —
+  backward's own `idx === 0` isn't really "the first station" the way forward's literally
+  is, so it gets its own prompt: "Now recite it backwards — what's the last station
+  reached?"). `advance()` gets its own branch too, since "done" here is rung-and-phase-aware,
+  not a single fixed number the way `totalSteps()` (deliberately just the *current leg's*
+  length in Learning mode — see its own comment) can express alone: leg not finished →
+  advance `idx`; forward leg just finished → flip to backward, reset `idx`; backward leg
+  just finished and the rung hasn't reached the level yet → grow `learningRung`, flip back
+  to forward, reset `idx`; backward leg just finished *and* the rung has reached the level →
+  `finishRun()`.
+- **The turn-around station (the newest one added this rung) gets typed twice in a row** —
+  once as the last forward answer, once as the first backward answer. This is intentional,
+  not a bug to special-case around: it's the natural reinforcement point of the real
+  chain-memorization technique this mode models, and skipping it would need extra branching
+  for no real benefit.
+- **The level picker reuses the Setup route map, not a new list** — by explicit instruction.
+  The route map's station dots already have a real click handler
+  (`showStationPopup()`/`markStationDotActive()`, purely an info popup with no selection
+  semantics in every other mode). In Learning mode, that same click *additionally* calls
+  `selectLearningLevel(name)`, which sets `learningEndIndex` to that station's position in
+  `learningBaseSeq()` — the info popup itself is completely unchanged, in every mode
+  including Learning. Clicking the true first station (position 0) is a no-op for selection
+  (the ladder needs at least 2 stations) — the popup still shows, it just doesn't move the
+  level. A persistent marker (`drawLevelMarker()`, a ring in the mode's own `--mode-color`
+  teal, `#0E9488`) is drawn on the picked station on every `drawRoutePreview()` call while
+  `mode === 'learning'` — unlike the hover ring (`markStationDotActive()`, cleared on
+  `mouseleave`), this one has no separate clear/redraw bookkeeping: `drawRoutePreview()`
+  already wipes and rebuilds the whole SVG on every call, so the marker is just drawn fresh
+  wherever `learningEndIndex` currently points. A small readout next to the map
+  (`#learningLevelInfo`, `updateLearningLevelInfo()`) shows the picked station's name and
+  the estimated total recall count for it.
+- **Default level = the 2nd station** (`learningEndIndex = 1`, the smallest valid ladder),
+  set whenever Learning mode is entered (`setMode()`) and whenever line/branch/direction
+  changes while already in Learning mode (`setLine()` already forces `setMode('warmup')` on
+  any line switch, so it needs no special case; `setBranch()`/`setDirection()` reset it
+  directly, since a stale position from a different branch/direction could point at a
+  completely different station, or not exist at all). Every line/branch has at least 2
+  stations, so this default always exists — **"Start playing" never needs a disabled/guarded
+  state**, unlike a picker that could start with nothing selected.
+- **Run length is bounded by the level you pick, not curated/capped** — a rung of size `k`
+  costs `2*(k-1)` recalls (forward + backward), so climbing to level position `learningEndIndex`
+  (rung size `k = learningEndIndex + 1`) costs `k*(k+1) - 2` total recalls, summed over every
+  rung from size 2 up to `k`. This is genuinely `O(N²)` in the picked position — shown to the
+  player up front in `#learningLevelInfo` precisely so a distant pick is an informed choice,
+  not a silent surprise, rather than curating the pickable stations down to a fixed list.
+- **`renderProgressRail()` and `milestoneNote()` both needed Learning-specific handling** —
+  neither's existing logic assumes anything but one monotonic `idx`/`total` walk.
+  `milestoneNote()`'s "Halfway there"/"Final stretch" would otherwise fire once *per rung*
+  (noise, not encouragement), so it's suppressed outright for `mode === 'learning'`, no
+  synthetic numbers fed in. `renderProgressRail()` gets its own fraction instead: fully
+  completed rungs, plus half a rung for the current leg's own within-leg progress (forward =
+  first half, backward = second half) — so the little train icon still moves monotonically
+  forward across the *whole* run instead of visibly snapping backward every time a rung
+  flips from forward to backward.
+- **`finishRun()`'s summary branch** (`mode === 'learning'`, alongside every other mode's own
+  branch there) reports the picked level's station name, total rungs climbed
+  (`learningEndIndex`, not a station count — the same stations get typed over and over as
+  the ladder grows, so "of N stations" the way quiz/network phrase it wouldn't mean the same
+  thing here), and total recalls (`attempts`), alongside the usual accuracy/best-streak/score.
+- **Mode-button color**: `#modeLearningBtn{ --mode-color: #0E9488 }`, a teal — checked
+  specifically against Victoria's cyan and Waterloo & City's pale mint (the two closest real
+  hues already in the Line ribbon) and against the other four mode colors (amber/blue/green/
+  purple), same "verified by eye against the full palette" discipline as every other mode
+  color here. Icon is a hand-authored ladder glyph (two rails, three rungs, a filled dot on
+  the top rung) — literal to the mode's own name and visually distinct from the other four
+  icons' bullseye/node-arrow/2×2-grid/network-junction shapes.
+
 ### Network mode
 
-A 4th mode (`#modeNetworkBtn`, alongside Warm-up/Recall quiz/Multiple choice): the app picks
+The last of the five mode buttons (`#modeNetworkBtn`, added chronologically before Learning
+but positioned after Warm-up/Learning/Recall quiz/Multiple choice in the DOM): the app picks
 two random stations anywhere in the whole system and the player types every real stop of the
 shortest route between them — a genuine "can you actually navigate the Tube" challenge,
 rather than one line's own fixed stop order. Reuses Recall quiz's exact "type the next
@@ -534,44 +637,50 @@ catch.
   Start button) from the read-only route-map preview beneath, rather than sitting
   immediately above the button. No CSS was scoped to `header .line-select`, so the Line
   ribbon's move needed no other fix-up.
-- **The four Mode buttons (`#modeWarmupBtn`/`#modeQuizBtn`/`#modeMcBtn`/`#modeNetworkBtn`)
-  are round, icon-only circles, not the old rectangular button + `<small>`-subtitle row** —
-  the full label/description only shows in a floating `.mode-btn-callout` card on hover,
-  keyboard focus, or when actually selected, by explicit instruction. Icons are hand-authored
-  inline `<svg>` line-art (`viewBox="0 0 22 22"`, `stroke="currentColor"`, `stroke-width:1.6`,
-  round caps/joins, fill only on small solid accent dots/nodes) rather than Unicode glyphs —
+- **The five Mode buttons (`#modeWarmupBtn`/`#modeLearningBtn`/`#modeQuizBtn`/`#modeMcBtn`/
+  `#modeNetworkBtn`, in that DOM order — Learning sits 2nd, right after Warm-up, by explicit
+  instruction, not appended last the way Network originally was) are round, icon-only
+  circles, not the old rectangular button + `<small>`-subtitle row** — the full
+  label/description only shows in a floating `.mode-btn-callout` card on hover, keyboard
+  focus, or when actually selected, by explicit instruction. Icons are hand-authored inline
+  `<svg>` line-art (`viewBox="0 0 22 22"`, `stroke="currentColor"`, `stroke-width:1.6`, round
+  caps/joins, fill only on small solid accent dots/nodes) rather than Unicode glyphs —
   `.theme-toggle`'s `☀`/`♪` work fine for two generic icons, but this codebase has already hit
   Unicode's limits for a precise glyph once (the `.muted` sound-toggle's own combining-
-  character tofu-box problem, solved by drawing a CSS shape instead); four *semantically
+  character tofu-box problem, solved by drawing a CSS shape instead); five *semantically
   distinct* mode concepts need the same "don't trust font-glyph roulette" treatment.
   `stroke="currentColor"` means every icon inherits `.mode-btn`'s own `color` exactly the way
   the theme-toggle's text glyphs already do — works across both themes and the active/inactive
   state with no extra wiring. Warm-up = a bullseye (two concentric circles + a filled center
-  dot, literal to "a target station is shown"); Recall quiz = a filled node connected by a
-  dashed line and small arrowhead to an open node ("known stop → recall this one"); Multiple
-  choice = a 2×2 grid of four outlined squares, one holding a checkmark ("four options, one
-  chosen"); Network = three nodes joined by two *angled* segments with the middle
-  (interchange) node filled and the two ends open — deliberately not a straight two-node
-  line, so it reads distinctly from Recall quiz's icon at a glance.
+  dot, literal to "a target station is shown"); Learning = a ladder (two vertical rails,
+  three horizontal rungs, a filled dot on the top rung — literal to "climbing a ladder");
+  Recall quiz = a filled node connected by a dashed line and small arrowhead to an open node
+  ("known stop → recall this one"); Multiple choice = a 2×2 grid of four outlined squares,
+  one holding a checkmark ("four options, one chosen"); Network = three nodes joined by two
+  *angled* segments with the middle (interchange) node filled and the two ends open —
+  deliberately not a straight two-node line, so it reads distinctly from Recall quiz's icon
+  at a glance.
   `.mode-btn`'s diameter scales at the existing 900px/1300px breakpoints (48→54→60px, a flat
   +6px per step — the same cadence `.line-select{ height:56px→62px→68px }` already uses)
   rather than staying a fixed size like `.theme-toggle` does, since these are primary Setup
-  controls, not secondary utility icons. The four sit close together as one clustered group
+  controls, not secondary utility icons. The five sit close together as one clustered group
   (`.mode-select{ justify-content:center; gap:20px }`), not spread edge-to-edge across the
   full row width the way the Line ribbon/Branch grid/Direction board deliberately are — by
   explicit instruction, since these buttons read as one cohesive control rather than a
   full-bleed section.
 - **Each mode button has its own fixed identity color** (`--mode-color`, set per button via
-  an ID selector — `#modeWarmupBtn`/`#modeQuizBtn`/`#modeMcBtn`/`#modeNetworkBtn`), not
-  `--line-accent` — an earlier version colored whichever mode button was `.active` using the
-  *currently selected line's* accent color, so every mode read as "whatever color Central
-  (or whichever line) happens to be" instead of having its own distinct look, by explicit
-  instruction to fix. Warm-up = amber `#E4780C`, Recall quiz = blue `#2E75D6`, Multiple
-  choice = green `#2FA84F`, Network = purple `#9B3FC4` — picked to stay visually distinct
-  from every real TfL line color already in use elsewhere in this app (Bakerloo's brown,
-  Central's red, Circle's yellow, District's green, Piccadilly's blue, Elizabeth's purple,
-  etc.), so a mode button is never mistaken for a line swatch, verified by eye against the
-  full `LINE_BADGE_COLORS` list rather than assumed. The color applies always, not just when
+  an ID selector — `#modeWarmupBtn`/`#modeLearningBtn`/`#modeQuizBtn`/`#modeMcBtn`/
+  `#modeNetworkBtn`), not `--line-accent` — an earlier version colored whichever mode button
+  was `.active` using the *currently selected line's* accent color, so every mode read as
+  "whatever color Central (or whichever line) happens to be" instead of having its own
+  distinct look, by explicit instruction to fix. Warm-up = amber `#E4780C`, Learning = teal
+  `#0E9488`, Recall quiz = blue `#2E75D6`, Multiple choice = green `#2FA84F`, Network =
+  purple `#9B3FC4` — picked to stay visually distinct from every real TfL line color already
+  in use elsewhere in this app (Bakerloo's brown, Central's red, Circle's yellow, District's
+  green, Piccadilly's blue, Elizabeth's purple, etc. — Learning's teal specifically checked
+  against Victoria's cyan and Waterloo & City's pale mint, the two closest real hues), so a
+  mode button is never mistaken for a line swatch, verified by eye against the full
+  `LINE_BADGE_COLORS` list rather than assumed. The color applies always, not just when
   selected (`border-color`/icon `color` both read `var(--mode-color)` unconditionally) —
   `.active` only adds a `color-mix(in srgb, var(--mode-color) 16%, transparent)` background
   tint on top, the same visual-weight pattern `--line-accent` used before. The hover rule
