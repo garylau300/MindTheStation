@@ -311,15 +311,30 @@ at every rung.
   `routeMapLabelEl.textContent` toggles between `'Route map'` (every other mode) and `'Level
   Picker'` (Learning mode) in the same place. No DOM nodes move, so nothing about the
   station-dot click handlers or existing element references needed to change.
-- **Run length formula** (verified by hand-simulating a small line end-to-end): for a walk of
-  length `N` starting at position `s` (`s = learningStartIndex`), the first rung (size `s+1`)
-  costs `2s+1` recalls (forward is `s+1` questions with no skip, since nothing precedes it;
-  backward is `s` questions, skipping the just-typed turn-around station). Every later rung
-  of size `k` costs `2*(k-1)` (both legs skip their own just-typed duplicate). Summed from
-  the first rung through the final rung (size `N`), total recalls = `N*(N-1) - s*(s-1) + 1` —
-  shown to the player up front (comma-formatted via `toLocaleString()`, since starting near
-  the beginning of a long line can now legitimately reach four digits) in the level card
-  precisely so a distant-from-the-end start is an informed choice, not a silent surprise.
+- **Run length formula** (verified by hand-simulating a small line end-to-end, `learningTotalRecalls()`):
+  for a walk of length `N` starting at position `s` (`s = learningStartIndex`), the first
+  rung (size `s+1`) costs `2s+1` recalls (forward is `s+1` questions with no skip, since
+  nothing precedes it; backward is `s` questions, skipping the just-typed turn-around
+  station). Every later rung of size `k` costs `2*(k-1)` (both legs skip their own
+  just-typed duplicate). Summed from the first rung through the final rung (size `N`), total
+  recalls = `N*(N-1) - s*(s-1) + 1` — shown to the player up front (comma-formatted via
+  `toLocaleString()`, since starting near the beginning of a long line can now legitimately
+  reach four digits) in the level card precisely so a distant-from-the-end start is an
+  informed choice, not a silent surprise. `learningTotalRecalls()` is the one shared source
+  for this number — both `updateLearningLevelInfo()` (the Setup-time estimate) and
+  `updateStats()` (the live Play-page count, next bullet) call it, so the two can never
+  drift apart.
+- **The Play page's live "Stations" stat (`#statProgress`) needs its own Learning-mode
+  branch in `updateStats()`, not the generic `idx + '/' + totalSteps()` every other mode
+  uses.** `totalSteps()` is deliberately just the *current leg's* length in Learning mode
+  (see its own comment) — reusing it here would reset the counter to something like `1/2`
+  at every single rung/phase transition instead of ever showing progress through the whole
+  run, defeating the entire point of a running station counter (a real, reported bug: the
+  stat never grew past a leg's own small size the whole run). `attempts` already counts
+  every recall answered so far across every leg of every rung regardless of mode, so
+  Learning mode shows `attempts + '/' + learningTotalRecalls()` instead — confirmed by
+  playing a full run to completion and checking the stat reads e.g. `59/59` at the finish,
+  matching the summary's own "N total recalls" exactly.
 - **`renderProgressRail()` and `milestoneNote()` both needed Learning-specific handling** —
   neither's existing logic assumes anything but one monotonic `idx`/`total` walk.
   `milestoneNote()`'s "Halfway there"/"Final stretch" would otherwise fire once *per rung*
@@ -576,6 +591,15 @@ catch.
   `mode === 'mc'` — and `render()`), plus resetting `learningStartIndex` back to its default
   when currently in Learning mode. Don't reintroduce a `setMode()` call at the end of
   `setLine()` without checking this first.
+- **`#summaryArea`'s `.summary-actions` ("Play again"/"Copy result"/"Change settings") sits
+  right after `#summaryTime`, before `#missList` — in every mode, not just Learning.** By
+  explicit instruction: the results list (`#missList`) can run long (a full Learning ladder
+  can list 50+ entries), and the action buttons used to come after it, meaning "Play again"
+  was only reachable after scrolling past the whole list. There's only one shared
+  `#summaryArea` template for every mode, so this is a single DOM reorder, not a per-mode
+  branch. `.summary-actions` picked up the `margin-bottom` that `.miss-list`'s own
+  `margin-bottom` used to provide when the list came first — don't drop it if `#missList`
+  is ever hidden/empty-cased, or the list will sit flush against the buttons above it.
 - **`showPage()`'s Setup<->Play transition is a timed two-stage sequence, not an instant
   swap — anything that depends on the target page actually being visible must wait for
   that, not for the click alone.** The outgoing page gets `.page-leaving` (fade + slide out,

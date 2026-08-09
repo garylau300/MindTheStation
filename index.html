@@ -434,7 +434,12 @@
     font-family:var(--font-main); line-height:1.5;
   }
 
-  .summary-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  /* Moved above #missList (by explicit instruction, across every mode) so
+     "Play again"/"Copy result"/"Change settings" are reachable right after
+     the summary stats without scrolling past a long results list first —
+     margin-bottom fills the gap .miss-list's own margin-bottom used to
+     provide when these buttons came after it instead. */
+  .summary-actions{ display:flex; gap:10px; flex-wrap:wrap; margin: 0 0 18px; }
   .summary-actions button{ flex:1; min-width:140px; padding: 12px 20px; }
   .ghost-btn{
     background: var(--panel-2); color: var(--ink); border:1px solid var(--line);
@@ -1417,12 +1422,12 @@
         <span class="summary-time-label">Time</span>
         <span class="summary-time-value" id="summaryTimeValue">0:00</span>
       </div>
-      <ul class="miss-list" id="missList"></ul>
       <div class="summary-actions">
         <button type="button" id="restartBtn">Play again</button>
         <button type="button" id="copyResultBtn" class="ghost-btn">Copy result</button>
         <button type="button" id="backToSetupBtn2" class="ghost-btn">Change settings</button>
       </div>
+      <ul class="miss-list" id="missList"></ul>
     </div>
   </main>
 
@@ -3159,6 +3164,23 @@
     return learningPhase === 'forward' ? slice : slice.slice().reverse();
   }
 
+  // The whole run's total recall count — not any one leg's, which is all
+  // totalSteps() gives for Learning mode (see its own comment). Shared by
+  // updateLearningLevelInfo() (the Setup-time estimate) and updateStats()
+  // (the live "Stations" count on the Play page), so the two can never
+  // drift apart. Formula (verified by hand-simulating a small line
+  // end-to-end): for a walk of length N starting at position s, the first
+  // rung (size s+1) costs 2s+1 recalls (forward is s+1 questions with no
+  // skip, since nothing precedes it; backward is s questions, skipping the
+  // just-typed turn-around station — see advanceLearning()). Every later
+  // rung of size k costs 2*(k-1) (both legs skip their own just-typed
+  // duplicate). Summed from the first rung through the final rung (size
+  // N), this comes out to N*(N-1) - s*(s-1) + 1 total recalls.
+  function learningTotalRecalls(){
+    const n = learningBaseSeq().length, s = learningStartIndex;
+    return n * (n - 1) - s * (s - 1) + 1;
+  }
+
   // active ordered list for the current mode/direction — multiple choice
   // uses its own randomized order (see mcOrder) rather than this
   function seq(){
@@ -3988,7 +4010,17 @@
   }
 
   function updateStats(){
-    statProgressEl.textContent = idx + '/' + totalSteps();
+    // Learning mode's totalSteps() is deliberately just the *current leg's*
+    // length (see its own comment) — showing idx/totalSteps() here would
+    // reset to something like "1/2" at every single rung/phase transition
+    // instead of ever reflecting the whole run, defeating the point of a
+    // "Stations" counter. attempts already counts every recall answered so
+    // far across every leg of every rung, so it — against the same total
+    // learningTotalRecalls() shown on Setup — is what actually tracks
+    // progress through the whole ladder.
+    statProgressEl.textContent = mode === 'learning'
+      ? attempts + '/' + learningTotalRecalls()
+      : idx + '/' + totalSteps();
     if(mode === 'warmup'){
       statAccEl.textContent = attempts ? Math.round(100*correctCount/attempts) + '%' : '—';
       statMidEl.textContent = currentWpm();
@@ -5159,22 +5191,12 @@
   // the .learning-level-card markup in index.html) — the picked station,
   // the true end it climbs to (shown explicitly, not just implied by the
   // recall count), and the estimated total recall count for climbing from
-  // one to the other. Hidden outside Learning mode.
-  //
-  // Formula (verified by hand-simulating a small line end-to-end): for a
-  // walk of length N starting at position s, the first rung (size s+1)
-  // costs 2s+1 recalls (forward is s+1 questions with no skip, since
-  // nothing precedes it; backward is s questions, skipping the just-typed
-  // turn-around station — see advanceLearning()). Every later rung of size
-  // k costs 2*(k-1) (both legs skip their own just-typed duplicate).
-  // Summed from the first rung through the final rung (size N), this comes
-  // out to N*(N-1) - s*(s-1) + 1 total recalls.
+  // one to the other (learningTotalRecalls()). Hidden outside Learning mode.
   function updateLearningLevelInfo(){
     if(mode !== 'learning'){ learningLevelInfoEl.classList.add('hidden'); return; }
     const walk = learningBaseSeq();
     const n = walk.length, s = learningStartIndex;
     const trueStartName = walk[0], pickedName = walk[s], endName = walk[n - 1];
-    const recalls = n * (n - 1) - s * (s - 1) + 1;
     // "Starting from <pick>" read as if recitation began *at* the pick,
     // when every rung actually recites from the direction's true first
     // station onward — showing both makes clear the pick is a level of
@@ -5182,7 +5204,7 @@
     // starting point.
     learningLevelNameEl.textContent = trueStartName + ' → ' + pickedName;
     learningLevelEndEl.textContent = '→ ' + endName;
-    learningLevelRecallsEl.textContent = recalls.toLocaleString();
+    learningLevelRecallsEl.textContent = learningTotalRecalls().toLocaleString();
     learningLevelInfoEl.classList.remove('hidden');
   }
 
