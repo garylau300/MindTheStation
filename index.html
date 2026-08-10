@@ -1289,7 +1289,7 @@
       <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
       <div class="learning-level-card hidden" id="learningLevelInfo">
         <div class="learning-level-main">
-          <span class="learning-level-caption">Level</span>
+          <span class="learning-level-caption">Initial level</span>
           <span class="learning-level-name" id="learningLevelName"></span>
           <span class="learning-level-end" id="learningLevelEnd"></span>
         </div>
@@ -5203,7 +5203,13 @@
     // complexity (how far the first rung already reaches), not a literal
     // starting point.
     learningLevelNameEl.textContent = trueStartName + ' → ' + pickedName;
-    learningLevelEndEl.textContent = '→ ' + endName;
+    // When the pick *is* the true end (the whole line in one rung), the
+    // headline above already ends in that same name — the "→ endName"
+    // sub-line would just repeat it, so it's hidden rather than shown as a
+    // literal duplicate.
+    const pickIsTrueEnd = s === n - 1;
+    learningLevelEndEl.classList.toggle('hidden', pickIsTrueEnd);
+    if(!pickIsTrueEnd) learningLevelEndEl.textContent = '→ ' + endName;
     learningLevelRecallsEl.textContent = learningTotalRecalls().toLocaleString();
     learningLevelInfoEl.classList.remove('hidden');
   }
