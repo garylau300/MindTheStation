@@ -276,20 +276,35 @@ the recommendation tip in the level card below.
   station is a fully valid Ending pick, unlike position 0 for Initial. Either way the info
   popup itself is completely unchanged, in every mode including Learning — clicking a station
   that's invalid for the current pick target still shows the popup, it just doesn't move
-  anything. Both picks get their own persistent marker (`drawLevelMarker()`, reused for both —
-  the same ring in the mode's own `--mode-color` teal, `#0E9488`, since both are equally
-  "chosen" now) drawn on every `drawRoutePreview()` call while `mode === 'learning'` — unlike
-  the hover ring (`markStationDotActive()`, cleared on `mouseleave`), neither has separate
-  clear/redraw bookkeeping: `drawRoutePreview()` already wipes and rebuilds the whole SVG on
-  every call, so both markers are just drawn fresh wherever `learningStartIndex`/
-  `learningEndIndex` currently point. For Learning mode specifically, the route map (relabeled
-  "Level Picker" — see the Setup-layout bullet below) sits above "Start playing" rather than
-  below it, since it's functionally the primary control in this mode, not a passive reference
-  preview.
+  anything. Both picks get their own persistent marker (`drawLevelMarker(svg, ns, dot, color)`)
+  drawn on every `drawRoutePreview()` call while `mode === 'learning'` — unlike the hover ring
+  (`markStationDotActive()`, cleared on `mouseleave`), neither has separate clear/redraw
+  bookkeeping: `drawRoutePreview()` already wipes and rebuilds the whole SVG on every call, so
+  both markers are just drawn fresh wherever `learningStartIndex`/`learningEndIndex` currently
+  point. For Learning mode specifically, the route map (relabeled "Level Picker" — see the
+  Setup-layout bullet below) sits above "Start playing" rather than below it, since it's
+  functionally the primary control in this mode, not a passive reference preview.
+- **Initial and Ending each get their own fixed identity color, by explicit instruction** — an
+  earlier version drew both markers in the same teal, and both toggle pills in the same teal
+  active-state tint, which made the two picks hard to tell apart at a glance beyond their text
+  label alone. `LEARNING_START_MARKER_COLOR` (`#0E9488`, the mode's own teal — unchanged, ties
+  Initial back to "this is a Learning-mode selection") and `LEARNING_END_MARKER_COLOR`
+  (`#D6336C`, a distinct rose) are passed into `drawLevelMarker()` per marker; the pick-toggle
+  pills (`.learning-pick-start`/`.learning-pick-end`) carry the same two colors via their own
+  `--pick-color` custom property, read by the shared `.learning-pick-btn`/`.learning-pick-
+  btn.active` rules — the same "each button gets its own always-on color via an ID/class
+  selector, `.active` only adds a background tint" convention `.mode-btn` already established
+  for the five mode buttons, applied here one level down at the pick level. Rose was checked
+  for contrast against both themes' panel background the same way every other accent color in
+  this app is (`color-mix` text-on-tint, not solid fill + white text — the solid-fill approach
+  already failed WCAG AA once for teal, see below): 4.62:1 against the light panel, 3.69:1
+  against the dark one, both comfortably clearing the 3:1 large-bold-text AA threshold the
+  same way teal's own 3.74/4.55 already do. Rose was also picked to stay clear of `--red`
+  (`#E32017`, used for wrong-answer feedback) so a keen Ending pick never reads as an error
+  state.
 - **The picked-level readout is a two-column card** (`.learning-level-card`,
   `#learningLevelInfo`, `.learning-level-cols` containing two `.learning-level-col`s) — not
-  the single small caption line it started as, and not a single "true-start → pick" headline
-  either (see below for why that was dropped). Each column is a muted "Initial level"/"Ending
+  the single small caption line it started as. Each column is a muted "Initial level"/"Ending
   level" caption (`.learning-level-caption`) above the picked station's own name in equal
   visual weight (`.learning-level-name`, `#learningLevelName`/`#learningLevelEnd`, both bold —
   neither is primary/secondary anymore). The estimated total recall count sits as its own
@@ -304,16 +319,24 @@ the recommendation tip in the level card below.
   the same way other mode-specific UI already does elsewhere in this app.
   `updateLearningLevelInfo()` sets every sub-element individually rather than one
   `textContent` assignment.
-- **Each column shows only its own picked station name, not a "true start → pick" compound
-  headline.** An earlier single-pick version of this card read `.learning-level-name` as
-  `"<true first station> → <pick>"` specifically to avoid implying recitation begins *at* the
-  pick — necessary back when the ladder always silently climbed to the true terminus with no
-  visible boundary of its own. Now that Ending is its own explicit, equally-weighted pick
-  shown right next to Initial, the pair itself already communicates "these are the two
-  boundaries the ladder works between," so that prefix became redundant and was removed by
-  explicit instruction — a real simplification of `updateLearningLevelInfo()`, not just an
-  addition. Don't reintroduce a compound "X → Y" headline in either column without checking
-  whether the two-column layout still makes it unnecessary.
+- **Each column's bold name is the picked station alone — the true-start/true-end context sits
+  in its own small line underneath, not folded into the bold name as a compound headline.** An
+  earlier single-pick version of this card read `.learning-level-name` itself as
+  `"<true first station> → <pick>"`; the two-column redesign initially dropped that context
+  entirely on the theory that the Initial/Ending pair alone communicated "these are the two
+  boundaries." By explicit instruction it came back — the pair alone doesn't say *how much of
+  the line* each pick leaves out on its own side, which the reference station does — but as a
+  separate small muted line (`.learning-level-arrow`, `#learningLevelStartArrow`/
+  `#learningLevelEndArrow`) below the bold name rather than merged into it, so the two columns
+  stay equally weighted at the size that actually matters for reading the picked station
+  itself. Initial's line always reads `"<true start> →"`; Ending's reads `"→ <true end>"` but
+  is hidden (`classList.toggle('hidden', ...)`, not left empty) whenever the Ending pick *is*
+  the true last station — the bold name above already says it, so showing `"→ <same name>"`
+  underneath would be a literal duplicate, mirroring an equivalent hide-check an earlier
+  single-pick iteration had for its own single sub-line. Initial's line never needs an
+  equivalent hide check: `selectLearningStart()`'s own guard already forbids position 0 from
+  ever being the Initial pick, so the true start and the Initial pick can never be the same
+  station to begin with.
 - **`.learning-level-stat` needs `margin-left:auto`, not just flex wrapping's own defaults,
   to stay right-aligned once the card wraps to multiple rows on a narrow phone.**
   `justify-content` alone only distributes items *within a given flex line* — once the two

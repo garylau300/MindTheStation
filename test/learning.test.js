@@ -105,6 +105,50 @@ test('selectLearningEnd(): anything at/before Initial is a no-op, but the true l
   }
 });
 
+test('the level card shows a true-start/true-end arrow context line per pick, hidden for Ending only when it equals the true last station', () => {
+  const page = loadPage();
+  const { $, document: doc, test: hooks } = page;
+  try {
+    $('lineVictoriaBtn').click();
+    $('modeLearningBtn').click();
+    const walk = hooks.getLearningBaseSeq();
+
+    const startArrow = doc.getElementById('learningLevelStartArrow');
+    const endArrow = doc.getElementById('learningLevelEndArrow');
+
+    assert.equal(startArrow.textContent, walk[0] + ' →', 'Initial\'s arrow line always shows the true first station — position 0 can never be the Initial pick itself');
+    assert.ok(!startArrow.classList.contains('hidden'), 'Initial\'s arrow line is never hidden');
+
+    assert.equal(endArrow.textContent, '→ ' + walk[walk.length - 1], 'Ending\'s arrow line shows the true last station while the pick is short of it (the default halfway point)');
+    assert.ok(!endArrow.classList.contains('hidden'), 'Ending\'s arrow line shows while the pick is not yet the true end');
+
+    hooks.selectLearningEndByName(walk[walk.length - 1]);
+    assert.ok(endArrow.classList.contains('hidden'), 'Ending\'s arrow line hides once the pick IS the true last station — the bold name above already says it');
+  } finally {
+    closePage(page);
+  }
+});
+
+test('Initial and Ending route-map markers use different, fixed colors', () => {
+  const page = loadPage();
+  const { $, document: doc } = page;
+  try {
+    $('lineVictoriaBtn').click();
+    $('modeLearningBtn').click();
+
+    const rings = Array.from(doc.querySelectorAll('#routePreviewSvg circle[fill="none"]'))
+      .filter(c => !c.classList.contains('station-ring')); // exclude the unrelated hover ring
+    assert.equal(rings.length, 2, 'expected exactly one persistent marker ring per pick');
+
+    const strokes = rings.map(r => r.getAttribute('stroke'));
+    assert.notEqual(strokes[0], strokes[1], 'Initial and Ending markers must use visually distinct colors');
+    assert.ok(strokes.includes('#0E9488'), 'expected the Initial marker to use Learning mode\'s own teal');
+    assert.ok(strokes.includes('#D6336C'), 'expected the Ending marker to use a distinct rose');
+  } finally {
+    closePage(page);
+  }
+});
+
 test('the halfway default has a safety floor for very short lines/branches', () => {
   const page = loadPage();
   const { $, test: hooks } = page;
