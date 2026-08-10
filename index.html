@@ -352,22 +352,33 @@
   .learning-level-col{ display:flex; flex-direction:column; gap:2px; }
   .learning-level-caption{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color: var(--ink-dim); }
   .learning-level-name{ font-size:19px; font-weight:700; color: var(--ink); line-height:1.25; }
-  /* Small muted "<true start> →" / "→ <true end>" context line under each
-     picked name — reintroduced by explicit instruction from an earlier
-     single-pick iteration's own "<true start> → <pick>" headline, which the
-     two-column redesign had dropped as redundant once both picks got their
-     own equally-weighted column. With two independent picks it's genuinely
-     useful again in its own right: it shows how much of the line each pick
-     leaves out on its own side (how far from the true start Initial begins,
-     how far short of the true end Ending stops), which the bold pick name
-     alone can't convey. Hidden for Ending specifically when the pick *is*
-     the true last station (see updateLearningLevelInfo()) — the same
-     duplicate-hiding behavior the old single-pick version had, just scoped
-     to the Ending column now instead of the old lone sub-line. Initial's
-     own arrow never needs the same hide check: position 0 can never be
-     picked as Initial (selectLearningStart()'s own guard), so the true
-     start and the Initial pick can never be the same station. */
-  .learning-level-arrow{ font-size:11px; color: var(--ink-dim); line-height:1.2; }
+  /* "<true start> →" / "→ <true end>" context line — reintroduced by
+     explicit instruction from an earlier single-pick iteration's own
+     "<true start> → <pick>" headline, which the two-column redesign had
+     dropped as redundant once both picks got their own equally-weighted
+     column. With two independent picks it's genuinely useful again in its
+     own right: it shows how much of the line each pick leaves out on its
+     own side (how far from the true start Initial begins, how far short of
+     the true end Ending stops), which the bold pick name alone can't
+     convey. Sits *above* the "Initial level"/"Ending level" caption (by
+     explicit instruction — it reads as the lead-in context for the pick
+     below it, not a footnote under it) and is deliberately styled to stand
+     out rather than read as secondary: larger than the caption above it
+     used to be sized at (13px vs. the caption's own 11px) and bold, in the
+     pick's own identity color (`var(--pick-color)`, inherited from the
+     `.learning-pick-start`/`.learning-pick-end` class also on the column —
+     the same reused-utility-class trick the pick-toggle pills use for the
+     same two colors) rather than the muted `--ink-dim` every other small
+     label in this card uses, so the two arrows are legible and color-coded
+     at a glance instead of blending into the caption text below. Hidden for
+     Ending specifically when the pick *is* the true last station (see
+     updateLearningLevelInfo()) — the same duplicate-hiding behavior the old
+     single-pick version had, just scoped to the Ending column now instead
+     of the old lone sub-line. Initial's own arrow never needs the same hide
+     check: position 0 can never be picked as Initial (selectLearningStart()'s
+     own guard), so the true start and the Initial pick can never be the
+     same station. */
+  .learning-level-arrow{ font-size:13px; font-weight:700; color: var(--pick-color); line-height:1.2; }
   /* margin-left:auto (not just the card's own justify-content:space-between)
      is what actually keeps this right-aligned once the card wraps to two
      rows on a narrow phone — space-between only distributes items *within
@@ -1322,15 +1333,15 @@
       <span class="direction-label section-label route-map-label" id="routeMapLabel">Route map</span>
       <div class="learning-level-card hidden" id="learningLevelInfo">
         <div class="learning-level-cols">
-          <div class="learning-level-col">
+          <div class="learning-level-col learning-pick-start">
+            <span class="learning-level-arrow" id="learningLevelStartArrow"></span>
             <span class="learning-level-caption">Initial level</span>
             <span class="learning-level-name" id="learningLevelName"></span>
-            <span class="learning-level-arrow" id="learningLevelStartArrow"></span>
           </div>
-          <div class="learning-level-col">
+          <div class="learning-level-col learning-pick-end">
+            <span class="learning-level-arrow" id="learningLevelEndArrow"></span>
             <span class="learning-level-caption">Ending level</span>
             <span class="learning-level-name" id="learningLevelEnd"></span>
-            <span class="learning-level-arrow" id="learningLevelEndArrow"></span>
           </div>
         </div>
         <div class="learning-level-stat">

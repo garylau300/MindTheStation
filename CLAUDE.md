@@ -320,23 +320,33 @@ the recommendation tip in the level card below.
   `updateLearningLevelInfo()` sets every sub-element individually rather than one
   `textContent` assignment.
 - **Each column's bold name is the picked station alone — the true-start/true-end context sits
-  in its own small line underneath, not folded into the bold name as a compound headline.** An
-  earlier single-pick version of this card read `.learning-level-name` itself as
-  `"<true first station> → <pick>"`; the two-column redesign initially dropped that context
-  entirely on the theory that the Initial/Ending pair alone communicated "these are the two
-  boundaries." By explicit instruction it came back — the pair alone doesn't say *how much of
-  the line* each pick leaves out on its own side, which the reference station does — but as a
-  separate small muted line (`.learning-level-arrow`, `#learningLevelStartArrow`/
-  `#learningLevelEndArrow`) below the bold name rather than merged into it, so the two columns
-  stay equally weighted at the size that actually matters for reading the picked station
-  itself. Initial's line always reads `"<true start> →"`; Ending's reads `"→ <true end>"` but
-  is hidden (`classList.toggle('hidden', ...)`, not left empty) whenever the Ending pick *is*
-  the true last station — the bold name above already says it, so showing `"→ <same name>"`
-  underneath would be a literal duplicate, mirroring an equivalent hide-check an earlier
+  in its own line above it, not folded into the bold name as a compound headline.** An earlier
+  single-pick version of this card read `.learning-level-name` itself as `"<true first
+  station> → <pick>"`; the two-column redesign initially dropped that context entirely on the
+  theory that the Initial/Ending pair alone communicated "these are the two boundaries." By
+  explicit instruction it came back — the pair alone doesn't say *how much of the line* each
+  pick leaves out on its own side, which the reference station does — as a separate line
+  (`.learning-level-arrow`, `#learningLevelStartArrow`/`#learningLevelEndArrow`) rather than
+  merged into the bold name, so the two columns stay equally weighted at the size that
+  actually matters for reading the picked station itself. It sits *above* the "Initial
+  level"/"Ending level" caption (also by explicit instruction, moved up from its first cut
+  below the bold name) since it reads as lead-in context for the pick that follows rather than
+  a footnote underneath it, and is deliberately sized and weighted to stand out rather than
+  read as secondary — `13px`/`font-weight:700`, larger than the `11px` caption right below it,
+  in the pick's own identity color (`var(--pick-color)`, the same CSS variable — and the same
+  `.learning-pick-start`/`.learning-pick-end` utility classes — the pick-toggle pills already
+  use for their two colors) rather than the muted `--ink-dim` every other small label in this
+  card uses. Initial's line always reads `"<true start> →"`; Ending's reads `"→ <true end>"`
+  but is hidden (`classList.toggle('hidden', ...)`, not left empty) whenever the Ending pick
+  *is* the true last station — the bold name below already says it, so showing `"→ <same
+  name>"` above it would be a literal duplicate, mirroring an equivalent hide-check an earlier
   single-pick iteration had for its own single sub-line. Initial's line never needs an
   equivalent hide check: `selectLearningStart()`'s own guard already forbids position 0 from
   ever being the Initial pick, so the true start and the Initial pick can never be the same
-  station to begin with.
+  station to begin with. Both lines share the exact same size/weight/position — the only
+  differences between them are the color (teal vs. rose) and which side of the picked name the
+  arrow sits on (pointing in from the true start for Initial, pointing out toward the true end
+  for Ending), since that mirrors the actual direction of travel on each side of the line.
 - **`.learning-level-stat` needs `margin-left:auto`, not just flex wrapping's own defaults,
   to stay right-aligned once the card wraps to multiple rows on a narrow phone.**
   `justify-content` alone only distributes items *within a given flex line* — once the two
