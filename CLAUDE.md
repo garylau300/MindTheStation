@@ -336,17 +336,17 @@ the recommendation tip in the level card below.
   in the pick's own identity color (`var(--pick-color)`, the same CSS variable — and the same
   `.learning-pick-start`/`.learning-pick-end` utility classes — the pick-toggle pills already
   use for their two colors) rather than the muted `--ink-dim` every other small label in this
-  card uses. Initial's line always reads `"<true start> →"`; Ending's reads `"→ <true end>"`
-  but is hidden (`classList.toggle('hidden', ...)`, not left empty) whenever the Ending pick
-  *is* the true last station — the bold name below already says it, so showing `"→ <same
-  name>"` above it would be a literal duplicate, mirroring an equivalent hide-check an earlier
-  single-pick iteration had for its own single sub-line. Initial's line never needs an
-  equivalent hide check: `selectLearningStart()`'s own guard already forbids position 0 from
-  ever being the Initial pick, so the true start and the Initial pick can never be the same
-  station to begin with. Both lines share the exact same size/weight/position — the only
-  differences between them are the color (teal vs. rose) and which side of the picked name the
-  arrow sits on (pointing in from the true start for Initial, pointing out toward the true end
-  for Ending), since that mirrors the actual direction of travel on each side of the line.
+  card uses. **Both lines share the same anchor** — the true start of the current walk, not
+  Initial anchoring to the true start and Ending to the true end — so Initial reads `"<true
+  start> → <Initial pick>"` and Ending reads `"<true start> → <Ending pick>"`, by explicit
+  instruction: a single shared reference point makes the two lines directly comparable ("this
+  many stations in from the same start") and literally identical in format, rather than two
+  different measurements from opposite ends of the line. An earlier version anchored Ending to
+  the true *end* instead (`"→ <true end>"`, hidden whenever the Ending pick was itself the true
+  last station to avoid duplicating the bold name below) — that hide-check is gone now, since
+  with both lines sharing one anchor and each including its own pick's name, Initial and Ending
+  can never produce identical text (Start/End are always strictly ordered, so their pick names
+  are always different) even when Ending reaches the true last station.
 - **`.learning-level-stat` needs `margin-left:auto`, not just flex wrapping's own defaults,
   to stay right-aligned once the card wraps to multiple rows on a narrow phone.**
   `justify-content` alone only distributes items *within a given flex line* — once the two

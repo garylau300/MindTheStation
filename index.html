@@ -352,32 +352,29 @@
   .learning-level-col{ display:flex; flex-direction:column; gap:2px; }
   .learning-level-caption{ font-size:11px; text-transform:uppercase; letter-spacing:.1em; color: var(--ink-dim); }
   .learning-level-name{ font-size:19px; font-weight:700; color: var(--ink); line-height:1.25; }
-  /* "<true start> →" / "→ <true end>" context line — reintroduced by
-     explicit instruction from an earlier single-pick iteration's own
-     "<true start> → <pick>" headline, which the two-column redesign had
-     dropped as redundant once both picks got their own equally-weighted
-     column. With two independent picks it's genuinely useful again in its
-     own right: it shows how much of the line each pick leaves out on its
-     own side (how far from the true start Initial begins, how far short of
-     the true end Ending stops), which the bold pick name alone can't
-     convey. Sits *above* the "Initial level"/"Ending level" caption (by
-     explicit instruction — it reads as the lead-in context for the pick
-     below it, not a footnote under it) and is deliberately styled to stand
-     out rather than read as secondary: larger than the caption above it
-     used to be sized at (13px vs. the caption's own 11px) and bold, in the
-     pick's own identity color (`var(--pick-color)`, inherited from the
-     `.learning-pick-start`/`.learning-pick-end` class also on the column —
-     the same reused-utility-class trick the pick-toggle pills use for the
-     same two colors) rather than the muted `--ink-dim` every other small
-     label in this card uses, so the two arrows are legible and color-coded
-     at a glance instead of blending into the caption text below. Hidden for
-     Ending specifically when the pick *is* the true last station (see
-     updateLearningLevelInfo()) — the same duplicate-hiding behavior the old
-     single-pick version had, just scoped to the Ending column now instead
-     of the old lone sub-line. Initial's own arrow never needs the same hide
-     check: position 0 can never be picked as Initial (selectLearningStart()'s
-     own guard), so the true start and the Initial pick can never be the
-     same station. */
+  /* "<true start> → <pick>" context line — reintroduced by explicit
+     instruction from an earlier single-pick iteration's own "<true start> →
+     <pick>" headline, which the two-column redesign had dropped as
+     redundant once both picks got their own equally-weighted column. Both
+     columns deliberately anchor to the same reference station (the true
+     start of the current walk), by explicit instruction, rather than
+     Initial anchoring to the true start and Ending to the true end — a
+     single shared anchor means both lines use the exact same format, so
+     they read as directly comparable ("this many stations in from the same
+     start") rather than two different measurements. Sits *above* the
+     "Initial level"/"Ending level" caption (by explicit instruction — it
+     reads as the lead-in context for the pick below it, not a footnote
+     underneath it) and is deliberately sized and weighted to stand out
+     rather than read as secondary — `13px`/`font-weight:700`, larger than
+     the `11px` caption right below it, in the pick's own identity color
+     (`var(--pick-color)`, inherited from the `.learning-pick-start`/
+     `.learning-pick-end` class also on the column — the same reused-
+     utility-class trick the pick-toggle pills use for their two colors)
+     rather than the muted `--ink-dim` every other small label in this card
+     uses. Never needs a duplicate-hiding check the way an earlier
+     true-end-anchored version did: the pick's own name is already part of
+     this line's own text, and Initial/Ending can never be the same station
+     (strictly ordered), so the two lines can never end up identical. */
   .learning-level-arrow{ font-size:13px; font-weight:700; color: var(--pick-color); line-height:1.2; }
   /* margin-left:auto (not just the card's own justify-content:space-between)
      is what actually keeps this right-aligned once the card wraps to two
@@ -5343,17 +5340,16 @@
     }
     const walk = learningBaseSeq();
     const trueStartName = walk[0];
-    const trueEndName = walk[walk.length - 1];
     learningLevelNameEl.textContent = walk[learningStartIndex];
     learningLevelEndEl.textContent = walk[learningEndIndex];
-    // Small muted "<true start> →" / "→ <true end>" context line under each
-    // pick — reintroduced by explicit instruction (see the
-    // .learning-level-arrow CSS comment for why this is back and why only
-    // Ending's own line ever needs hiding).
-    learningLevelStartArrowEl.textContent = trueStartName + ' →';
-    const pickIsTrueEnd = learningEndIndex === walk.length - 1;
-    learningLevelEndArrowEl.classList.toggle('hidden', pickIsTrueEnd);
-    if(!pickIsTrueEnd) learningLevelEndArrowEl.textContent = '→ ' + trueEndName;
+    // "<true start> → <pick>" context line above each caption — both
+    // columns anchor to the same true start (see the .learning-level-arrow
+    // CSS comment), so unlike the old true-end-anchored version, there's no
+    // duplicate-with-the-bold-name case to hide: the pick's own name is
+    // already part of the line here, and Start/End can never be the same
+    // station (strictly ordered), so the two arrow lines can never collide.
+    learningLevelStartArrowEl.textContent = trueStartName + ' → ' + walk[learningStartIndex];
+    learningLevelEndArrowEl.textContent = trueStartName + ' → ' + walk[learningEndIndex];
     learningLevelRecallsEl.textContent = learningTotalRecalls().toLocaleString();
     learningLevelInfoEl.classList.remove('hidden');
     learningPickToggleEl.classList.remove('hidden');

@@ -105,7 +105,7 @@ test('selectLearningEnd(): anything at/before Initial is a no-op, but the true l
   }
 });
 
-test('the level card shows a true-start/true-end arrow context line per pick, hidden for Ending only when it equals the true last station', () => {
+test('the level card shows a "<true start> → <pick>" arrow context line for both Initial and Ending, sharing the same anchor', () => {
   const page = loadPage();
   const { $, document: doc, test: hooks } = page;
   try {
@@ -116,14 +116,17 @@ test('the level card shows a true-start/true-end arrow context line per pick, hi
     const startArrow = doc.getElementById('learningLevelStartArrow');
     const endArrow = doc.getElementById('learningLevelEndArrow');
 
-    assert.equal(startArrow.textContent, walk[0] + ' →', 'Initial\'s arrow line always shows the true first station — position 0 can never be the Initial pick itself');
-    assert.ok(!startArrow.classList.contains('hidden'), 'Initial\'s arrow line is never hidden');
+    assert.equal(startArrow.textContent, walk[0] + ' → ' + walk[hooks.getLearningStartIndex()], 'Initial\'s arrow line reads true start → Initial pick');
+    assert.equal(endArrow.textContent, walk[0] + ' → ' + walk[hooks.getLearningEndIndex()], 'Ending\'s arrow line reads true start → Ending pick — the same anchor as Initial\'s own line');
+    assert.ok(!startArrow.classList.contains('hidden'));
+    assert.ok(!endArrow.classList.contains('hidden'));
 
-    assert.equal(endArrow.textContent, '→ ' + walk[walk.length - 1], 'Ending\'s arrow line shows the true last station while the pick is short of it (the default halfway point)');
-    assert.ok(!endArrow.classList.contains('hidden'), 'Ending\'s arrow line shows while the pick is not yet the true end');
-
+    // Even when Ending is pushed all the way to the true last station, both
+    // lines share the same true-start anchor and can never collide — unlike
+    // an earlier true-end-anchored version, there's nothing to hide here.
     hooks.selectLearningEndByName(walk[walk.length - 1]);
-    assert.ok(endArrow.classList.contains('hidden'), 'Ending\'s arrow line hides once the pick IS the true last station — the bold name above already says it');
+    assert.equal(endArrow.textContent, walk[0] + ' → ' + walk[walk.length - 1]);
+    assert.ok(!endArrow.classList.contains('hidden'), 'Ending\'s arrow line never hides now that both lines share one anchor');
   } finally {
     closePage(page);
   }
