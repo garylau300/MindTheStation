@@ -1206,11 +1206,15 @@ catch.
   color and reverted it — too sharp against the dark background — so it stays `var(--ink)` in
   both themes. `document.title` (the actual browser-tab title) is untouched by any of this —
   a separate, plain-text browser API that can't render a custom font.
-- **`document.title` is always the plain, fixed `"Mind the Station"` — no line name, by
-  explicit instruction.** `setLine()` used to overwrite it with `LINE.def.label + ' Line —
-  Mind the Station'` on every line switch; that call (and the matching static `<title>` in
-  `<head>`, which used to hardcode the default line's own name) are both gone. Don't
-  reintroduce a per-line browser-tab title without checking first.
+- **`document.title` is always the plain, fixed `"Mind the Station — Memorise Every Tube
+  Station"` — no line name, by explicit instruction.** `setLine()` used to overwrite it with
+  `LINE.def.label + ' Line — Mind the Station'` on every line switch; that call (and the
+  matching static `<title>` in `<head>`, which used to hardcode the default line's own name)
+  are both gone. The static text itself was later lengthened from the bare `"Mind the
+  Station"` to include a keyword-rich subtitle for SEO (matching the em-dash-separated
+  `"Mind the Station — X"` convention `og:title`/`twitter:title`/the `.sr-only` `<h1>` already
+  use) — a deliberate change to the one fixed value, not a reintroduction of per-line
+  dynamism. Don't reintroduce a per-line browser-tab title without checking first.
 - **The favicon and the two small icons on the page title's second line are the same
   asset**: "Arrow Upper Right" by kosonicon, from Flaticon, under Flaticon's free "with
   attribution" license — the required credit lives in the Terms modal's own Attribution
